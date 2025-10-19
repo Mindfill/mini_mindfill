@@ -16,12 +16,13 @@ export default function VideoSection() {
           How It Works
         </h2>
         
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div 
-            className="relative aspect-video rounded-xl overflow-hidden border-2 group cursor-pointer"
+            className="relative rounded-xl overflow-hidden border-2 group cursor-pointer"
             style={{
               borderColor: "rgba(0, 255, 136, 0.3)",
               boxShadow: "0 0 40px rgba(0, 255, 136, 0.2)",
+              aspectRatio: "21 / 9",
             }}
             onClick={handlePlay}
             data-testid="container-video"
