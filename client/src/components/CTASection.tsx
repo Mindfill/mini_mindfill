@@ -1,10 +1,7 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import WaitlistDialog from "./WaitlistDialog";
+import { Link } from "wouter";
 
 export default function CTASection() {
-  const [waitlistOpen, setWaitlistOpen] = useState(false);
-
   return (
     <section className="py-32 px-6 lg:px-8 bg-black relative overflow-hidden">
       <div 
@@ -26,21 +23,20 @@ export default function CTASection() {
           <span className="text-[hsl(158,100%,50%)]">learning.</span>
         </h2>
 
-        <Button
-          size="lg"
-          className="bg-[hsl(158,100%,50%)] text-black hover:bg-[hsl(158,100%,50%)] px-12 py-7 text-xl font-bold"
-          style={{
-            boxShadow: "0 0 50px rgba(0, 255, 136, 0.6)",
-            animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite"
-          }}
-          onClick={() => setWaitlistOpen(true)}
-          data-testid="button-join-beta-cta"
-        >
-          Join Beta
-        </Button>
+        <Link href="/waitlist">
+          <Button
+            size="lg"
+            className="bg-[hsl(158,100%,50%)] text-black hover:bg-[hsl(158,100%,50%)] px-12 py-7 text-xl font-bold"
+            style={{
+              boxShadow: "0 0 50px rgba(0, 255, 136, 0.6)",
+              animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite"
+            }}
+            data-testid="button-join-beta-cta"
+          >
+            Join Beta
+          </Button>
+        </Link>
       </div>
-
-      <WaitlistDialog open={waitlistOpen} onOpenChange={setWaitlistOpen} />
     </section>
   );
 }

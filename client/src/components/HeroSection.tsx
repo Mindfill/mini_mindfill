@@ -1,11 +1,8 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 import ParticleBackground from "./ParticleBackground";
-import WaitlistDialog from "./WaitlistDialog";
 
 export default function HeroSection() {
-  const [waitlistOpen, setWaitlistOpen] = useState(false);
-
   const scrollToVideo = () => {
     const element = document.querySelector("#how-it-works");
     if (element) {
@@ -36,18 +33,19 @@ export default function HeroSection() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Button
-            size="lg"
-            className="bg-[hsl(158,100%,50%)] text-black hover:bg-[hsl(158,100%,50%)] px-10 py-6 text-lg font-semibold animate-pulse"
-            style={{
-              boxShadow: "0 0 40px rgba(0, 255, 136, 0.6)",
-              animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite"
-            }}
-            onClick={() => setWaitlistOpen(true)}
-            data-testid="button-join-waitlist"
-          >
-            Join Waitlist
-          </Button>
+          <Link href="/waitlist">
+            <Button
+              size="lg"
+              className="bg-[hsl(158,100%,50%)] text-black hover:bg-[hsl(158,100%,50%)] px-10 py-6 text-lg font-semibold animate-pulse"
+              style={{
+                boxShadow: "0 0 40px rgba(0, 255, 136, 0.6)",
+                animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite"
+              }}
+              data-testid="button-join-waitlist"
+            >
+              Join Waitlist
+            </Button>
+          </Link>
           
           <Button
             size="lg"
@@ -62,8 +60,6 @@ export default function HeroSection() {
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent" />
-      
-      <WaitlistDialog open={waitlistOpen} onOpenChange={setWaitlistOpen} />
     </section>
   );
 }
