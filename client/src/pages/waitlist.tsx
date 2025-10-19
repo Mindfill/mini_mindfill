@@ -19,7 +19,16 @@ export default function Waitlist() {
     setIsSubmitting(true);
 
     // Simulate submission
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+const res = await fetch(`${backendUrl}/api/join`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ name, email }),
+});
+
+if (!res.ok) throw new Error("Failed to join waitlist");
+
 
     setIsSubmitted(true);
     setIsSubmitting(false);
