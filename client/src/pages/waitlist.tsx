@@ -19,24 +19,7 @@ export default function Waitlist() {
     setIsSubmitting(true);
 
     // Simulate submission
-    const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-const res = await fetch(`${backendUrl}/api/join`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ name, email }),
-});
-
-if (!res.ok) throw new Error("Failed to join waitlist");
-
-
-    setIsSubmitted(true);
-    setIsSubmitting(false);
-
-    toast({
-      title: "You're on the list!",
-      description: "We'll notify you when Mindfill launches.",
-    });
   };
 
   return (
@@ -89,49 +72,79 @@ if (!res.ok) throw new Error("Failed to join waitlist");
                   </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="name" className="text-white/90">
-                      Name
-                    </Label>
-                    <Input
-                      id="name"
-                      type="text"
-                      placeholder="Your name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                      className="bg-white/5 border-white/20 text-white placeholder:text-white/40 focus-visible:ring-[hsl(158,100%,50%)]"
-                      data-testid="input-name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-white/90">
-                      Email
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="bg-white/5 border-white/20 text-white placeholder:text-white/40 focus-visible:ring-[hsl(158,100%,50%)]"
-                      data-testid="input-email"
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full bg-[hsl(158,100%,50%)] text-black hover:bg-[hsl(158,100%,50%)] py-6 text-lg font-semibold"
-                    style={{
-                      boxShadow: "0 0 30px rgba(0, 255, 136, 0.4)",
-                    }}
-                    disabled={isSubmitting}
-                    data-testid="button-submit"
-                  >
-                    {isSubmitting ? "Joining..." : "Join Waitlist"}
-                  </Button>
-                </form>
+                <form
+  onSubmit={async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+      const res = await fetch(`${backendUrl}/api/join`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email }),
+      });
+
+      if (!res.ok) throw new Error("Failed to join waitlist");
+
+      setIsSubmitted(true);
+      toast({
+        title: "You're on the list!",
+        description: "We'll notify you when Mindfill launches.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }}
+  className="space-y-6"
+>
+  <div className="space-y-2">
+    <Label htmlFor="name" className="text-white/90">
+      Name
+    </Label>
+    <Input
+      id="name"
+      type="text"
+      placeholder="Your name"
+      value={name}
+      onChange={(e) => setName(e.target.value)}
+      required
+      className="bg-white/5 border-white/20 text-white placeholder:text-white/40 focus-visible:ring-[hsl(158,100%,50%)]"
+      data-testid="input-name"
+    />
+  </div>
+  <div className="space-y-2">
+    <Label htmlFor="email" className="text-white/90">
+      Email
+    </Label>
+    <Input
+      id="email"
+      type="email"
+      placeholder="your@email.com"
+      value={email}
+      onChange={(e) => setEmail(e.target.value)}
+      required
+      className="bg-white/5 border-white/20 text-white placeholder:text-white/40 focus-visible:ring-[hsl(158,100%,50%)]"
+      data-testid="input-email"
+    />
+  </div>
+  <Button
+    type="submit"
+    className="w-full bg-[hsl(158,100%,50%)] text-black hover:bg-[hsl(158,100%,50%)] py-6 text-lg font-semibold"
+    style={{ boxShadow: "0 0 30px rgba(0, 255, 136, 0.4)" }}
+    disabled={isSubmitting}
+    data-testid="button-submit"
+  >
+    {isSubmitting ? "Joining..." : "Join Waitlist"}
+  </Button>
+</form>
+
               </div>
             ) : (
               <div
