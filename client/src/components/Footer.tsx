@@ -1,12 +1,6 @@
-import { SiX } from "react-icons/si";
+import { SiX, SiInstagram } from "react-icons/si";
 
 export default function Footer() {
-  const links = [
-    { label: "About", href: "#about" },
-    { label: "Privacy", href: "#privacy" },
-    { label: "Contact", href: "#contact" },
-  ];
-
   return (
     <footer className="bg-black border-t border-white/10 py-12 px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -27,28 +21,21 @@ export default function Footer() {
             </p>
           </div>
 
-          <div className="flex items-center gap-8">
-            {links.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className="text-sm text-white/70 hover:text-[hsl(158,100%,50%)] transition-colors duration-200"
-                data-testid={`link-footer-${link.label.toLowerCase()}`}
-              >
-                {link.label}
-              </a>
-            ))}
-          </div>
-
-          <div>
+          <div className="flex items-center gap-4">
+            <a
+              href="https://instagram.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/20 text-white/70 hover:text-[hsl(158,100%,50%)] hover:border-[hsl(158,100%,50%)] transition-all duration-200"
+              data-testid="link-footer-instagram"
+            >
+              <SiInstagram className="w-5 h-5" />
+            </a>
             <a
               href="https://twitter.com"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/20 text-white/70 hover:text-[hsl(158,100%,50%)] hover:border-[hsl(158,100%,50%)] transition-all duration-200"
-              style={{
-                transition: "all 0.2s"
-              }}
               data-testid="link-footer-twitter"
             >
               <SiX className="w-5 h-5" />

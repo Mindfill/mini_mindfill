@@ -39,7 +39,7 @@ export default function VideoSection() {
                   >
                     <Play className="w-12 h-12 text-black ml-1" fill="currentColor" />
                   </div>
-                  <p className="text-xl text-white/80">
+                  <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/80">
                     Watch how Mindfill transforms learning
                   </p>
                 </div>
