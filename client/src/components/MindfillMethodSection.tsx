@@ -62,13 +62,12 @@ export default function MindfillMethodSection() {
           Our 3-Layer Learning System adapts to your level, ensuring deep comprehension at every stage.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-fr">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <BentoCard
             icon={<Layers className="w-7 h-7" />}
             number="1"
             title="Intuitive"
             description="Start with simple, relatable concepts. Build a foundation using everyday analogies and visual thinking."
-            className="md:col-span-1"
             testId="step-intuitive"
           />
 
@@ -77,7 +76,6 @@ export default function MindfillMethodSection() {
             number="2"
             title="Structured"
             description="Progress to organized frameworks. Connect ideas systematically and understand relationships."
-            className="md:col-span-2"
             testId="step-structured"
           />
 
@@ -86,7 +84,6 @@ export default function MindfillMethodSection() {
             number="3"
             title="Rigorous"
             description="Master the formal details. Develop deep expertise with mathematical precision and technical depth."
-            className="md:col-span-3"
             testId="step-rigorous"
           />
         </div>
