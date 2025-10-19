@@ -1,0 +1,66 @@
+You are a world-class web designer tasked with creating a premium, futuristic landing page for Mindfill, an AI-powered learning platform that teaches STEM through deep understanding, adaptive questioning, and layered explanations.
+
+Goal: Impress visitors instantly. The design should feel intelligent, modern, and slightly sci-fi, evoking a sense of focus, mastery, and brilliance.
+
+Brand colors:
+
+Background: Black (main canvas, depth and elegance)
+
+Accent: Neon Green (#00FF88 or similar glow effect)
+
+Text: White and light gray for contrast and readability
+
+Typography & Vibe:
+
+Sleek sans-serif fonts like Inter, Space Grotesk, or Satoshi
+
+Large hero headline, minimalist layout
+
+Use glow/blur effects subtly to highlight interactivity
+
+Combine grid precision with cinematic spacing
+
+Structure (in order):
+
+Navbar: Left = logo “Mindfill” (neon text glow). Right = “How it Works”, “For Students”, “For Schools”, “Login”, “Join Beta”.
+
+Hero Section:
+
+Headline: “Fill Your Mind. Master Anything.”
+
+Subtext: AI-powered understanding through layered explanations and deep reasoning.
+
+CTA buttons: “Start Learning” (glowing green) and “See Demo” (white outline).
+
+Abstract neon particle or brainwave background animation.
+
+Section 2 – How It Works:
+
+Three columns: “Explain”, “Question”, “Master” — each with an icon and short description.
+
+Section 3 – The Mindfill Method:
+
+Describe the 3-Layer Learning System: Intuitive → Structured → Rigorous.
+
+Visualize with glowing step diagram or animated progression.
+
+Section 4 – Why Mindfill:
+
+Showcase benefits: “Deeper Understanding”, “Adaptive Learning”, “AI Clarity Engine.”
+
+Include smooth scroll reveal animations.
+
+Section 5 – Call to Action:
+
+Headline: “Join the next era of learning.”
+
+Button: “Join Beta” (neon glow pulse).
+
+Footer:
+
+Black background, subtle white text.
+
+Links: About, Privacy, Contact, X/Twitter icon (neon hover).
+
+Style keywords:
+futuristic, minimal, cinematic, deep contrast, glowing edges, smooth gradients, ambient light effects, immersive.
