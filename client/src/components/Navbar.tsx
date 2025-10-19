@@ -10,8 +10,6 @@ export default function Navbar() {
   const menuItems = [
     { label: "How it Works", href: "#how-it-works" },
     { label: "For Students", href: "#why-mindfill" },
-    { label: "For Schools", href: "#method" },
-    { label: "Login", href: "#login" },
   ];
 
   const scrollToSection = (href: string) => {
