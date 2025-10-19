@@ -1,6 +1,10 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import WaitlistDialog from "./WaitlistDialog";
 
 export default function CTASection() {
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
+
   return (
     <section className="py-32 px-6 lg:px-8 bg-black relative overflow-hidden">
       <div 
@@ -29,11 +33,14 @@ export default function CTASection() {
             boxShadow: "0 0 50px rgba(0, 255, 136, 0.6)",
             animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite"
           }}
+          onClick={() => setWaitlistOpen(true)}
           data-testid="button-join-beta-cta"
         >
           Join Beta
         </Button>
       </div>
+
+      <WaitlistDialog open={waitlistOpen} onOpenChange={setWaitlistOpen} />
     </section>
   );
 }

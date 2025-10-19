@@ -1,7 +1,18 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import ParticleBackground from "./ParticleBackground";
+import WaitlistDialog from "./WaitlistDialog";
 
 export default function HeroSection() {
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
+
+  const scrollToVideo = () => {
+    const element = document.querySelector("#how-it-works");
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
       <ParticleBackground />
@@ -32,15 +43,17 @@ export default function HeroSection() {
               boxShadow: "0 0 40px rgba(0, 255, 136, 0.6)",
               animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite"
             }}
-            data-testid="button-start-learning"
+            onClick={() => setWaitlistOpen(true)}
+            data-testid="button-join-waitlist"
           >
-            Start Learning
+            Join Waitlist
           </Button>
           
           <Button
             size="lg"
             variant="outline"
             className="border-2 border-white text-white bg-white/5 backdrop-blur-sm hover:bg-white/10 px-10 py-6 text-lg font-semibold"
+            onClick={scrollToVideo}
             data-testid="button-see-demo"
           >
             See Demo
@@ -49,6 +62,8 @@ export default function HeroSection() {
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent" />
+      
+      <WaitlistDialog open={waitlistOpen} onOpenChange={setWaitlistOpen} />
     </section>
   );
 }

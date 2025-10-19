@@ -1,6 +1,6 @@
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
-import HowItWorksSection from "@/components/HowItWorksSection";
+import VideoSection from "@/components/VideoSection";
 import MindfillMethodSection from "@/components/MindfillMethodSection";
 import WhyMindfillSection from "@/components/WhyMindfillSection";
 import CTASection from "@/components/CTASection";
@@ -11,7 +11,7 @@ export default function Home() {
     <div className="min-h-screen bg-black text-white">
       <Navbar />
       <HeroSection />
-      <HowItWorksSection />
+      <VideoSection />
       <MindfillMethodSection />
       <WhyMindfillSection />
       <CTASection />
