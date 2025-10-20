@@ -82,8 +82,8 @@ export default function Waitlist() {
 
       const res = await fetch(`${backendUrl}/api/join`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email }),
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ name, email }),
       });
 
       if (!res.ok) throw new Error("Failed to join waitlist");
