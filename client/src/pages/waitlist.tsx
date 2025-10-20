@@ -75,10 +75,12 @@ export default function Waitlist() {
                 <form
   onSubmit={async (e) => {
     e.preventDefault();
+    console.log("Submitting form...");   // debug
     setIsSubmitting(true);
 
     try {
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      console.log("Backend URL:", backendUrl);
 
       const res = await fetch(`${backendUrl}/api/join`, {
         method: "POST",
@@ -89,11 +91,14 @@ export default function Waitlist() {
       if (!res.ok) throw new Error("Failed to join waitlist");
 
       setIsSubmitted(true);
+      console.log("isSubmitted set to true");
+      
       toast({
         title: "You're on the list!",
         description: "We'll notify you when Mindfill launches.",
       });
     } catch (error) {
+      console.error("Submit error:", error);
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
