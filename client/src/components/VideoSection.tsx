@@ -52,7 +52,7 @@ export default function VideoSection() {
                   autoPlay
                   data-testid="video-player"
                 >
-                  <source src="/video/MindfillFirst.mp4" type="video/mp4" />
+                  <source src="public/video/MindfillFirst.mp4" type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
               </div>
