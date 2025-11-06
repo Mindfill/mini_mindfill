@@ -23,7 +23,7 @@ export default function Footer() {
 
           <div className="flex items-center gap-4">
             <a
-              href="https://instagram.com"
+              href="https://www.instagram.com/mindfill_official?igsh=YmZiaThlNTl4azZp"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/20 text-white/70 hover:text-[hsl(158,100%,50%)] hover:border-[hsl(158,100%,50%)] transition-all duration-200"
@@ -31,15 +31,7 @@ export default function Footer() {
             >
               <SiInstagram className="w-5 h-5" />
             </a>
-            <a
-              href="https://twitter.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/20 text-white/70 hover:text-[hsl(158,100%,50%)] hover:border-[hsl(158,100%,50%)] transition-all duration-200"
-              data-testid="link-footer-twitter"
-            >
-              <SiX className="w-5 h-5" />
-            </a>
+            
           </div>
         </div>
       </div>
