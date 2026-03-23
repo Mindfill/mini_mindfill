@@ -6,9 +6,10 @@ import { Link } from "wouter";
 
 export default function Login() {
     const handleGoogleSignIn = async () => {
+        const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
         await supabase.auth.signInWithOAuth({
             provider: "google",
-            options: { redirectTo: "http://localhost:5000/dashboard" },
+            options: { redirectTo: `${siteUrl}/dashboard` },
         });
     };
 
