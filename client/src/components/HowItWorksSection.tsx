@@ -13,18 +13,18 @@ function FeatureCard({ icon, title, description, testId }: FeatureCardProps) {
       className="relative p-8 rounded-xl border transition-all duration-300 hover-elevate group"
       style={{
         background: "rgba(255, 255, 255, 0.02)",
-        borderColor: "rgba(0, 255, 136, 0.2)",
+        borderColor: "rgba(245, 158, 11, 0.2)",
       }}
       data-testid={testId}
     >
       <div 
         className="w-16 h-16 mb-6 flex items-center justify-center rounded-lg transition-all duration-300"
         style={{
-          background: "rgba(0, 255, 136, 0.1)",
-          border: "1px solid rgba(0, 255, 136, 0.3)",
+          background: "rgba(245, 158, 11, 0.1)",
+          border: "1px solid rgba(245, 158, 11, 0.3)",
         }}
       >
-        <div className="text-[hsl(158,100%,50%)]">
+        <div className="text-primary">
           {icon}
         </div>
       </div>
@@ -33,7 +33,7 @@ function FeatureCard({ icon, title, description, testId }: FeatureCardProps) {
         {title}
       </h3>
       
-      <p className="text-white/60 leading-relaxed" data-testid={`text-${testId}-description`}>
+      <p className="text-muted-foreground leading-relaxed" data-testid={`text-${testId}-description`}>
         {description}
       </p>
     </div>
@@ -42,7 +42,7 @@ function FeatureCard({ icon, title, description, testId }: FeatureCardProps) {
 
 export default function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="py-24 px-6 lg:px-8 bg-black">
+    <section id="how-it-works" className="py-24 px-6 lg:px-8 bg-background">
       <div className="max-w-7xl mx-auto">
         <h2 className="text-4xl md:text-5xl font-bold text-center mb-16" data-testid="text-how-it-works-headline">
           How It Works

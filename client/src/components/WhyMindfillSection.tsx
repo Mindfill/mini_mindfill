@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Lightbulb, Users, Sparkles, Target } from "lucide-react";
+import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 
 interface BenefitCardProps {
   number: string;
@@ -35,12 +36,11 @@ function BenefitCard({ number, icon, title, description, testId }: BenefitCardPr
   return (
     <div
       ref={cardRef}
-      className={`relative p-8 rounded-xl border transition-all duration-700 hover-elevate ${
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-      }`}
+      className={`relative p-8 rounded-xl border transition-all duration-700 hover-elevate ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+        }`}
       style={{
-        background: "rgba(255, 255, 255, 0.02)",
-        borderColor: "rgba(0, 255, 136, 0.2)",
+        background: "rgba(255, 255, 255, 0.7)",
+        borderColor: "rgba(245, 158, 11, 0.25)",
       }}
       data-testid={testId}
     >
@@ -48,27 +48,27 @@ function BenefitCard({ number, icon, title, description, testId }: BenefitCardPr
         <div
           className="w-16 h-16 flex-shrink-0 flex items-center justify-center rounded-lg"
           style={{
-            background: "rgba(0, 255, 136, 0.1)",
-            border: "1px solid rgba(0, 255, 136, 0.3)",
+            background: "rgba(245, 158, 11, 0.1)",
+            border: "1px solid rgba(245, 158, 11, 0.3)",
           }}
         >
-          <div className="text-[hsl(158,100%,50%)]">{icon}</div>
+          <div className="text-primary">{icon}</div>
         </div>
-        <div 
-          className="text-4xl font-bold text-[hsl(158,100%,50%)]"
+        <div
+          className="text-4xl font-bold text-primary"
           style={{
-            textShadow: "0 0 20px rgba(0, 255, 136, 0.3)"
+            textShadow: "0 0 20px rgba(245, 158, 11, 0.3)"
           }}
         >
           {number}
         </div>
       </div>
 
-      <h3 className="text-2xl font-semibold mb-4" data-testid={`text-${testId}-title`}>
+      <h3 className="text-2xl font-semibold mb-4 text-stone-900" data-testid={`text-${testId}-title`}>
         {title}
       </h3>
 
-      <p className="text-white/60 leading-relaxed" data-testid={`text-${testId}-description`}>
+      <p className="text-stone-600 leading-relaxed" data-testid={`text-${testId}-description`}>
         {description}
       </p>
     </div>
@@ -77,9 +77,10 @@ function BenefitCard({ number, icon, title, description, testId }: BenefitCardPr
 
 export default function WhyMindfillSection() {
   return (
-    <section id="why-mindfill" className="py-24 px-6 lg:px-8 bg-black">
-      <div className="max-w-7xl mx-auto">
-        <h2 className="text-4xl md:text-5xl font-bold text-center mb-16" data-testid="text-why-headline">
+    <section id="why-mindfill" className="py-24 px-6 lg:px-8 relative overflow-hidden bg-white" style={{ backgroundColor: "#C9C9C5" }}>
+      <AnimatedGradientBg />
+      <div className="max-w-7xl mx-auto relative z-10">
+        <h2 className="text-4xl md:text-5xl font-bold text-center mb-16 text-stone-900" data-testid="text-why-headline">
           Why Mindfill
         </h2>
 

@@ -1,4 +1,5 @@
 import { Layers, Network, GraduationCap } from "lucide-react";
+import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 
 interface BentoCardProps {
   icon: React.ReactNode;
@@ -14,8 +15,8 @@ function BentoCard({ icon, number, title, description, className, testId }: Bent
     <div
       className={`relative p-8 rounded-xl border hover-elevate transition-all duration-300 ${className}`}
       style={{
-        background: "rgba(255, 255, 255, 0.02)",
-        borderColor: "rgba(0, 255, 136, 0.2)",
+        background: "rgba(255, 255, 255, 0.7)",
+        borderColor: "rgba(245, 158, 11, 0.25)",
       }}
       data-testid={testId}
     >
@@ -23,27 +24,27 @@ function BentoCard({ icon, number, title, description, className, testId }: Bent
         <div
           className="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-lg"
           style={{
-            background: "rgba(0, 255, 136, 0.1)",
-            border: "1px solid rgba(0, 255, 136, 0.3)",
+            background: "rgba(245, 158, 11, 0.1)",
+            border: "1px solid rgba(245, 158, 11, 0.3)",
           }}
         >
-          <div className="text-[hsl(158,100%,50%)]">{icon}</div>
+          <div className="text-primary">{icon}</div>
         </div>
         <div
-          className="text-3xl font-bold text-[hsl(158,100%,50%)]"
+          className="text-3xl font-bold text-primary"
           style={{
-            textShadow: "0 0 20px rgba(0, 255, 136, 0.3)",
+            textShadow: "0 0 20px rgba(245, 158, 11, 0.3)",
           }}
         >
           {number}
         </div>
       </div>
 
-      <h3 className="text-2xl font-semibold mb-4" data-testid={`text-${testId}-title`}>
+      <h3 className="text-2xl font-semibold mb-4 text-stone-900" data-testid={`text-${testId}-title`}>
         {title}
       </h3>
 
-      <p className="text-white/60 leading-relaxed" data-testid={`text-${testId}-description`}>
+      <p className="text-stone-600 leading-relaxed" data-testid={`text-${testId}-description`}>
         {description}
       </p>
     </div>
@@ -52,13 +53,14 @@ function BentoCard({ icon, number, title, description, className, testId }: Bent
 
 export default function MindfillMethodSection() {
   return (
-    <section id="method" className="py-24 px-6 lg:px-8 bg-black">
-      <div className="max-w-7xl mx-auto">
-        <h2 className="text-4xl md:text-5xl font-bold text-center mb-6" data-testid="text-method-headline">
+    <section id="method" className="py-24 px-6 lg:px-8 relative overflow-hidden bg-white" style={{ backgroundColor: "#C9C9C5" }}>
+      <AnimatedGradientBg />
+      <div className="max-w-7xl mx-auto relative z-10">
+        <h2 className="text-4xl md:text-5xl font-bold text-center mb-6 text-stone-900" data-testid="text-method-headline">
           The Mindfill Method
         </h2>
 
-        <p className="text-xl text-white/70 text-center mb-16 max-w-3xl mx-auto" data-testid="text-method-subtext">
+        <p className="text-xl text-stone-600 text-center mb-16 max-w-3xl mx-auto" data-testid="text-method-subtext">
           Our 3-Layer Learning System adapts to your level, ensuring deep comprehension at every stage.
         </p>
 

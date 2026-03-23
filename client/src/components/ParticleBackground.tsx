@@ -30,7 +30,7 @@ export default function ParticleBackground() {
     const createParticles = () => {
       particles = [];
       const particleCount = Math.min(100, Math.floor((canvas.width * canvas.height) / 15000));
-      
+
       for (let i = 0; i < particleCount; i++) {
         particles.push({
           x: Math.random() * canvas.width,
@@ -55,9 +55,9 @@ export default function ParticleBackground() {
 
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(0, 255, 136, ${particle.opacity})`;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "rgba(0, 255, 136, 0.5)";
+        ctx.fillStyle = `rgba(255, 255, 255, ${particle.opacity})`;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = "rgba(255, 255, 255, 0.4)";
         ctx.fill();
 
         for (let j = i + 1; j < particles.length; j++) {
@@ -69,7 +69,7 @@ export default function ParticleBackground() {
             ctx.beginPath();
             ctx.moveTo(particle.x, particle.y);
             ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(0, 255, 136, ${0.15 * (1 - distance / 150)})`;
+            ctx.strokeStyle = `rgba(255, 255, 255, ${0.12 * (1 - distance / 150)})`;
             ctx.lineWidth = 0.5;
             ctx.stroke();
           }
@@ -98,7 +98,6 @@ export default function ParticleBackground() {
     <canvas
       ref={canvasRef}
       className="absolute inset-0 w-full h-full"
-      style={{ background: "black" }}
     />
   );
 }

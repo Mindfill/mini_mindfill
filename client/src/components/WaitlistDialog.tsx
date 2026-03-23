@@ -42,19 +42,19 @@ export default function WaitlistDialog({ open, onOpenChange }: WaitlistDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-black border-[hsl(158,100%,50%)]" data-testid="dialog-waitlist">
+      <DialogContent className="sm:max-w-md bg-background border-primary" data-testid="dialog-waitlist">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
             Join the{" "}
-            <span className="text-[hsl(158,100%,50%)]">Waitlist</span>
+            <span className="text-primary">Waitlist</span>
           </DialogTitle>
-          <DialogDescription className="text-white/60">
+          <DialogDescription className="text-muted-foreground">
             Be among the first to experience the future of learning.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-white/90">
+            <Label htmlFor="name" className="text-foreground">
               Name
             </Label>
             <Input
@@ -64,12 +64,12 @@ export default function WaitlistDialog({ open, onOpenChange }: WaitlistDialogPro
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="bg-white/5 border-white/20 text-white placeholder:text-white/40"
+              className="bg-card border-muted-foreground/30 text-foreground placeholder:text-muted-foreground"
               data-testid="input-waitlist-name"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-white/90">
+            <Label htmlFor="email" className="text-foreground">
               Email
             </Label>
             <Input
@@ -79,15 +79,15 @@ export default function WaitlistDialog({ open, onOpenChange }: WaitlistDialogPro
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="bg-white/5 border-white/20 text-white placeholder:text-white/40"
+              className="bg-card border-muted-foreground/30 text-foreground placeholder:text-muted-foreground"
               data-testid="input-waitlist-email"
             />
           </div>
           <Button
             type="submit"
-            className="w-full bg-[hsl(158,100%,50%)] text-black hover:bg-[hsl(158,100%,50%)]"
+            className="w-full bg-primary text-black hover:bg-primary"
             style={{
-              boxShadow: "0 0 30px rgba(0, 255, 136, 0.4)",
+              boxShadow: "0 0 30px rgba(245, 158, 11, 0.4)",
             }}
             disabled={isSubmitting}
             data-testid="button-waitlist-submit"
