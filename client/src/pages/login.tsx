@@ -2,9 +2,20 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { FcGoogle } from "react-icons/fc";
 import { supabase } from "@/lib/supabase";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+import { useEffect } from "react";
 
 export default function Login() {
+    const { session, isLoading } = useAuth();
+    const [, navigate] = useLocation();
+
+    useEffect(() => {
+        if (!isLoading && session) {
+            navigate("/dashboard");
+        }
+    }, [session, isLoading, navigate]);
+
     const handleGoogleSignIn = async () => {
         const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
         await supabase.auth.signInWithOAuth({

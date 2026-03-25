@@ -1,31 +1,25 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/use-auth";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import { BookOpen, Clock, Play, ArrowRight, Activity } from "lucide-react";
 import { fetchDashboard, DashboardResponse } from "@/lib/api";
 
 export default function Dashboard() {
+    const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
     const [, navigate] = useLocation();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [userName, setUserName] = useState("");
     const [data, setData] = useState<DashboardResponse | null>(null);
 
+    const userName = user?.user_metadata?.full_name || user?.email || "User";
+
     const loadDashboard = async () => {
+        if (!session) return;
+
         setLoading(true);
         setError(null);
         try {
-            const {
-                data: { session },
-            } = await supabase.auth.getSession();
-
-            if (!session) {
-                navigate("/login");
-                return;
-            }
-
-            setUserName(session.user.user_metadata?.full_name || session.user.email || "User");
             const dashboardData = await fetchDashboard(session.access_token);
             setData(dashboardData);
         } catch (err) {
@@ -37,11 +31,18 @@ export default function Dashboard() {
     };
 
     useEffect(() => {
-        loadDashboard();
-    }, [navigate]);
+        if (!authLoading && !session) {
+            navigate("/login");
+            return;
+        }
+
+        if (session) {
+            loadDashboard();
+        }
+    }, [session, authLoading, navigate]);
 
     const handleSignOut = async () => {
-        await supabase.auth.signOut();
+        await supabaseSignOut();
         navigate("/login");
     };
 
@@ -61,7 +62,7 @@ export default function Dashboard() {
         return `${diffInDays} day${diffInDays === 1 ? '' : 's'} ago`;
     };
 
-    if (loading) {
+    if (authLoading || loading) {
         return (
             <div className="min-h-screen bg-background text-foreground flex">
                 <AppSidebar userName={userName || "Loading..."} activeItem="home" onSignOut={handleSignOut} />

@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { Link } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Navbar() {
+  const { session } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -63,13 +65,13 @@ export default function Navbar() {
                 </button>
               ))}
 
-              <Link href="/login">
+              <Link href={session ? "/dashboard" : "/login"}>
                 <Button
                   size="sm"
                   className="rounded-xl bg-amber-500 text-white hover:bg-amber-600 px-5 font-semibold shadow-[0_0_20px_rgba(245,158,11,0.4)] transition-all duration-200"
                   data-testid="button-join-beta-nav"
                 >
-                  Join Beta
+                  {session ? "Dashboard" : "Join Beta"}
                 </Button>
               </Link>
             </div>
@@ -102,13 +104,13 @@ export default function Navbar() {
                 {item.label}
               </button>
             ))}
-            <Link href="/login">
+            <Link href={session ? "/dashboard" : "/login"}>
               <Button
                 className="w-full rounded-xl bg-amber-500 text-white hover:bg-amber-600 font-semibold shadow-[0_0_20px_rgba(245,158,11,0.4)]"
                 onClick={() => setMobileMenuOpen(false)}
                 data-testid="button-join-beta-mobile"
               >
-                Join Beta
+                {session ? "Dashboard" : "Join Beta"}
               </Button>
             </Link>
           </div>

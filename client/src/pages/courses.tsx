@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import CourseCard from "@/components/courses/CourseCard";
@@ -30,67 +31,62 @@ interface GroupedModule extends Module {
 }
 
 export default function Courses() {
+    const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
     const [, navigate] = useLocation();
     const [loading, setLoading] = useState(true);
-    const [userName, setUserName] = useState("");
     const [courses, setCourses] = useState<Course[]>([]);
     const [modules, setModules] = useState<Module[]>([]);
     const [lessons, setLessons] = useState<Lesson[]>([]);
 
+    const userName = user?.user_metadata?.full_name || user?.email || "User";
+
     useEffect(() => {
-        const init = async () => {
-            const {
-                data: { session },
-            } = await supabase.auth.getSession();
+        if (!authLoading && !session) {
+            navigate("/login");
+            return;
+        }
 
-            if (!session) {
-                navigate("/login");
-                return;
-            }
+        if (session) {
+            const fetchAllData = async () => {
+                setLoading(true);
+                // Fetch courses, modules, and lessons in parallel
+                const [coursesRes, modulesRes, lessonsRes] = await Promise.all([
+                    supabase.from("courses").select("id, title, slug").order("order_index", { ascending: true }),
+                    supabase.from("modules").select("id, course_id, title, slug").order("order_index", { ascending: true }),
+                    supabase.from("lessons").select("id, module_id, title, slug").order("order_index", { ascending: true }),
+                ]);
 
-            setUserName(
-                session.user.user_metadata?.full_name ||
-                session.user.email ||
-                "User"
-            );
+                if (coursesRes.error) console.error("Courses query error:", coursesRes.error);
+                if (modulesRes.error) console.error("Modules query error:", modulesRes.error);
+                if (lessonsRes.error) console.error("Lessons query error:", lessonsRes.error);
 
-            // Fetch courses, modules, and lessons in parallel
-            const [coursesRes, modulesRes, lessonsRes] = await Promise.all([
-                supabase.from("courses").select("id, title, slug").order("order_index", { ascending: true }),
-                supabase.from("modules").select("id, course_id, title, slug").order("order_index", { ascending: true }),
-                supabase.from("lessons").select("id, module_id, title, slug").order("order_index", { ascending: true }),
-            ]);
+                if (coursesRes.data) setCourses(coursesRes.data);
+                if (modulesRes.data) setModules(modulesRes.data);
+                if (lessonsRes.data) setLessons(lessonsRes.data);
 
-            if (coursesRes.error) console.error("Courses query error:", coursesRes.error);
-            if (modulesRes.error) console.error("Modules query error:", modulesRes.error);
-            if (lessonsRes.error) console.error("Lessons query error:", lessonsRes.error);
+                setLoading(false);
+            };
 
-            if (coursesRes.data) setCourses(coursesRes.data);
-            if (modulesRes.data) setModules(modulesRes.data);
-            if (lessonsRes.data) setLessons(lessonsRes.data);
-
-            setLoading(false);
-        };
-
-        init();
-    }, [navigate]);
+            fetchAllData();
+        }
+    }, [session, authLoading, navigate]);
 
     const handleSignOut = async () => {
-        await supabase.auth.signOut();
+        await supabaseSignOut();
         navigate("/login");
     };
 
     // Group modules under courses, lessons under modules
     const getGroupedModules = (courseId: string): GroupedModule[] => {
         return modules
-            .filter((m) => m.course_id === courseId)
-            .map((mod) => ({
+            .filter((m: Module) => m.course_id === courseId)
+            .map((mod: Module) => ({
                 ...mod,
-                lessons: lessons.filter((l) => l.module_id === mod.id),
+                lessons: lessons.filter((l: Lesson) => l.module_id === mod.id),
             }));
     };
 
-    if (loading) {
+    if (authLoading || loading) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -144,7 +140,7 @@ export default function Courses() {
                         </div>
                     ) : (
                         <div className="flex flex-col gap-6 max-w-5xl">
-                            {courses.map((course, idx) => (
+                            {courses.map((course: Course, idx: number) => (
                                 <CourseCard
                                     key={course.id}
                                     course={course}

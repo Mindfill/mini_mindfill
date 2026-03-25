@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Home, BookOpen, Clock, LogOut, Menu, X } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { DropReviewDialog } from "./DropReviewDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -28,9 +29,10 @@ const navItems: SidebarNavItem[] = [
 ];
 
 export default function AppSidebar({ userName, activeItem, onSignOut }: AppSidebarProps) {
+    const { session } = useAuth();
     const [, navigate] = useLocation();
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [accessToken, setAccessToken] = useState<string | undefined>();
+    const accessToken = session?.access_token;
 
     useEffect(() => {
         const handleResize = () => {
@@ -43,14 +45,6 @@ export default function AppSidebar({ userName, activeItem, onSignOut }: AppSideb
         handleResize(); // Set initial state correctly
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session) {
-                setAccessToken(session.access_token);
-            }
-        });
     }, []);
 
     return (

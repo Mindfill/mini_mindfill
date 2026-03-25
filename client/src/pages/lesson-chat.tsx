@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation, useParams } from "wouter";
-import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/use-auth";
 import { fetchLessonHistory, submitLessonMessage, type ChatMessage } from "@/lib/api";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import ChatBubble from "@/components/chat/ChatBubble";
@@ -10,17 +10,19 @@ import { MessageSquare } from "lucide-react";
 import QuizSection from "@/components/quiz/QuizSection";
 
 export default function LessonChat() {
+    const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
     const [, navigate] = useLocation();
     const params = useParams<{ lessonSlug: string }>();
     const lessonSlug = params.lessonSlug || "";
 
     const [loading, setLoading] = useState(true);
-    const [userName, setUserName] = useState("");
-    const [accessToken, setAccessToken] = useState("");
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<"chat" | "quiz">("chat");
+
+    const userName = user?.user_metadata?.full_name || user?.email || "User";
+    const accessToken = session?.access_token || "";
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -36,40 +38,28 @@ export default function LessonChat() {
 
     // Init: check session + load history
     useEffect(() => {
-        const init = async () => {
-            const {
-                data: { session },
-            } = await supabase.auth.getSession();
+        if (!authLoading && !session) {
+            navigate("/login");
+            return;
+        }
 
-            if (!session) {
-                navigate("/login");
-                return;
-            }
-
-            const name =
-                session.user.user_metadata?.full_name ||
-                session.user.email ||
-                "User";
-            setUserName(name);
-            setAccessToken(session.access_token);
-
-            // Fetch chat history
-            try {
-                const history = await fetchLessonHistory(lessonSlug, session.access_token);
-                setMessages(history);
-            } catch (err) {
-                console.error("Failed to fetch history:", err);
-                // Not a hard error — just no history yet
-            }
-
-            setLoading(false);
-        };
-
-        init();
-    }, [navigate, lessonSlug]);
+        if (session) {
+            const loadHistory = async () => {
+                setLoading(true);
+                try {
+                    const history = await fetchLessonHistory(lessonSlug, session.access_token);
+                    setMessages(history);
+                } catch (err) {
+                    console.error("Failed to fetch history:", err);
+                }
+                setLoading(false);
+            };
+            loadHistory();
+        }
+    }, [session, authLoading, navigate, lessonSlug]);
 
     const handleSignOut = async () => {
-        await supabase.auth.signOut();
+        await supabaseSignOut();
         navigate("/login");
     };
 
@@ -81,13 +71,13 @@ export default function LessonChat() {
             role: "user",
             content,
         };
-        setMessages((prev) => [...prev, userMsg]);
+        setMessages((prev: ChatMessage[]) => [...prev, userMsg]);
         setSending(true);
         setError(null);
 
         try {
             const assistantMsg = await submitLessonMessage(lessonSlug, content, accessToken);
-            setMessages((prev) => [...prev, assistantMsg]);
+            setMessages((prev: ChatMessage[]) => [...prev, assistantMsg]);
         } catch (err) {
             console.error("Failed to send message:", err);
             setError("Failed to get response. Please try again.");
@@ -96,7 +86,7 @@ export default function LessonChat() {
         }
     };
 
-    if (loading) {
+    if (authLoading || loading) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -107,7 +97,7 @@ export default function LessonChat() {
     // Format slug for display: "intro-to-calculus" → "Intro to Calculus"
     const displayTitle = lessonSlug
         .split("-")
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
         .join(" ");
 
     return (
@@ -185,7 +175,7 @@ export default function LessonChat() {
                                     </div>
                                 )}
 
-                                {messages.map((msg, idx) => (
+                                {messages.map((msg: ChatMessage, idx: number) => (
                                     <ChatBubble key={idx} role={msg.role} content={msg.content} />
                                 ))}
 
