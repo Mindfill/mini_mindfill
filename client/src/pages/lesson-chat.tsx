@@ -109,7 +109,7 @@ export default function LessonChat() {
             />
 
             {/* Chat area */}
-            <div className="flex-1 flex flex-col min-h-screen">
+            <div className="flex-1 flex flex-col h-[100dvh]">
                 {/* Chat header */}
                 <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-6 py-4 flex justify-between items-center">
                     <div className="flex items-center gap-3">

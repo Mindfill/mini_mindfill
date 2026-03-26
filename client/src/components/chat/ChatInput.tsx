@@ -67,7 +67,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
                         className="
               w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
               bg-primary text-black
-              hover:bg-[hsl(158,100%,55%)]
+              hover:bg-primary/90
               disabled:opacity-30 disabled:cursor-not-allowed
               transition-all duration-200
             "

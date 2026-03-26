@@ -158,14 +158,14 @@ export default function Dashboard() {
                             </div>
                         ) : (
                             <div className="rounded-3xl p-8 border border-border bg-card">
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                <div className="flex flex-col md:flex-row items-center md:items-center justify-between gap-6 text-center md:text-left">
                                     <div>
                                         <h2 className="text-2xl font-semibold mb-2">Start your first lesson</h2>
                                         <p className="text-muted-foreground">Begin learning and your progress will appear here.</p>
                                     </div>
                                     <button
                                         onClick={() => navigate("/courses")}
-                                        className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex flex-shrink-0"
+                                        className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center flex-shrink-0"
                                     >
                                         Start Learning
                                     </button>
