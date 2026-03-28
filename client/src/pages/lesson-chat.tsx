@@ -101,7 +101,7 @@ export default function LessonChat() {
         .join(" ");
 
     return (
-        <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+        <div className="h-screen w-full bg-background text-foreground flex overflow-hidden">
             <AppSidebar
                 userName={userName}
                 activeItem="courses"
@@ -145,7 +145,7 @@ export default function LessonChat() {
                 </header>
 
                 {activeTab === "quiz" ? (
-                    <div className="flex-1 overflow-y-auto">
+                    <div className="flex-1 overflow-y-auto min-h-0">
                         <QuizSection lessonId={lessonSlug} lessonTitle={displayTitle} onClose={() => setActiveTab("chat")} />
                     </div>
                 ) : (
@@ -153,7 +153,7 @@ export default function LessonChat() {
                         {/* Messages area */}
                         <div
                             ref={scrollContainerRef}
-                            className="flex-1 overflow-y-auto"
+                            className="flex-1 overflow-y-auto min-h-0"
                         >
                             <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 pb-40">
                                 {messages.length === 0 && !sending && (
