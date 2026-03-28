@@ -34,7 +34,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
     };
 
     return (
-        <div className="border-t border-border bg-background/60 backdrop-blur-md p-4">
+        <div className="w-full">
             <div className="max-w-3xl mx-auto">
                 <div
                     className="
