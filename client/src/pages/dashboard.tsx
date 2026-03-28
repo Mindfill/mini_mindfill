@@ -64,7 +64,7 @@ export default function Dashboard() {
 
     if (authLoading || loading) {
         return (
-            <div className="min-h-screen bg-background text-foreground flex">
+            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
                 <AppSidebar userName={userName || "Loading..."} activeItem="home" onSignOut={handleSignOut} />
                 <div className="flex-1 overflow-y-auto">
                     <div className="max-w-4xl mx-auto p-6 md:p-10 space-y-10 animate-pulse">
@@ -90,7 +90,7 @@ export default function Dashboard() {
 
     if (error || !data) {
         return (
-            <div className="min-h-screen bg-background text-foreground flex">
+            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
                 <AppSidebar userName={userName} activeItem="home" onSignOut={handleSignOut} />
                 <div className="flex-1 flex items-center justify-center p-8">
                     <div className="bg-card border border-border rounded-2xl p-8 max-w-sm w-full text-center">
@@ -115,7 +115,7 @@ export default function Dashboard() {
         : 0;
 
     return (
-        <div className="min-h-screen bg-background text-foreground flex">
+        <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
             <AppSidebar
                 userName={userName}
                 activeItem="home"

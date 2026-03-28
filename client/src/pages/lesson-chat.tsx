@@ -101,7 +101,7 @@ export default function LessonChat() {
         .join(" ");
 
     return (
-        <div className="min-h-screen bg-background text-foreground flex">
+        <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
             <AppSidebar
                 userName={userName}
                 activeItem="courses"
@@ -109,7 +109,7 @@ export default function LessonChat() {
             />
 
             {/* Chat area */}
-            <div className="flex-1 flex flex-col h-[100dvh]">
+            <div className="flex-1 flex flex-col h-full relative overflow-hidden">
                 {/* Chat header */}
                 <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-6 py-4 flex justify-between items-center">
                     <div className="flex items-center gap-3">

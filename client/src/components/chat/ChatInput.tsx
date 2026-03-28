@@ -39,10 +39,13 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
                 <div
                     className="
             flex items-end gap-3 rounded-2xl
-            border border-border bg-card
+            border border-white/30 dark:border-white/10
+            bg-white/40 dark:bg-black/40
+            backdrop-blur-xl backdrop-saturate-150
+            shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)]
             px-4 py-3
-            focus-within:border-primary/30
-            transition-colors duration-200
+            focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20
+            transition-all duration-300
           "
                 >
                     <textarea
@@ -54,7 +57,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
                         disabled={disabled}
                         rows={1}
                         className="
-              flex-1 bg-transparent text-foreground text-sm resize-none
+              flex-1 bg-transparent text-foreground text-base md:text-sm resize-none
               outline-none placeholder:text-muted-foreground
               disabled:opacity-50 disabled:cursor-not-allowed
               max-h-[200px]
@@ -66,14 +69,13 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
                         disabled={disabled || !value.trim()}
                         className="
               w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
-              bg-primary text-black
-              hover:bg-primary/90
+              bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary
               disabled:opacity-30 disabled:cursor-not-allowed
               transition-all duration-200
             "
                         style={{
                             boxShadow: value.trim() && !disabled
-                                ? "0 0 20px rgba(245, 158, 11, 0.3)"
+                                ? "0 0 20px rgba(245, 158, 11, 0.15)"
                                 : "none",
                         }}
                         data-testid="chat-send"
