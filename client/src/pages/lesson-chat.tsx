@@ -194,8 +194,8 @@ export default function LessonChat() {
                         </div>
 
                         {/* Input area */}
-                        <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-background via-background/90 to-transparent pt-10 pb-6 px-4 pointer-events-none">
-                            <div className="pointer-events-auto">
+                        <div className="absolute bottom-6 left-0 right-0 w-full pointer-events-none px-4 md:px-6 flex justify-center z-10">
+                            <div className="pointer-events-auto w-full max-w-3xl">
                                 <ChatInput onSend={handleSend} disabled={sending} />
                             </div>
                         </div>
