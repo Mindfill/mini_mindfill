@@ -69,7 +69,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
                         disabled={disabled || !value.trim()}
                         className="
               w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center flex-shrink-0
-              bg-primary/90 hover:bg-primary text-black
+              bg-amber-500/90 hover:bg-amber-500 text-black
               disabled:opacity-30 disabled:cursor-not-allowed
               transition-all duration-200
             "
