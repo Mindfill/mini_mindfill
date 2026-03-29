@@ -61,10 +61,11 @@ export default function AppSidebar({ userName, activeItem, onSignOut }: AppSideb
             {/* Sidebar */}
             <aside
                 className={`
-          fixed md:sticky top-0 bottom-0 inset-y-0 left-0 z-40 h-[100dvh] bg-background border-r border-border
+          fixed md:relative top-0 inset-y-0 left-0 z-40 h-full md:h-full md:self-stretch
+          bg-background border-r border-border
           transition-all duration-300 ease-in-out overflow-x-hidden
           flex flex-col whitespace-nowrap
-          ${sidebarOpen ? "translate-x-0 w-64" : "-translate-x-full w-64 md:translate-x-0 md:w-0"}
+          ${sidebarOpen ? "translate-x-0 w-64" : "-translate-x-full md:translate-x-0 md:w-0"}
         `}
                 data-testid="sidebar"
             >
