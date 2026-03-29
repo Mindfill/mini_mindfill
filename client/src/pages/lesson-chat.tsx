@@ -27,7 +27,6 @@ export default function LessonChat() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-    // Auto-scroll to bottom
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
@@ -36,7 +35,6 @@ export default function LessonChat() {
         scrollToBottom();
     }, [messages, sending]);
 
-    // Init: check session + load history
     useEffect(() => {
         if (!authLoading && !session) {
             navigate("/login");
@@ -66,7 +64,6 @@ export default function LessonChat() {
     const handleSend = async (content: string) => {
         if (sending) return;
 
-        // Optimistic UI: append user message
         const userMsg: ChatMessage = {
             role: "user",
             content,
@@ -94,14 +91,13 @@ export default function LessonChat() {
         );
     }
 
-    // Format slug for display: "intro-to-calculus" → "Intro to Calculus"
     const displayTitle = lessonSlug
         .split("-")
         .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
         .join(" ");
 
     return (
-        <div className="fixed inset-0 w-full bg-background text-foreground flex overflow-hidden">
+        <div className="fixed inset-0 w-full bg-background text-foreground flex overflow-hidden" style={{ height: '100dvh' }}>
             <AppSidebar
                 userName={userName}
                 activeItem="courses"
@@ -109,9 +105,9 @@ export default function LessonChat() {
             />
 
             {/* Chat area */}
-            <div className="flex-1 flex flex-col h-full relative overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Chat header */}
-                <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-6 py-4 flex justify-between items-center">
+                <header className="shrink-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-6 py-4 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => navigate("/courses")}
@@ -153,14 +149,12 @@ export default function LessonChat() {
                         {/* Messages area */}
                         <div
                             ref={scrollContainerRef}
-                            className="flex-1 overflow-y-auto min-h-0"
+                            className="flex-1 overflow-y-auto min-h-0 overscroll-contain"
                         >
                             <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
                                 {messages.length === 0 && !sending && (
                                     <div className="flex flex-col items-center justify-center py-20">
-                                        <div
-                                            className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4"
-                                        >
+                                        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                                             <MessageSquare className="w-8 h-8 text-primary" />
                                         </div>
                                         <h2
@@ -194,7 +188,9 @@ export default function LessonChat() {
                         </div>
 
                         {/* Input area */}
-                        <ChatInput onSend={handleSend} disabled={sending} />
+                        <div className="shrink-0">
+                            <ChatInput onSend={handleSend} disabled={sending} />
+                        </div>
                     </>
                 )}
             </div>
