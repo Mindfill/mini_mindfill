@@ -94,7 +94,7 @@ export default function LessonChat() {
         .join(" ");
 
     return (
-        <div className="fixed inset-0 w-full bg-background text-foreground flex overflow-hidden" style={{ height: '100dvh' }}>
+        <div className="min-h-screen bg-background text-foreground flex">
             <AppSidebar
                 userName={userName}
                 activeItem="courses"
@@ -102,9 +102,9 @@ export default function LessonChat() {
             />
 
             {/* Chat area */}
-            <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 flex flex-col min-h-screen">
                 {/* Chat header */}
-                <header className="shrink-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-6 py-4 flex justify-between items-center">
+                <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-6 py-4 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => navigate("/courses")}
@@ -138,7 +138,7 @@ export default function LessonChat() {
                 </header>
 
                 {activeTab === "quiz" ? (
-                    <div className="flex-1 overflow-y-auto min-h-0">
+                    <div className="flex-1 overflow-y-auto">
                         <QuizSection lessonId={lessonSlug} lessonTitle={displayTitle} onClose={() => setActiveTab("chat")} />
                     </div>
                 ) : (
@@ -146,7 +146,7 @@ export default function LessonChat() {
                         {/* Messages area */}
                         <div
                             ref={scrollContainerRef}
-                            className="flex-1 overflow-y-auto min-h-0 overscroll-contain"
+                            className="flex-1 overflow-y-auto"
                         >
                             <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
                                 {messages.length === 0 && !sending && (
@@ -185,9 +185,7 @@ export default function LessonChat() {
                         </div>
 
                         {/* Input area */}
-                        <div className="shrink-0">
-                            <ChatInput onSend={handleSend} disabled={sending} />
-                        </div>
+                        <ChatInput onSend={handleSend} disabled={sending} />
                     </div>
                 )}
             </div>
