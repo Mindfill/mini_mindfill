@@ -64,10 +64,7 @@ export default function LessonChat() {
     const handleSend = async (content: string) => {
         if (sending) return;
 
-        const userMsg: ChatMessage = {
-            role: "user",
-            content,
-        };
+        const userMsg: ChatMessage = { role: "user", content };
         setMessages((prev: ChatMessage[]) => [...prev, userMsg]);
         setSending(true);
         setError(null);

@@ -10,7 +10,6 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
     const [value, setValue] = useState("");
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    // Auto-resize textarea
     useEffect(() => {
         const ta = textareaRef.current;
         if (ta) {
@@ -34,20 +33,9 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
     };
 
     return (
-        <div className="w-full px-2 py-4 md:px-4 md:py-6 bg-background">
+        <div className="border-t border-border bg-background/60 backdrop-blur-md p-4">
             <div className="max-w-3xl mx-auto">
-                <div
-                    className="
-            flex items-end gap-2 md:gap-3 rounded-2xl md:rounded-3xl
-            border border-border/50 dark:border-white/10
-            bg-card/50 dark:bg-black/30
-            backdrop-blur-xl backdrop-saturate-150
-            shadow-sm dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)]
-            px-3 py-2 md:px-4 md:py-3
-            focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20
-            transition-all duration-300
-          "
-                >
+                <div className="flex items-end gap-3 rounded-2xl border border-border bg-card px-4 py-3 focus-within:border-primary/30 transition-colors duration-200">
                     <textarea
                         ref={textareaRef}
                         value={value}
@@ -56,29 +44,24 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
                         placeholder="Ask Mindfill anything…"
                         disabled={disabled}
                         rows={1}
-                        className="
-              flex-1 bg-transparent text-foreground text-base md:text-sm resize-none
-              outline-none placeholder:text-muted-foreground/70
-              disabled:opacity-50 disabled:cursor-not-allowed
-              max-h-[200px] py-1.5 md:py-1
-            "
+                        className="flex-1 bg-transparent text-foreground text-sm resize-none outline-none placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed max-h-[200px]"
                         data-testid="chat-input"
                     />
                     <button
                         onClick={handleSubmit}
                         disabled={disabled || !value.trim()}
-                        className="
-              w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center flex-shrink-0
-              bg-amber-500/90 hover:bg-amber-500 text-black
-              disabled:opacity-30 disabled:cursor-not-allowed
-              transition-all duration-200
-            "
+                        className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-primary text-black hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+                        style={{
+                            boxShadow: value.trim() && !disabled
+                                ? "0 0 20px rgba(245, 158, 11, 0.3)"
+                                : "none",
+                        }}
                         data-testid="chat-send"
                     >
-                        <Send className="w-4 h-4 md:w-5 md:h-5 ml-[-2px]" />
+                        <Send className="w-4 h-4" />
                     </button>
                 </div>
-                <p className="text-[10px] md:text-[11px] text-muted-foreground/60 text-center mt-2 px-4">
+                <p className="text-[11px] text-muted-foreground/60 text-center mt-2">
                     Mindfill may produce inaccurate information. Verify important facts.
                 </p>
             </div>
