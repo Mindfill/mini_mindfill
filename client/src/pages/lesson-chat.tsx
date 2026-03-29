@@ -101,7 +101,7 @@ export default function LessonChat() {
         .join(" ");
 
     return (
-        <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+        <div className="fixed inset-0 w-full bg-background text-foreground flex overflow-hidden">
             <AppSidebar
                 userName={userName}
                 activeItem="courses"
