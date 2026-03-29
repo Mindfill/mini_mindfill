@@ -142,7 +142,7 @@ export default function LessonChat() {
                         <QuizSection lessonId={lessonSlug} lessonTitle={displayTitle} onClose={() => setActiveTab("chat")} />
                     </div>
                 ) : (
-                    <>
+                    <div className="flex-1 flex flex-col min-h-0">
                         {/* Messages area */}
                         <div
                             ref={scrollContainerRef}
@@ -188,7 +188,7 @@ export default function LessonChat() {
                         <div className="shrink-0">
                             <ChatInput onSend={handleSend} disabled={sending} />
                         </div>
-                    </>
+                    </div>
                 )}
             </div>
         </div>
