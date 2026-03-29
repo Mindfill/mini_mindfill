@@ -34,16 +34,16 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
     };
 
     return (
-        <div className="w-full">
+        <div className="w-full px-2 py-4 md:px-4 md:py-6 bg-background">
             <div className="max-w-3xl mx-auto">
                 <div
                     className="
-            flex items-end gap-3 rounded-2xl
-            border border-white/30 dark:border-white/10
-            bg-white/40 dark:bg-black/40
+            flex items-end gap-2 md:gap-3 rounded-2xl md:rounded-3xl
+            border border-border/50 dark:border-white/10
+            bg-card/50 dark:bg-black/30
             backdrop-blur-xl backdrop-saturate-150
-            shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)]
-            px-4 py-3
+            shadow-sm dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)]
+            px-3 py-2 md:px-4 md:py-3
             focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20
             transition-all duration-300
           "
@@ -58,9 +58,9 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
                         rows={1}
                         className="
               flex-1 bg-transparent text-foreground text-base md:text-sm resize-none
-              outline-none placeholder:text-muted-foreground
+              outline-none placeholder:text-muted-foreground/70
               disabled:opacity-50 disabled:cursor-not-allowed
-              max-h-[200px]
+              max-h-[200px] py-1.5 md:py-1
             "
                         data-testid="chat-input"
                     />
@@ -68,22 +68,17 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
                         onClick={handleSubmit}
                         disabled={disabled || !value.trim()}
                         className="
-              w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
-              bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary
+              w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center flex-shrink-0
+              bg-primary/90 hover:bg-primary text-black
               disabled:opacity-30 disabled:cursor-not-allowed
               transition-all duration-200
             "
-                        style={{
-                            boxShadow: value.trim() && !disabled
-                                ? "0 0 20px rgba(245, 158, 11, 0.15)"
-                                : "none",
-                        }}
                         data-testid="chat-send"
                     >
-                        <Send className="w-4 h-4" />
+                        <Send className="w-4 h-4 md:w-5 md:h-5 ml-[-2px]" />
                     </button>
                 </div>
-                <p className="text-[11px] text-muted-foreground/60 text-center mt-2">
+                <p className="text-[10px] md:text-[11px] text-muted-foreground/60 text-center mt-2 px-4">
                     Mindfill may produce inaccurate information. Verify important facts.
                 </p>
             </div>

@@ -155,7 +155,7 @@ export default function LessonChat() {
                             ref={scrollContainerRef}
                             className="flex-1 overflow-y-auto min-h-0"
                         >
-                            <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 pb-40">
+                            <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
                                 {messages.length === 0 && !sending && (
                                     <div className="flex flex-col items-center justify-center py-20">
                                         <div
@@ -194,11 +194,7 @@ export default function LessonChat() {
                         </div>
 
                         {/* Input area */}
-                        <div className="absolute bottom-6 left-0 right-0 w-full pointer-events-none px-4 md:px-6 flex justify-center z-10">
-                            <div className="pointer-events-auto w-full max-w-3xl">
-                                <ChatInput onSend={handleSend} disabled={sending} />
-                            </div>
-                        </div>
+                        <ChatInput onSend={handleSend} disabled={sending} />
                     </>
                 )}
             </div>
