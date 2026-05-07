@@ -23,7 +23,7 @@ function BenefitCard({ number, icon, title, description, testId }: BenefitCardPr
           }
         });
       },
-      { threshold: 0.2 }
+      { threshold: 0.1 }
     );
 
     if (cardRef.current) {
@@ -36,39 +36,23 @@ function BenefitCard({ number, icon, title, description, testId }: BenefitCardPr
   return (
     <div
       ref={cardRef}
-      className={`relative p-8 rounded-xl border transition-all duration-700 hover-elevate ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      className={`relative p-10 rounded-2xl border transition-all duration-1000 group ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
         }`}
       style={{
-        background: "rgba(255, 255, 255, 0.7)",
-        borderColor: "rgba(245, 158, 11, 0.25)",
+        background: "rgba(255, 255, 255, 0.02)",
+        borderColor: "rgba(255, 255, 255, 0.05)",
       }}
       data-testid={testId}
     >
-      <div className="flex items-start gap-4 mb-6">
-        <div
-          className="w-16 h-16 flex-shrink-0 flex items-center justify-center rounded-lg"
-          style={{
-            background: "rgba(245, 158, 11, 0.1)",
-            border: "1px solid rgba(245, 158, 11, 0.3)",
-          }}
-        >
-          <div className="text-primary">{icon}</div>
-        </div>
-        <div
-          className="text-4xl font-bold text-primary"
-          style={{
-            textShadow: "0 0 20px rgba(245, 158, 11, 0.3)"
-          }}
-        >
-          {number}
-        </div>
+      <div className="w-12 h-12 mb-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-500">
+        {icon}
       </div>
 
-      <h3 className="text-2xl font-semibold mb-4 text-stone-900" data-testid={`text-${testId}-title`}>
+      <h3 className="text-xl font-bold mb-4 text-white tracking-tight" data-testid={`text-${testId}-title`}>
         {title}
       </h3>
 
-      <p className="text-stone-600 leading-relaxed" data-testid={`text-${testId}-description`}>
+      <p className="text-white/40 leading-relaxed font-normal text-base" data-testid={`text-${testId}-description`}>
         {description}
       </p>
     </div>
@@ -77,44 +61,47 @@ function BenefitCard({ number, icon, title, description, testId }: BenefitCardPr
 
 export default function WhyMindfillSection() {
   return (
-    <section id="why-mindfill" className="py-24 px-6 lg:px-8 relative overflow-hidden bg-white" style={{ backgroundColor: "#C9C9C5" }}>
-      <AnimatedGradientBg />
+    <section id="why-mindfill" className="py-32 px-6 lg:px-8 relative overflow-hidden bg-black">
       <div className="max-w-7xl mx-auto relative z-10">
-        <h2 className="text-4xl md:text-5xl font-bold text-center mb-16 text-stone-900" data-testid="text-why-headline">
-          Why Mindfill
-        </h2>
+        <div className="max-w-3xl mb-24">
+          <p className="text-primary text-xs font-bold tracking-[0.3em] uppercase mb-4">Core Benefits</p>
+          <h2 className="text-4xl md:text-6xl font-bold text-white tracking-tight" data-testid="text-why-headline">
+            Why Choose <br />
+            <span className="text-white/40">Mindfill.</span>
+          </h2>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <BenefitCard
-            number="1"
-            icon={<Lightbulb className="w-8 h-8" />}
-            title="Learn Like a Genius"
-            description="Mindfill doesn't just explain — it teaches you to think. Every concept unfolds from intuition to mastery until it finally clicks."
+            number="01"
+            icon={<Lightbulb className="w-6 h-6" />}
+            title="Genius Thinking"
+            description="We don't just explain — we teach you how to think from first principles."
             testId="card-genius"
           />
 
           <BenefitCard
-            number="2"
-            icon={<Users className="w-8 h-8" />}
-            title="Your AI That Actually Knows You"
-            description="The more you learn, the smarter Mindfill gets. It adapts to your strengths, fills your weak spots, and grows with your mind."
+            number="02"
+            icon={<Users className="w-6 h-6" />}
+            title="AI Precision"
+            description="Our Clarity Engine fine-tunes explanations to your exact level of understanding."
             testId="card-adaptive"
           />
 
           <BenefitCard
-            number="3"
-            icon={<Sparkles className="w-8 h-8" />}
-            title="No More Boring Learning"
-            description="Dynamic conversations, glowing visuals, and real understanding — not memorization. Every session feels like a breakthrough."
-            testId="card-dynamic"
+            number="03"
+            icon={<Sparkles className="w-6 h-6" />}
+            title="Deep Insights"
+            description="Skip rote memorization. Gain intuitive insights that stay with you forever."
+            testId="card-first-principles"
           />
 
           <BenefitCard
-            number="4"
-            icon={<Target className="w-8 h-8" />}
-            title="The Science of Clarity"
-            description="Mindfill's Clarity Engine fine-tunes every explanation for precision, keeping you in your zone of focus and flow."
-            testId="card-clarity"
+            number="04"
+            icon={<Target className="w-6 h-6" />}
+            title="STEM Mastery"
+            description="Specialized guidance for complex technical subjects from math to physics."
+            testId="card-stem"
           />
         </div>
       </div>

@@ -44,20 +44,17 @@ export default function Waitlist() {
           <div className="max-w-md w-full">
             {!isSubmitted ? (
               <div
-                className="p-8 rounded-xl border"
+                className="p-8 rounded-xl border neon-border"
                 style={{
                   background: "rgba(0, 0, 0, 0.8)",
-                  borderColor: "rgba(245, 158, 11, 0.3)",
-                  boxShadow: "0 0 40px rgba(245, 158, 11, 0.2)",
                   backdropFilter: "blur(10px)",
                 }}
               >
                 <div className="text-center mb-8">
                   <h1
-                    className="text-2xl font-bold mb-2"
+                    className="text-2xl font-bold mb-2 text-gradient"
                     style={{
-                      color: "#F59E0B",
-                      textShadow: "0 0 20px rgba(245, 158, 11, 0.5)",
+                      textShadow: "0 0 20px rgba(199, 89, 48, 0.5)",
                     }}
                     data-testid="text-logo"
                   >
@@ -120,7 +117,7 @@ export default function Waitlist() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
-                      className="bg-card border-muted-foreground/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-[#F59E0B]"
+                      className="bg-card border-muted-foreground/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-primary"
                       data-testid="input-name"
                     />
                   </div>
@@ -135,14 +132,13 @@ export default function Waitlist() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="bg-card border-muted-foreground/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-[#F59E0B]"
+                      className="bg-card border-muted-foreground/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-primary"
                       data-testid="input-email"
                     />
                   </div>
                   <Button
                     type="submit"
-                    className="w-full bg-primary text-black hover:bg-primary py-6 text-lg font-semibold"
-                    style={{ boxShadow: "0 0 30px rgba(245, 158, 11, 0.4)" }}
+                    className="btn-primary w-full text-white py-6 text-lg font-semibold"
                     disabled={isSubmitting}
                     data-testid="button-submit"
                   >
@@ -153,20 +149,18 @@ export default function Waitlist() {
               </div>
             ) : (
               <div
-                className="p-12 rounded-xl border text-center"
+                className="p-12 rounded-xl border text-center neon-border"
                 style={{
                   background: "rgba(0, 0, 0, 0.8)",
-                  borderColor: "rgba(245, 158, 11, 0.3)",
-                  boxShadow: "0 0 40px rgba(245, 158, 11, 0.2)",
                   backdropFilter: "blur(10px)",
                 }}
               >
                 <div
                   className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center"
                   style={{
-                    background: "rgba(245, 158, 11, 0.1)",
-                    border: "2px solid #F59E0B",
-                    boxShadow: "0 0 30px rgba(245, 158, 11, 0.4)",
+                    background: "rgba(199, 89, 48, 0.1)",
+                    border: "2px solid hsl(199, 89%, 48%)",
+                    boxShadow: "0 0 30px rgba(199, 89, 48, 0.4)",
                   }}
                 >
                   <CheckCircle2 className="w-10 h-10 text-primary" />

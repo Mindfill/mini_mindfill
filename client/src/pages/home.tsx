@@ -8,7 +8,7 @@ import Footer from "@/components/Footer";
 
 export default function Home() {
   return (
-    <div className="min-h-screen text-stone-900 flex flex-col" style={{ backgroundColor: "#C9C9C5" }}>
+    <div className="min-h-screen text-white flex flex-col bg-black">
       <Navbar />
       <HeroSection />
       <VideoSection />

@@ -25,14 +25,13 @@ export default function Login() {
     };
 
     return (
-        <div className="min-h-screen text-stone-900 flex flex-col" style={{ backgroundColor: "#C9C9C5" }}>
+        <div className="min-h-screen text-white flex flex-col bg-black">
             <header className="absolute top-0 left-0 p-6 z-50">
                 <Link href="/">
                     <h1
-                        className="text-2xl font-bold tracking-tight cursor-pointer"
+                        className="text-2xl font-bold tracking-tight cursor-pointer text-gradient"
                         style={{
-                            color: "#F59E0B",
-                            textShadow: "0 0 20px rgba(245, 158, 11, 0.5)"
+                            textShadow: "0 0 20px rgba(199, 89, 48, 0.5)"
                         }}
                         data-testid="logo-mindfill"
                     >
@@ -46,21 +45,21 @@ export default function Login() {
                     className="absolute inset-0 opacity-30"
                     style={{
                         background:
-                            "radial-gradient(circle at center, rgba(245, 158, 11, 0.15) 0%, transparent 70%)",
+                            "radial-gradient(circle at center, rgba(199, 89, 48, 0.15) 0%, transparent 70%)",
                     }}
                 />
 
                 <div className="relative z-10 w-full max-w-md text-center">
-                    <div className="rounded-3xl border border-stone-300 bg-white/70 backdrop-blur-md p-10 shadow-[0_20px_60px_rgba(0,0,0,0.15)]">
+                    <div className="rounded-3xl border neon-border bg-black/70 backdrop-blur-md p-10">
                         <h1
-                            className="text-3xl md:text-4xl font-bold mb-10 tracking-tight leading-tight text-stone-900"
+                            className="text-3xl md:text-4xl font-bold mb-10 tracking-tight leading-tight text-white"
                             style={{
-                                textShadow: "0 0 40px rgba(245, 158, 11, 0.3)",
+                                textShadow: "0 0 40px rgba(199, 89, 48, 0.3)",
                             }}
                             data-testid="text-login-headline"
                         >
                             Fill Your Mind.{" "}
-                            <span className="text-primary">
+                            <span className="text-gradient">
                                 Become the Exception.
                             </span>
                         </h1>

@@ -71,10 +71,9 @@ export default function AppSidebar({ userName, activeItem, onSignOut }: AppSideb
                 {/* Logo & Toggle */}
                 <div className="flex items-center justify-between p-6 border-b border-border min-w-[256px]">
                     <h2
-                        className="text-xl font-bold cursor-pointer"
+                        className="text-xl font-bold cursor-pointer text-gradient"
                         style={{
-                            color: "#F59E0B",
-                            textShadow: "0 0 15px rgba(245, 158, 11, 0.5)",
+                            textShadow: "0 0 15px rgba(199, 89, 48, 0.5)",
                         }}
                         onClick={() => { navigate("/dashboard"); if (window.innerWidth < 768) setSidebarOpen(false); }}
                     >
