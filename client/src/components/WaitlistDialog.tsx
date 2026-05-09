@@ -31,7 +31,7 @@ export default function WaitlistDialog({ open, onOpenChange }: WaitlistDialogPro
 
     toast({
       title: "You're on the list!",
-      description: "We'll notify you when Mindfill launches.",
+      description: "We'll notify you when TECHCESS launches.",
     });
 
     setEmail("");

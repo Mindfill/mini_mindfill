@@ -50,21 +50,25 @@ export default function Waitlist() {
                   backdropFilter: "blur(10px)",
                 }}
               >
-                <div className="text-center mb-8">
-                  <h1
-                    className="text-2xl font-bold mb-2 text-gradient"
-                    style={{
-                      textShadow: "0 0 20px rgba(199, 89, 48, 0.5)",
-                    }}
-                    data-testid="text-logo"
-                  >
-                    Mindfill
-                  </h1>
-                  <h2 className="text-4xl font-bold mb-4" data-testid="text-headline">
+                <div className="text-center mb-10">
+                  <div className="flex items-center justify-center gap-3 mb-6">
+                    <img 
+                      src="/images/mindfill.png" 
+                      alt="TECHCESS Logo" 
+                      className="w-10 h-10 object-contain"
+                    />
+                    <h1
+                      className="text-xl font-bold tracking-tight text-white"
+                      data-testid="text-logo"
+                    >
+                      TECHCESS
+                    </h1>
+                  </div>
+                  <h2 className="text-4xl font-bold mb-4 tracking-tight" data-testid="text-headline">
                     Join the{" "}
-                    <span className="text-primary">Waitlist</span>
+                    <span className="text-white/30">Beta</span>
                   </h2>
-                  <p className="text-muted-foreground" data-testid="text-subtext">
+                  <p className="text-white/40 font-normal" data-testid="text-subtext">
                     Be among the first to experience the future of learning.
                   </p>
                 </div>
@@ -92,7 +96,7 @@ export default function Waitlist() {
 
                       toast({
                         title: "You're on the list!",
-                        description: "We'll notify you when Mindfill launches.",
+                        description: "We'll notify you when TECHCESS launches.",
                       });
                     } catch (error) {
                       console.error("Submit error:", error);

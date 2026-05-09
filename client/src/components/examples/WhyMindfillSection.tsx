@@ -1,5 +1,5 @@
 import WhyMindfillSection from '../WhyMindfillSection';
 
-export default function WhyMindfillSectionExample() {
+export default function WhyTECHCESSSectionExample() {
   return <WhyMindfillSection />;
 }

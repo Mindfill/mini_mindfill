@@ -43,14 +43,14 @@ export default function Navbar() {
               <div className="flex items-center gap-3 cursor-pointer group">
                 <img 
                   src="/images/mindfill.png" 
-                  alt="Mindfill Logo" 
+                  alt="TECHCESS Logo" 
                   className="w-10 h-10 object-contain transition-transform group-hover:scale-110 duration-500"
                 />
                 <h1
                   className="text-xl font-bold tracking-tight text-white"
-                  data-testid="logo-mindfill"
+                  data-testid="logo-techcess"
                 >
-                  Mindfill
+                  TECHCESS
                 </h1>
               </div>
             </Link>

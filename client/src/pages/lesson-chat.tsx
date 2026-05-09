@@ -93,6 +93,10 @@ export default function LessonChat() {
         .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
         .join(" ");
 
+    useEffect(() => {
+        document.title = `${displayTitle} | TECHCESS`;
+    }, [displayTitle]);
+
     return (
         <div className="min-h-screen bg-background text-foreground flex">
             <AppSidebar

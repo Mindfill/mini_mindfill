@@ -9,11 +9,11 @@ export default function Footer() {
             <div className="flex items-center gap-3">
               <img 
                 src="/images/mindfill.png" 
-                alt="Mindfill Logo" 
+                alt="TECHCESS Logo" 
                 className="w-8 h-8 object-contain"
               />
               <h3 className="text-lg font-bold text-white tracking-tight">
-                Mindfill
+                TECHCESS
               </h3>
             </div>
             <p className="text-sm text-white/30 max-w-xs leading-relaxed">
@@ -47,7 +47,7 @@ export default function Footer() {
         
         <div className="mt-24 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
           <p className="text-xs text-white/20">
-            © 2026 Mindfill. All rights reserved.
+            © 2026 TECHCESS. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
             <a href="#" className="text-[10px] font-bold tracking-widest uppercase text-white/20 hover:text-white transition-colors">Privacy</a>

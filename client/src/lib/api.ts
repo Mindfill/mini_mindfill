@@ -1,5 +1,5 @@
 /**
- * Backend API client for Mindfill lesson chat.
+ * Backend API client for TECHCESS lesson chat.
  * All requests attach the Supabase JWT as a Bearer token.
  */
 

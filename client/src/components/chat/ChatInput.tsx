@@ -41,7 +41,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
                         value={value}
                         onChange={(e) => setValue(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="Ask Mindfill anything…"
+                        placeholder="Ask TECHCESS anything…"
                         disabled={disabled}
                         rows={1}
                         className="flex-1 bg-transparent text-foreground text-sm resize-none outline-none placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed max-h-[200px]"
@@ -62,7 +62,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
                     </button>
                 </div>
                 <p className="text-[11px] text-muted-foreground/60 text-center mt-2">
-                    Mindfill may produce inaccurate information. Verify important facts.
+                    TECHCESS may produce inaccurate information. Verify important facts.
                 </p>
             </div>
         </div>

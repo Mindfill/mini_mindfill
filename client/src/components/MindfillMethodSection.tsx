@@ -60,7 +60,7 @@ export default function MindfillMethodSection() {
             </h2>
           </div>
           <p className="text-lg text-white/30 max-w-sm font-normal leading-relaxed mb-2" data-testid="text-method-subtext">
-            Bridging the gap between conceptual intuition and rigorous formal understanding.
+            How TECHCESS bridges the gap between conceptual intuition and rigorous formal understanding.
           </p>
         </div>
 

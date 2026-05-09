@@ -70,15 +70,21 @@ export default function AppSidebar({ userName, activeItem, onSignOut }: AppSideb
             >
                 {/* Logo & Toggle */}
                 <div className="flex items-center justify-between p-6 border-b border-border min-w-[256px]">
-                    <h2
-                        className="text-xl font-bold cursor-pointer text-gradient"
-                        style={{
-                            textShadow: "0 0 15px rgba(199, 89, 48, 0.5)",
-                        }}
+                    <div 
+                        className="flex items-center gap-2 cursor-pointer group"
                         onClick={() => { navigate("/dashboard"); if (window.innerWidth < 768) setSidebarOpen(false); }}
                     >
-                        Mindfill
-                    </h2>
+                        <img 
+                            src="/images/mindfill.png" 
+                            alt="TECHCESS Logo" 
+                            className="w-8 h-8 object-contain"
+                        />
+                        <h2
+                            className="text-lg font-bold text-white tracking-tight"
+                        >
+                            TECHCESS
+                        </h2>
+                    </div>
                     <button onClick={() => setSidebarOpen(false)} className="p-2 -mr-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors">
                         <X className="w-5 h-5 md:hidden" />
                         <Menu className="w-5 h-5 hidden md:block" />

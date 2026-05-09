@@ -40,7 +40,7 @@ export default function HeroSection() {
         </h1>
 
         <p className="text-lg md:text-2xl text-white/40 mb-16 max-w-3xl mx-auto leading-relaxed font-normal" data-testid="text-hero-subtext">
-          Mindfill bridges the gap between intuitive understanding and formal mastery using first-principles AI.
+          TECHCESS bridges the gap between intuitive understanding and formal mastery using first-principles AI.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">

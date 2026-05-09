@@ -67,7 +67,7 @@ export default function WhyMindfillSection() {
           <p className="text-primary text-xs font-bold tracking-[0.3em] uppercase mb-4">Core Benefits</p>
           <h2 className="text-4xl md:text-6xl font-bold text-white tracking-tight" data-testid="text-why-headline">
             Why Choose <br />
-            <span className="text-white/40">Mindfill.</span>
+            <span className="text-white/40">TECHCESS.</span>
           </h2>
         </div>
 

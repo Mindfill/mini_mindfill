@@ -17,7 +17,7 @@ export default function VideoSection() {
           <p className="text-primary text-xs font-bold tracking-[0.3em] uppercase mb-4">The Experience</p>
           <h2 className="text-4xl md:text-6xl font-bold text-white tracking-tight" data-testid="text-video-headline">
             Experience the <br />
-            <span className="text-white/40">Mindfill Interface.</span>
+            <span className="text-white/40">TECHCESS Interface.</span>
           </h2>
         </div>
 
@@ -42,7 +42,7 @@ export default function VideoSection() {
                     <Play className="w-8 h-8 ml-1" fill="currentColor" />
                   </div>
                   <p className="text-sm font-medium tracking-wide text-white/60">
-                    Watch the walkthrough
+                    See TECHCESS in action
                   </p>
                 </div>
               </div>

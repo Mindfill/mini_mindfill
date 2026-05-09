@@ -17,7 +17,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     const response = [
-      "Mindfill received your instruction:",
+      "TECHCESS received your instruction:",
       "",
       `“${prompt}”`,
       "",
