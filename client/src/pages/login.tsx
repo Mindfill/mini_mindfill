@@ -25,44 +25,42 @@ export default function Login() {
     };
 
     return (
-        <div className="min-h-screen text-stone-900 flex flex-col" style={{ backgroundColor: "#C9C9C5" }}>
-            <header className="absolute top-0 left-0 p-6 z-50">
+        <div className="min-h-screen text-white flex flex-col bg-black">
+            <header className="absolute top-0 left-0 p-8 z-50">
                 <Link href="/">
-                    <h1
-                        className="text-2xl font-bold tracking-tight cursor-pointer"
-                        style={{
-                            color: "#F59E0B",
-                            textShadow: "0 0 20px rgba(245, 158, 11, 0.5)"
-                        }}
-                        data-testid="logo-mindfill"
-                    >
-                        Mindfill
-                    </h1>
+                    <div className="flex items-center gap-3 cursor-pointer group">
+                        <img 
+                            src="/images/mindfill.png" 
+                            alt="TECHCESS Logo" 
+                            className="w-10 h-10 object-contain transition-transform group-hover:scale-110 duration-500"
+                        />
+                        <h1
+                            className="text-xl font-bold tracking-tight text-white"
+                            data-testid="logo-techcess"
+                        >
+                            TECHCESS
+                        </h1>
+                    </div>
                 </Link>
             </header>
             <main className="flex-1 flex items-center justify-center relative overflow-hidden px-6">
                 {/* Radial glow background */}
                 <div
-                    className="absolute inset-0 opacity-30"
+                    className="absolute inset-0 opacity-20"
                     style={{
                         background:
-                            "radial-gradient(circle at center, rgba(245, 158, 11, 0.15) 0%, transparent 70%)",
+                            "radial-gradient(circle at center, rgba(71, 100, 120, 0.1) 0%, transparent 70%)",
                     }}
                 />
 
                 <div className="relative z-10 w-full max-w-md text-center">
-                    <div className="rounded-3xl border border-stone-300 bg-white/70 backdrop-blur-md p-10 shadow-[0_20px_60px_rgba(0,0,0,0.15)]">
+                    <div className="rounded-3xl border border-white/5 bg-black/40 backdrop-blur-xl p-12">
                         <h1
-                            className="text-3xl md:text-4xl font-bold mb-10 tracking-tight leading-tight text-stone-900"
-                            style={{
-                                textShadow: "0 0 40px rgba(245, 158, 11, 0.3)",
-                            }}
+                            className="text-3xl md:text-4xl font-bold mb-10 tracking-tight leading-tight text-white"
                             data-testid="text-login-headline"
                         >
-                            Fill Your Mind.{" "}
-                            <span className="text-primary">
-                                Become the Exception.
-                            </span>
+                            Become <br />
+                            <span className="text-white/20">the Exception.</span>
                         </h1>
 
                         <Button

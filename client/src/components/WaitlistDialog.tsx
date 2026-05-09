@@ -31,7 +31,7 @@ export default function WaitlistDialog({ open, onOpenChange }: WaitlistDialogPro
 
     toast({
       title: "You're on the list!",
-      description: "We'll notify you when Mindfill launches.",
+      description: "We'll notify you when TECHCESS launches.",
     });
 
     setEmail("");
@@ -42,57 +42,53 @@ export default function WaitlistDialog({ open, onOpenChange }: WaitlistDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-background border-primary" data-testid="dialog-waitlist">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">
-            Join the{" "}
-            <span className="text-primary">Waitlist</span>
+      <DialogContent className="sm:max-w-md bg-black border-white/5 rounded-3xl p-12" data-testid="dialog-waitlist">
+        <DialogHeader className="mb-10">
+          <DialogTitle className="text-3xl font-bold tracking-tight text-white text-center">
+            Join the <span className="text-white/30">Beta</span>
           </DialogTitle>
-          <DialogDescription className="text-muted-foreground">
-            Be among the first to experience the future of learning.
+          <DialogDescription className="text-white/30 font-normal mt-3 text-center">
+            Be among the first to experience the future of intelligent learning.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+        <form onSubmit={handleSubmit} className="space-y-8">
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-foreground">
-              Name
+            <Label htmlFor="name" className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/20 ml-1">
+              Full Name
             </Label>
             <Input
               id="name"
               type="text"
-              placeholder="Your name"
+              placeholder="Enter your name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="bg-card border-muted-foreground/30 text-foreground placeholder:text-muted-foreground"
+              className="bg-white/5 border-white/5 rounded-2xl text-white placeholder:text-white/10 h-14 focus:border-primary/30 transition-all px-6"
               data-testid="input-waitlist-name"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-foreground">
-              Email
+            <Label htmlFor="email" className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/20 ml-1">
+              Email Address
             </Label>
             <Input
               id="email"
               type="email"
-              placeholder="your@email.com"
+              placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="bg-card border-muted-foreground/30 text-foreground placeholder:text-muted-foreground"
+              className="bg-white/5 border-white/5 rounded-2xl text-white placeholder:text-white/10 h-14 focus:border-primary/30 transition-all px-6"
               data-testid="input-waitlist-email"
             />
           </div>
           <Button
             type="submit"
-            className="w-full bg-primary text-black hover:bg-primary"
-            style={{
-              boxShadow: "0 0 30px rgba(245, 158, 11, 0.4)",
-            }}
+            className="w-full bg-white text-black hover:bg-white/90 rounded-full h-16 text-base font-bold transition-all duration-500 shadow-2xl"
             disabled={isSubmitting}
             data-testid="button-waitlist-submit"
           >
-            {isSubmitting ? "Joining..." : "Join Waitlist"}
+            {isSubmitting ? "Processing Request..." : "Request Access"}
           </Button>
         </form>
       </DialogContent>

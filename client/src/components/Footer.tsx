@@ -2,36 +2,56 @@ import { SiX, SiInstagram } from "react-icons/si";
 
 export default function Footer() {
   return (
-    <footer className="bg-background border-t border-border py-12 px-6 lg:px-8">
+    <footer className="bg-black border-t border-white/5 py-24 px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="flex flex-col items-center md:items-start gap-4">
-            <h3 
-              className="text-xl font-bold"
-              style={{
-                color: "#F59E0B",
-                textShadow: "0 0 15px rgba(245, 158, 11, 0.5)"
-              }}
-              data-testid="text-footer-logo"
-            >
-              Mindfill
-            </h3>
-            <p className="text-sm text-muted-foreground" data-testid="text-footer-copyright">
-              © 2025 Mindfill. All rights reserved.
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+          <div className="col-span-1 md:col-span-2 flex flex-col items-start gap-6">
+            <div className="flex items-center gap-3">
+              <img 
+                src="/images/mindfill.png" 
+                alt="TECHCESS Logo" 
+                className="w-8 h-8 object-contain"
+              />
+              <h3 className="text-lg font-bold text-white tracking-tight">
+                TECHCESS
+              </h3>
+            </div>
+            <p className="text-sm text-white/30 max-w-xs leading-relaxed">
+              Bridging the gap between intuition and formal mastery through AI-powered understanding.
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
-            <a
-              href="https://www.instagram.com/mindfill_official?igsh=YmZiaThlNTl4azZp"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-muted-foreground/30 text-muted-foreground hover:text-primary hover:border-primary transition-all duration-200"
-              data-testid="link-footer-instagram"
-            >
-              <SiInstagram className="w-5 h-5" />
-            </a>
-            
+          <div className="flex flex-col gap-4">
+            <h4 className="text-xs font-bold tracking-widest uppercase text-white/20">Platform</h4>
+            <nav className="flex flex-col gap-2">
+              <a href="#method" className="text-sm text-white/50 hover:text-white transition-colors">Methodology</a>
+              <a href="#how-it-works" className="text-sm text-white/50 hover:text-white transition-colors">Walkthrough</a>
+              <a href="#why-mindfill" className="text-sm text-white/50 hover:text-white transition-colors">Benefits</a>
+            </nav>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <h4 className="text-xs font-bold tracking-widest uppercase text-white/20">Social</h4>
+            <div className="flex items-center gap-4">
+              <a
+                href="https://www.instagram.com/mindfill_official?igsh=YmZiaThlNTl4azZp"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-lg border border-white/10 flex items-center justify-center text-white/30 hover:text-white hover:border-white transition-all duration-300"
+              >
+                <SiInstagram className="w-5 h-5" />
+              </a>
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-24 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
+          <p className="text-xs text-white/20">
+            © 2026 TECHCESS. All rights reserved.
+          </p>
+          <div className="flex items-center gap-6">
+            <a href="#" className="text-[10px] font-bold tracking-widest uppercase text-white/20 hover:text-white transition-colors">Privacy</a>
+            <a href="#" className="text-[10px] font-bold tracking-widest uppercase text-white/20 hover:text-white transition-colors">Terms</a>
           </div>
         </div>
       </div>

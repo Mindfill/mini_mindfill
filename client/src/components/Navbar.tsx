@@ -29,36 +29,39 @@ export default function Navbar() {
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4 px-4">
+    <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-8 px-4">
       <nav
-        className={`w-full max-w-4xl rounded-2xl border transition-all duration-300 ${scrolled
-          ? "bg-white/80 backdrop-blur-xl border-stone-200/80 shadow-lg shadow-stone-900/10"
-          : "bg-white/60 backdrop-blur-md border-stone-200/50"
+        className={`w-full max-w-5xl rounded-2xl border transition-all duration-500 ${scrolled
+          ? "bg-black/80 backdrop-blur-2xl border-white/10 shadow-2xl"
+          : "bg-transparent border-transparent"
           }`}
       >
-        <div className="px-6">
-          <div className="flex items-center justify-between h-14">
+        <div className="px-10">
+          <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/">
-              <h1
-                className="text-xl font-bold tracking-tight cursor-pointer"
-                style={{
-                  color: "#F59E0B",
-                  textShadow: "0 0 16px rgba(245, 158, 11, 0.45)",
-                }}
-                data-testid="logo-mindfill"
-              >
-                Mindfill
-              </h1>
+              <div className="flex items-center gap-3 cursor-pointer group">
+                <img 
+                  src="/images/mindfill.png" 
+                  alt="TECHCESS Logo" 
+                  className="w-10 h-10 object-contain transition-transform group-hover:scale-110 duration-500"
+                />
+                <h1
+                  className="text-xl font-bold tracking-tight text-white"
+                  data-testid="logo-techcess"
+                >
+                  TECHCESS
+                </h1>
+              </div>
             </Link>
 
             {/* Desktop nav */}
-            <div className="hidden md:flex items-center gap-6">
+            <div className="hidden md:flex items-center gap-10">
               {menuItems.map((item) => (
                 <button
                   key={item.label}
                   onClick={() => scrollToSection(item.href)}
-                  className="text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors duration-200"
+                  className="text-sm font-medium text-white/50 hover:text-white transition-all duration-300"
                   data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
                 >
                   {item.label}
@@ -68,7 +71,7 @@ export default function Navbar() {
               <Link href={session ? "/dashboard" : "/login"}>
                 <Button
                   size="sm"
-                  className="rounded-xl bg-amber-500 text-white hover:bg-amber-600 px-5 font-semibold shadow-[0_0_20px_rgba(245,158,11,0.4)] transition-all duration-200"
+                  className="bg-white text-black hover:bg-white/90 rounded-full px-6 font-bold text-xs uppercase tracking-widest transition-all duration-300 shadow-lg shadow-white/5"
                   data-testid="button-join-beta-nav"
                 >
                   {session ? "Dashboard" : "Join Beta"}
@@ -82,7 +85,7 @@ export default function Navbar() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="text-stone-600 hover:text-stone-900"
+                className="text-white"
                 data-testid="button-mobile-menu"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -93,12 +96,12 @@ export default function Navbar() {
 
         {/* Mobile drawer */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-stone-200/50 px-6 py-4 space-y-3">
+          <div className="md:hidden border-t border-white/10 px-10 py-8 space-y-6 bg-black/95 backdrop-blur-3xl rounded-b-2xl">
             {menuItems.map((item) => (
               <button
                 key={item.label}
                 onClick={() => scrollToSection(item.href)}
-                className="block w-full text-left text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors py-2"
+                className="block w-full text-left text-base font-medium text-white/50 hover:text-white transition-all py-2"
                 data-testid={`link-mobile-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
               >
                 {item.label}
@@ -106,7 +109,7 @@ export default function Navbar() {
             ))}
             <Link href={session ? "/dashboard" : "/login"}>
               <Button
-                className="w-full rounded-xl bg-amber-500 text-white hover:bg-amber-600 font-semibold shadow-[0_0_20px_rgba(245,158,11,0.4)]"
+                className="w-full btn-primary rounded-xl text-white font-semibold"
                 onClick={() => setMobileMenuOpen(false)}
                 data-testid="button-join-beta-mobile"
               >

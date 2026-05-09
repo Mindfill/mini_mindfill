@@ -5,10 +5,15 @@ import MindfillMethodSection from "@/components/MindfillMethodSection";
 import WhyMindfillSection from "@/components/WhyMindfillSection";
 import CTASection from "@/components/CTASection";
 import Footer from "@/components/Footer";
+import { useEffect } from "react";
 
 export default function Home() {
+  useEffect(() => {
+    document.title = "TECHCESS - Mastery through Deep Reasoning";
+  }, []);
+
   return (
-    <div className="min-h-screen text-stone-900 flex flex-col" style={{ backgroundColor: "#C9C9C5" }}>
+    <div className="min-h-screen text-white flex flex-col bg-black">
       <Navbar />
       <HeroSection />
       <VideoSection />

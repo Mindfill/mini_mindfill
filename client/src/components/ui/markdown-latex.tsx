@@ -52,7 +52,7 @@ export default function MarkdownLatex({ content, className = "" }: MarkdownLatex
                                 </SyntaxHighlighter>
                             </div>
                         ) : (
-                            <code className="bg-muted/50 dark:bg-stone-800 px-1.5 py-0.5 rounded text-[0.9em] font-mono text-amber-700 dark:text-amber-400" {...props}>
+                            <code className="bg-muted/50 dark:bg-stone-800 px-1.5 py-0.5 rounded text-[0.9em] font-mono text-cyan-700 dark:text-cyan-400" {...props}>
                                 {children}
                             </code>
                         );

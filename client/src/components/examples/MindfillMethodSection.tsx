@@ -1,5 +1,5 @@
-import MindfillMethodSection from '../MindfillMethodSection';
+import TECHCESSMethodSection from '../TECHCESSMethodSection';
 
-export default function MindfillMethodSectionExample() {
-  return <MindfillMethodSection />;
+export default function TECHCESSMethodSectionExample() {
+  return <TECHCESSMethodSection />;
 }

@@ -78,7 +78,7 @@ export function DropReviewDialog({ accessToken, triggerButton }: DropReviewDialo
                             placeholder="e.g. John Doe"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="bg-card border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-[#F59E0B]"
+                            className="bg-card border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary"
                             required
                             disabled={isSubmitting}
                         />
