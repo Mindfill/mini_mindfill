@@ -1,0 +1,36 @@
+{
+  "name": "Mindfill",
+  "short_name": "Mindfill",
+  "description": "AI-powered learning platform that teaches STEM through deep understanding",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#3772ff",
+  "icons": [
+    {
+      "src": "/images/mindfill.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/mindfill.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/mindfill.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/mindfill.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/mindfill.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    }
+  ]
+}

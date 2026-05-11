@@ -6,7 +6,7 @@ import AppSidebar from "@/components/sidebar/AppSidebar";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatInput from "@/components/chat/ChatInput";
 import TypingIndicator from "@/components/chat/TypingIndicator";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, X } from "lucide-react";
 import QuizSection from "@/components/quiz/QuizSection";
 
 export default function LessonChat() {
