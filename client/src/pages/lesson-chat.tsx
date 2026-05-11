@@ -188,12 +188,10 @@ export default function LessonChat() {
                     </div>
                 </header>
 
-                {activeTab === "quiz" ? (
-                    <div className="flex-1 overflow-y-auto">
-                        <QuizSection lessonId={lessonSlug} lessonTitle={displayTitle} onClose={() => setActiveTab("chat")} />
-                    </div>
-                ) : (
-                    <div className="flex-1 flex flex-col min-h-0">
+                <div className="flex-1 overflow-y-auto" style={{ display: activeTab === "quiz" ? "block" : "none" }}>
+                    <QuizSection lessonId={lessonSlug} lessonTitle={displayTitle} onClose={() => setActiveTab("chat")} />
+                </div>
+                <div className="flex-1 flex flex-col min-h-0" style={{ display: activeTab === "chat" ? "flex" : "none" }}>
                         {/* Messages area */}
                         <div
                             ref={scrollContainerRef}
@@ -237,7 +235,6 @@ export default function LessonChat() {
                         {/* Input area */}
                         <ChatInput onSend={handleSend} disabled={sending} />
                     </div>
-                )}
             </div>
         </div>
     );
