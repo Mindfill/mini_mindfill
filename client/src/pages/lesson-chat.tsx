@@ -106,35 +106,37 @@ export default function LessonChat() {
             />
 
             {/* Chat area */}
-            <div className="flex-1 flex flex-col min-h-screen">
+            <div className="flex-1 flex flex-col min-h-screen bg-black">
                 {/* Chat header */}
-                <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-6 py-4 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
+                <header className="sticky top-0 z-20 bg-black/40 backdrop-blur-xl border-b border-white/5 px-6 py-5 flex justify-between items-center">
+                    <div className="flex items-center gap-4">
                         <button
                             onClick={() => navigate("/courses")}
-                            className="text-muted-foreground hover:text-muted-foreground transition-colors text-sm"
+                            className="text-white/30 hover:text-white transition-all text-xs font-bold tracking-widest uppercase"
                         >
-                            ← Courses
+                            ← Back
                         </button>
-                        <span className="text-muted-foreground/60">|</span>
-                        <div className="flex items-center gap-2">
-                            <MessageSquare className="w-4 h-4 text-primary" />
-                            <h1 className="text-sm font-semibold text-foreground truncate">
+                        <div className="h-4 w-px bg-white/10" />
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <MessageSquare className="w-4 h-4 text-primary" />
+                            </div>
+                            <h1 className="text-sm font-bold text-white tracking-tight truncate max-w-[200px] md:max-w-md">
                                 {displayTitle}
                             </h1>
                         </div>
                     </div>
 
-                    <div className="flex items-center bg-card rounded-lg p-1 border border-border">
+                    <div className="flex items-center bg-white/5 rounded-full p-1 border border-white/5">
                         <button
                             onClick={() => setActiveTab("chat")}
-                            className={`px-4 py-1 rounded-md text-sm font-medium transition-colors ${activeTab === "chat" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                            className={`px-6 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "chat" ? "bg-white text-black shadow-lg" : "text-white/40 hover:text-white"}`}
                         >
                             Chat
                         </button>
                         <button
                             onClick={() => setActiveTab("quiz")}
-                            className={`px-4 py-1 rounded-md text-sm font-medium transition-colors ${activeTab === "quiz" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                            className={`px-6 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "quiz" ? "bg-white text-black shadow-lg" : "text-white/40 hover:text-white"}`}
                         >
                             Quiz
                         </button>
@@ -159,13 +161,12 @@ export default function LessonChat() {
                                             <MessageSquare className="w-8 h-8 text-primary" />
                                         </div>
                                         <h2
-                                            className="text-xl font-bold mb-2"
-                                            style={{ textShadow: "0 0 20px rgba(245, 158, 11, 0.15)" }}
+                                            className="text-xl font-bold mb-2 text-white"
                                         >
                                             Start learning
                                         </h2>
-                                        <p className="text-muted-foreground text-sm text-center max-w-sm">
-                                            Ask Mindfill anything about this lesson. Get clear, layered explanations with deep reasoning.
+                                        <p className="text-white/40 text-sm text-center max-w-sm">
+                                            Ask TECHCESS anything about this lesson. Get clear, layered explanations with deep reasoning.
                                         </p>
                                     </div>
                                 )}

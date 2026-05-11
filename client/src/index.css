@@ -4,67 +4,66 @@
 
 /* LIGHT MODE */
 :root {
-  --button-outline: rgba(0, 0, 0, .10);
-  --badge-outline: rgba(0, 0, 0, .05);
+  --button-outline: rgba(0, 0, 0, .05);
+  --badge-outline: rgba(0, 0, 0, .03);
   --opaque-button-border-intensity: -8;
-  --elevate-1: rgba(0, 0, 0, .03);
-  --elevate-2: rgba(0, 0, 0, .08);
+  --elevate-1: rgba(0, 0, 0, .02);
+  --elevate-2: rgba(0, 0, 0, .05);
 
-  --background: 60 20% 98%;
-  /* #FAFAF9 */
-  --foreground: 0 0% 0%;
-  /* Pure Black */
-  --border: 45 7% 90%;
-  /* #E7E5E4 */
+  --background: 210 20% 98%;
+  /* Crisp White-Blue */
+  --foreground: 200 30% 10%;
+  /* Dark Slate Text */
+  --border: 210 20% 90%;
+  /* Soft Slate Border */
   --card: 0 0% 100%;
-  /* #FFFFFF */
-  --card-foreground: 0 0% 0%;
-  --card-border: 45 7% 90%;
-  --sidebar: 60 20% 98%;
-  --sidebar-foreground: 0 0% 0%;
-  --sidebar-border: 45 7% 90%;
-  --sidebar-primary: 32 95% 37%;
-  /* #B45309 */
+  /* Pure White Card */
+  --card-foreground: 200 30% 15%;
+  --card-border: 210 20% 92%;
+  --sidebar: 210 20% 97%;
+  --sidebar-foreground: 200 30% 20%;
+  --sidebar-border: 210 20% 92%;
+  --sidebar-primary: 200 30% 45%;
+  /* Slate Blue from Logo */
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 38 92% 50%;
-  --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 38 92% 50%;
+  --sidebar-accent: 210 20% 94%;
+  --sidebar-accent-foreground: 200 30% 30%;
+  --sidebar-ring: 200 30% 45%;
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 0%;
-  --popover-border: 45 7% 90%;
-  --primary: 32 95% 37%;
-  /* #B45309 */
+  --popover-foreground: 200 30% 15%;
+  --popover-border: 210 20% 90%;
+  --primary: 200 30% 45%;
+  /* Slate Blue from Logo */
   --primary-foreground: 0 0% 100%;
-  --secondary: 45 7% 90%;
-  --secondary-foreground: 0 0% 0%;
-  --muted: 45 7% 94%;
-  --muted-foreground: 24 5% 45%;
-  /* #A8A29E */
-  --accent: 38 92% 50%;
-  /* #F59E0B */
+  --secondary: 210 20% 95%;
+  --secondary-foreground: 200 30% 20%;
+  --muted: 210 20% 96%;
+  --muted-foreground: 210 10% 50%;
+  /* Muted Slate Gray */
+  --accent: 200 30% 45%;
   --accent-foreground: 0 0% 100%;
-  --destructive: 0 84% 35%;
-  --destructive-foreground: 0 84% 98%;
-  --input: 45 7% 85%;
-  --ring: 38 92% 50%;
-  --chart-1: 32 95% 37%;
-  --chart-2: 220 90% 35%;
-  --chart-3: 280 75% 35%;
-  --chart-4: 25 90% 35%;
-  --chart-5: 340 85% 35%;
+  --destructive: 0 84% 45%;
+  --destructive-foreground: 0 0% 100%;
+  --input: 210 20% 90%;
+  --ring: 200 30% 45%;
+  --chart-1: 200 30% 45%;
+  --chart-2: 200 30% 55%;
+  --chart-3: 200 30% 65%;
+  --chart-4: 200 30% 75%;
+  --chart-5: 200 30% 85%;
 
   --font-sans: "Space Grotesk", Inter, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
-  --radius: .5rem;
-  --shadow-2xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.02);
-  --shadow-xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.05);
-  --shadow-sm: 0px 2px 0px 0px hsl(0 0% 0% / 0.03), 0px 1px 2px -1px hsl(0 0% 0% / 0.08);
-  --shadow: 0px 2px 0px 0px hsl(0 0% 0% / 0.04), 0px 1px 2px -1px hsl(0 0% 0% / 0.10);
-  --shadow-md: 0px 2px 0px 0px hsl(0 0% 0% / 0.05), 0px 2px 4px -1px hsl(0 0% 0% / 0.12);
-  --shadow-lg: 0px 2px 0px 0px hsl(0 0% 0% / 0.06), 0px 4px 6px -1px hsl(0 0% 0% / 0.15);
-  --shadow-xl: 0px 2px 0px 0px hsl(0 0% 0% / 0.08), 0px 8px 10px -1px hsl(0 0% 0% / 0.18);
-  --shadow-2xl: 0px 2px 0px 0px hsl(0 0% 0% / 0.12);
+  --radius: .75rem;
+  --shadow-2xs: 0px 1px 2px 0px hsl(200 30% 5% / 0.02);
+  --shadow-xs: 0px 2px 4px 0px hsl(200 30% 5% / 0.03);
+  --shadow-sm: 0px 4px 8px -2px hsl(200 30% 5% / 0.04), 0px 2px 4px -2px hsl(200 30% 5% / 0.02);
+  --shadow: 0px 8px 16px -4px hsl(200 30% 5% / 0.05), 0px 4px 8px -4px hsl(200 30% 5% / 0.03);
+  --shadow-md: 0px 12px 24px -6px hsl(200 30% 5% / 0.06), 0px 8px 16px -6px hsl(200 30% 5% / 0.04);
+  --shadow-lg: 0px 20px 40px -10px hsl(200 30% 5% / 0.08), 0px 12px 20px -10px hsl(200 30% 5% / 0.05);
+  --shadow-xl: 0px 28px 56px -14px hsl(200 30% 5% / 0.1), 0px 16px 28px -14px hsl(200 30% 5% / 0.08);
+  --shadow-2xl: 0px 32px 64px -16px hsl(200 30% 5% / 0.12);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 

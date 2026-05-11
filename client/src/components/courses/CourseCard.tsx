@@ -22,13 +22,11 @@ interface CourseCardProps {
     gradientIndex: number;
 }
 
-// Curated gradient palette — subtle, premium, green-hue anchored
+// Curated gradient palette — subtle, professional slate/blue hues
 const gradients = [
-    "linear-gradient(135deg, rgba(245, 158, 11,0.15) 0%, rgba(0,180,216,0.10) 100%)",
-    "linear-gradient(135deg, rgba(245, 158, 11,0.12) 0%, rgba(120,0,255,0.08) 100%)",
-    "linear-gradient(135deg, rgba(0,200,100,0.14) 0%, rgba(255,180,0,0.08) 100%)",
-    "linear-gradient(135deg, rgba(0,255,180,0.12) 0%, rgba(0,100,255,0.08) 100%)",
-    "linear-gradient(135deg, rgba(80,255,120,0.10) 0%, rgba(255,80,200,0.06) 100%)",
+    "linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%)",
+    "linear-gradient(135deg, rgba(71, 100, 120, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)",
+    "linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(71, 100, 120, 0.05) 100%)",
 ];
 
 export default function CourseCard({ course, modules, gradientIndex }: CourseCardProps) {
@@ -38,11 +36,11 @@ export default function CourseCard({ course, modules, gradientIndex }: CourseCar
         <div
             className="
         group relative rounded-2xl overflow-clip
-        border border-border hover:border-primary/30
+        border border-border hover:border-primary/20
         bg-card backdrop-blur-sm
-        transition-all duration-300 ease-out
-        hover:shadow-[0_0_40px_rgba(245, 158, 11,0.06)]
-        hover:-translate-y-0.5
+        transition-all duration-500 ease-out
+        hover:shadow-xl hover:shadow-primary/5
+        hover:-translate-y-1
       "
             data-testid={`course-${course.slug}`}
         >

@@ -80,7 +80,7 @@ export default function AppSidebar({ userName, activeItem, onSignOut }: AppSideb
                             className="w-8 h-8 object-contain"
                         />
                         <h2
-                            className="text-lg font-bold text-white tracking-tight"
+                            className="text-lg font-bold text-foreground tracking-tight"
                         >
                             TECHCESS
                         </h2>

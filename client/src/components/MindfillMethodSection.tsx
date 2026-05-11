@@ -13,30 +13,30 @@ interface BentoCardProps {
 function BentoCard({ icon, number, title, description, className, testId }: BentoCardProps) {
   return (
     <div
-      className={`relative p-10 rounded-2xl border transition-all duration-500 group hover:border-primary/30 ${className}`}
+      className={`relative p-8 md:p-10 rounded-2xl border transition-all duration-500 group hover:border-primary/30 ${className}`}
       style={{
         background: "rgba(255, 255, 255, 0.02)",
         borderColor: "rgba(255, 255, 255, 0.05)",
       }}
       data-testid={testId}
     >
-      <div className="flex items-center gap-4 mb-8">
+      <div className="flex items-center gap-4 mb-6 md:mb-8">
         <div
-          className="w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-xl bg-primary/10 border border-primary/20 text-primary group-hover:bg-primary group-hover:text-white transition-all duration-500"
+          className="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 flex items-center justify-center rounded-xl bg-primary/10 border border-primary/20 text-primary group-hover:bg-primary group-hover:text-white transition-all duration-500"
         >
           {icon}
         </div>
         <div className="h-px flex-grow bg-white/10" />
-        <div className="text-sm font-bold text-white/20 tracking-widest uppercase">
+        <div className="text-[10px] md:text-sm font-bold text-white/20 tracking-widest uppercase">
           Phase {number}
         </div>
       </div>
 
-      <h3 className="text-2xl font-bold mb-4 text-white tracking-tight" data-testid={`text-${testId}-title`}>
+      <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4 text-white tracking-tight" data-testid={`text-${testId}-title`}>
         {title}
       </h3>
 
-      <p className="text-white/40 leading-relaxed font-normal text-base" data-testid={`text-${testId}-description`}>
+      <p className="text-sm md:text-base text-white/40 leading-relaxed font-normal" data-testid={`text-${testId}-description`}>
         {description}
       </p>
 
@@ -49,17 +49,17 @@ function BentoCard({ icon, number, title, description, className, testId }: Bent
 
 export default function MindfillMethodSection() {
   return (
-    <section id="method" className="py-32 px-6 lg:px-8 relative overflow-hidden bg-black">
+    <section id="method" className="py-20 md:py-32 px-6 lg:px-8 relative overflow-hidden bg-black">
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-20">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 md:gap-8 mb-16 md:mb-20">
           <div className="max-w-2xl">
             <p className="text-primary text-xs font-bold tracking-[0.3em] uppercase mb-4">The Methodology</p>
-            <h2 className="text-4xl md:text-6xl font-bold text-white tracking-tight" data-testid="text-method-headline">
-              A 3-Layer System for <br />
+            <h2 className="text-3xl md:text-6xl font-bold text-white tracking-tight leading-tight" data-testid="text-method-headline">
+              A 3-Layer System for <br className="hidden md:block" />
               <span className="text-white/40">Technical Mastery.</span>
             </h2>
           </div>
-          <p className="text-lg text-white/30 max-w-sm font-normal leading-relaxed mb-2" data-testid="text-method-subtext">
+          <p className="text-base md:text-lg text-white/30 max-w-sm font-normal leading-relaxed mb-2" data-testid="text-method-subtext">
             How TECHCESS bridges the gap between conceptual intuition and rigorous formal understanding.
           </p>
         </div>

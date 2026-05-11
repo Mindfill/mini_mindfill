@@ -29,25 +29,25 @@ export default function Navbar() {
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-8 px-4">
+    <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-6 md:pt-8 px-4">
       <nav
         className={`w-full max-w-5xl rounded-2xl border transition-all duration-500 ${scrolled
           ? "bg-black/80 backdrop-blur-2xl border-white/10 shadow-2xl"
-          : "bg-transparent border-transparent"
+          : "bg-black/20 backdrop-blur-md border-white/5 md:bg-transparent md:border-transparent"
           }`}
       >
-        <div className="px-10">
+        <div className="px-6 md:px-10">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/">
-              <div className="flex items-center gap-3 cursor-pointer group">
+              <div className="flex items-center gap-2 md:gap-3 cursor-pointer group">
                 <img 
                   src="/images/mindfill.png" 
                   alt="TECHCESS Logo" 
-                  className="w-10 h-10 object-contain transition-transform group-hover:scale-110 duration-500"
+                  className="w-8 h-8 md:w-10 md:h-10 object-contain transition-transform group-hover:scale-110 duration-500"
                 />
                 <h1
-                  className="text-xl font-bold tracking-tight text-white"
+                  className="text-lg md:text-xl font-bold tracking-tight text-white"
                   data-testid="logo-techcess"
                 >
                   TECHCESS
@@ -80,12 +80,22 @@ export default function Navbar() {
             </div>
 
             {/* Mobile hamburger */}
-            <div className="md:hidden">
+            <div className="md:hidden flex items-center gap-4">
+              {!session && (
+                <Link href="/login">
+                  <Button
+                    size="sm"
+                    className="bg-white text-black hover:bg-white/90 rounded-full px-4 h-9 font-bold text-[10px] uppercase tracking-widest transition-all"
+                  >
+                    Join
+                  </Button>
+                </Link>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="text-white"
+                className="text-white hover:bg-white/5 h-9 w-9"
                 data-testid="button-mobile-menu"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -96,7 +106,7 @@ export default function Navbar() {
 
         {/* Mobile drawer */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-white/10 px-10 py-8 space-y-6 bg-black/95 backdrop-blur-3xl rounded-b-2xl">
+          <div className="md:hidden border-t border-white/10 px-6 py-8 space-y-6 bg-black/95 backdrop-blur-3xl rounded-b-2xl animate-fadeIn">
             {menuItems.map((item) => (
               <button
                 key={item.label}
@@ -107,15 +117,13 @@ export default function Navbar() {
                 {item.label}
               </button>
             ))}
-            <Link href={session ? "/dashboard" : "/login"}>
-              <Button
-                className="w-full btn-primary rounded-xl text-white font-semibold"
-                onClick={() => setMobileMenuOpen(false)}
-                data-testid="button-join-beta-mobile"
-              >
-                {session ? "Dashboard" : "Join Beta"}
-              </Button>
-            </Link>
+            {session && (
+              <Link href="/dashboard">
+                <button className="block w-full text-left text-base font-medium text-white/50 hover:text-white transition-all py-2">
+                  Dashboard
+                </button>
+              </Link>
+            )}
           </div>
         )}
       </nav>
