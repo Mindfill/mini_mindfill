@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { fetchQuestions, fetchTimedBatch, submitAttempt, submitBatchAttempts, fetchStats, fetchExplanation } from "@/lib/quizApi";
 import MarkdownLatex from "@/components/ui/markdown-latex";
 import { BookOpen, GraduationCap, Timer as TimerIcon, ChevronRight, CheckCircle, XCircle, Send, Loader2, ArrowLeft, X } from "lucide-react";
@@ -68,10 +68,11 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
         } else if (timerActive && timeLeft <= 0) {
             setTimerExpired(true);
             setTimerActive(false);
-            handleTimedBatchSubmit(answersRef.current);
+            // Use setTimeout to avoid React state update during render
+            setTimeout(() => handleTimedBatchSubmit(answersRef.current), 0);
         }
         return () => clearInterval(interval);
-    }, [timerActive, timeLeft]);
+    }, [timerActive, timeLeft, handleTimedBatchSubmit]);
 
     // --- Actions ---
 
@@ -187,7 +188,7 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
         }
     };
 
-    const handleTimedBatchSubmit = async (finalAnswers = answers) => {
+    const handleTimedBatchSubmit = useCallback(async (finalAnswers = answers) => {
         setTimerActive(false);
         setLoading(true);
         try {
@@ -199,7 +200,7 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
             console.error("Backend batch attempt failed, falling back to local stats.", err);
             await finishQuizLoadStats(finalAnswers);
         }
-    };
+    }, [answers, lessonId]);
 
     const handleNextQuestion = (currentAnswers = answers) => {
         setSelectedOption(null);
