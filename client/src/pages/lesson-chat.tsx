@@ -34,7 +34,10 @@ export default function LessonChat() {
     };
 
     useEffect(() => {
-        scrollToBottom();
+        const timer = setTimeout(() => {
+            scrollToBottom();
+        }, 0);
+        return () => clearTimeout(timer);
     }, [messages, sending]);
 
     useEffect(() => {
