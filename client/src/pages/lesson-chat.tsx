@@ -44,13 +44,16 @@ export default function LessonChat() {
         if (session) {
             const loadHistory = async () => {
                 setLoading(true);
+                setError(null);
                 try {
                     const history = await fetchLessonHistory(lessonSlug, session.access_token);
                     setMessages(history);
                 } catch (err) {
                     console.error("Failed to fetch history:", err);
+                    setError("Could not connect to the knowledge server. Please ensure the backend is running.");
+                } finally {
+                    setLoading(false);
                 }
-                setLoading(false);
             };
             loadHistory();
         }
