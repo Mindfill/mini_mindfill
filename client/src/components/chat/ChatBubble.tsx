@@ -18,23 +18,23 @@ export default function ChatBubble({ role, content }: ChatBubbleProps) {
                 {/* Avatar */}
                 <div
                     className={`
-                        w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold
+                        w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-[10px] font-black italic
                         ${isUser
-                            ? "bg-primary/20 text-primary"
-                            : "bg-muted text-primary shadow-sm"
+                            ? "bg-white/10 text-white/40"
+                            : "bg-primary text-white shadow-lg"
                         }
                     `}
                 >
-                    {isUser ? "Y" : "M"}
+                    {isUser ? "Y" : "T"}
                 </div>
 
                 {/* Message bubble */}
                 <div
                     className={`
-                        rounded-2xl px-5 py-4 text-sm leading-relaxed
+                        rounded-2xl px-5 py-4 text-[15px] leading-relaxed
                         ${isUser
-                            ? "bg-primary/10 border border-primary/20 text-foreground rounded-tr-sm"
-                            : "bg-card border border-border text-foreground rounded-tl-sm shadow-sm"
+                            ? "bg-white/5 border border-white/5 text-white/90 rounded-tr-sm"
+                            : "bg-white/5 border border-white/5 text-white/80 rounded-tl-sm backdrop-blur-sm"
                         }
                     `}
                 >

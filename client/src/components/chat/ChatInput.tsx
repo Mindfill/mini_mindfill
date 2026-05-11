@@ -33,9 +33,9 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
     };
 
     return (
-        <div className="border-t border-border bg-background/60 backdrop-blur-md p-4">
+        <div className="border-t border-white/5 bg-black/40 backdrop-blur-xl p-6 md:p-8">
             <div className="max-w-3xl mx-auto">
-                <div className="flex items-end gap-3 rounded-2xl border border-border bg-card px-4 py-3 focus-within:border-primary/30 transition-colors duration-200">
+                <div className="flex items-end gap-3 rounded-3xl border border-white/5 bg-white/5 px-6 py-4 focus-within:border-white/10 transition-all duration-300 shadow-2xl">
                     <textarea
                         ref={textareaRef}
                         value={value}
@@ -44,24 +44,19 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
                         placeholder="Ask TECHCESS anything…"
                         disabled={disabled}
                         rows={1}
-                        className="flex-1 bg-transparent text-foreground text-sm resize-none outline-none placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed max-h-[200px]"
+                        className="flex-1 bg-transparent text-white text-[15px] resize-none outline-none placeholder:text-white/20 disabled:opacity-50 disabled:cursor-not-allowed max-h-[200px] py-1"
                         data-testid="chat-input"
                     />
                     <button
                         onClick={handleSubmit}
                         disabled={disabled || !value.trim()}
-                        className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-primary text-black hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
-                        style={{
-                            boxShadow: value.trim() && !disabled
-                                ? "0 0 20px rgba(245, 158, 11, 0.3)"
-                                : "none",
-                        }}
+                        className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 bg-white text-black hover:bg-white/90 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-300 shadow-xl"
                         data-testid="chat-send"
                     >
                         <Send className="w-4 h-4" />
                     </button>
                 </div>
-                <p className="text-[11px] text-muted-foreground/60 text-center mt-2">
+                <p className="text-[10px] font-bold tracking-widest uppercase text-white/10 text-center mt-4">
                     TECHCESS may produce inaccurate information. Verify important facts.
                 </p>
             </div>

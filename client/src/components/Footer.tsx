@@ -2,10 +2,10 @@ import { SiX, SiInstagram } from "react-icons/si";
 
 export default function Footer() {
   return (
-    <footer className="bg-black border-t border-white/5 py-24 px-6 lg:px-8">
+    <footer className="bg-black border-t border-white/5 py-16 md:py-24 px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
-          <div className="col-span-1 md:col-span-2 flex flex-col items-start gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12">
+          <div className="col-span-1 sm:col-span-2 flex flex-col items-start gap-6">
             <div className="flex items-center gap-3">
               <img 
                 src="/images/mindfill.png" 
@@ -22,7 +22,7 @@ export default function Footer() {
           </div>
 
           <div className="flex flex-col gap-4">
-            <h4 className="text-xs font-bold tracking-widest uppercase text-white/20">Platform</h4>
+            <h4 className="text-[10px] md:text-xs font-bold tracking-widest uppercase text-white/20">Platform</h4>
             <nav className="flex flex-col gap-2">
               <a href="#method" className="text-sm text-white/50 hover:text-white transition-colors">Methodology</a>
               <a href="#how-it-works" className="text-sm text-white/50 hover:text-white transition-colors">Walkthrough</a>
@@ -31,7 +31,7 @@ export default function Footer() {
           </div>
 
           <div className="flex flex-col gap-4">
-            <h4 className="text-xs font-bold tracking-widest uppercase text-white/20">Social</h4>
+            <h4 className="text-[10px] md:text-xs font-bold tracking-widest uppercase text-white/20">Social</h4>
             <div className="flex items-center gap-4">
               <a
                 href="https://www.instagram.com/mindfill_official?igsh=YmZiaThlNTl4azZp"
@@ -45,8 +45,8 @@ export default function Footer() {
           </div>
         </div>
         
-        <div className="mt-24 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
-          <p className="text-xs text-white/20">
+        <div className="mt-16 md:mt-24 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
+          <p className="text-[10px] md:text-xs text-white/20 text-center md:text-left">
             © 2026 TECHCESS. All rights reserved.
           </p>
           <div className="flex items-center gap-6">

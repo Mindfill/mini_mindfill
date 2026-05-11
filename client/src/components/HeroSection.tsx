@@ -24,30 +24,30 @@ export default function HeroSection() {
       />
 
       {/* Content */}
-      <div className="relative z-20 max-w-6xl mx-auto px-6 lg:px-8 text-center pt-20">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/5 bg-white/5 mb-10 animate-fadeIn">
+      <div className="relative z-20 max-w-6xl mx-auto px-6 lg:px-8 text-center pt-24 md:pt-20">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/5 bg-white/5 mb-8 md:mb-10 animate-fadeIn">
           <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-white/40">
             Intelligent Learning Infrastructure
           </span>
         </div>
 
         <h1
-          className="text-6xl md:text-9xl font-bold mb-10 tracking-tight text-white leading-[1.05]"
+          className="text-4xl sm:text-6xl md:text-9xl font-bold mb-8 md:mb-10 tracking-tight text-white leading-[1.1] md:leading-[1.05]"
           data-testid="text-hero-headline"
         >
           Mastery through <br />
           <span className="text-white/20">Deep Reasoning.</span>
         </h1>
 
-        <p className="text-lg md:text-2xl text-white/40 mb-16 max-w-3xl mx-auto leading-relaxed font-normal" data-testid="text-hero-subtext">
+        <p className="text-base md:text-2xl text-white/40 mb-12 md:mb-16 max-w-3xl mx-auto leading-relaxed font-normal" data-testid="text-hero-subtext">
           TECHCESS bridges the gap between intuitive understanding and formal mastery using first-principles AI.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+        <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center">
           <Link href="/login">
             <Button
               size="lg"
-              className="group bg-white text-black hover:bg-white/90 rounded-full px-10 py-8 text-base font-bold transition-all duration-500 shadow-[0_0_40px_rgba(255,255,255,0.1)] flex items-center gap-2"
+              className="w-full sm:w-auto group bg-white text-black hover:bg-white/90 rounded-full px-8 md:px-10 py-6 md:py-8 text-sm md:text-base font-bold transition-all duration-500 shadow-[0_0_40px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2"
               data-testid="button-join-waitlist"
             >
               Begin Your Journey
@@ -58,7 +58,7 @@ export default function HeroSection() {
           <Button
             size="lg"
             variant="outline"
-            className="group rounded-full border-white/10 bg-white/5 text-white/80 hover:text-white hover:bg-white/10 px-10 py-8 text-base font-bold transition-all duration-500 backdrop-blur-md flex items-center gap-2"
+            className="w-full sm:w-auto group rounded-full border-white/10 bg-white/5 text-white/80 hover:text-white hover:bg-white/10 px-8 md:px-10 py-6 md:py-8 text-sm md:text-base font-bold transition-all duration-500 backdrop-blur-md flex items-center justify-center gap-2"
             onClick={scrollToVideo}
             data-testid="button-see-demo"
           >

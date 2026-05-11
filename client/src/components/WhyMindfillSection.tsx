@@ -36,7 +36,7 @@ function BenefitCard({ number, icon, title, description, testId }: BenefitCardPr
   return (
     <div
       ref={cardRef}
-      className={`relative p-10 rounded-2xl border transition-all duration-1000 group ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+      className={`relative p-8 md:p-10 rounded-2xl border transition-all duration-1000 group ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
         }`}
       style={{
         background: "rgba(255, 255, 255, 0.02)",
@@ -44,15 +44,15 @@ function BenefitCard({ number, icon, title, description, testId }: BenefitCardPr
       }}
       data-testid={testId}
     >
-      <div className="w-12 h-12 mb-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-500">
+      <div className="w-10 h-10 md:w-12 md:h-12 mb-6 md:mb-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-500">
         {icon}
       </div>
 
-      <h3 className="text-xl font-bold mb-4 text-white tracking-tight" data-testid={`text-${testId}-title`}>
+      <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-4 text-white tracking-tight" data-testid={`text-${testId}-title`}>
         {title}
       </h3>
 
-      <p className="text-white/40 leading-relaxed font-normal text-base" data-testid={`text-${testId}-description`}>
+      <p className="text-sm md:text-base text-white/40 leading-relaxed font-normal" data-testid={`text-${testId}-description`}>
         {description}
       </p>
     </div>
@@ -61,17 +61,17 @@ function BenefitCard({ number, icon, title, description, testId }: BenefitCardPr
 
 export default function WhyMindfillSection() {
   return (
-    <section id="why-mindfill" className="py-32 px-6 lg:px-8 relative overflow-hidden bg-black">
+    <section id="why-mindfill" className="py-20 md:py-32 px-6 lg:px-8 relative overflow-hidden bg-black">
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="max-w-3xl mb-24">
+        <div className="max-w-3xl mb-16 md:mb-24">
           <p className="text-primary text-xs font-bold tracking-[0.3em] uppercase mb-4">Core Benefits</p>
-          <h2 className="text-4xl md:text-6xl font-bold text-white tracking-tight" data-testid="text-why-headline">
-            Why Choose <br />
+          <h2 className="text-3xl md:text-6xl font-bold text-white tracking-tight leading-tight" data-testid="text-why-headline">
+            Why Choose <br className="hidden md:block" />
             <span className="text-white/40">TECHCESS.</span>
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           <BenefitCard
             number="01"
             icon={<Lightbulb className="w-6 h-6" />}
