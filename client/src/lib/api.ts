@@ -21,6 +21,7 @@ export async function fetchLessonHistory(
     lessonSlug: string,
     accessToken: string
 ): Promise<ChatMessage[]> {
+    console.log(`[API] Fetching history for: ${lessonSlug} at ${BACKEND_URL}`);
     const res = await fetch(`${BACKEND_URL}/lessons/${lessonSlug}/history`, {
         headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -29,6 +30,7 @@ export async function fetchLessonHistory(
 
     if (!res.ok) {
         const text = (await res.text()) || res.statusText;
+        console.error(`[API] History fetch failed: ${res.status}`, text);
         throw new Error(`Failed to fetch history: ${res.status} — ${text}`);
     }
 
