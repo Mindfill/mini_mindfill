@@ -24,6 +24,8 @@ export default function LessonChat() {
     const userName = user?.user_metadata?.full_name || user?.email || "User";
     const accessToken = session?.access_token || "";
 
+    console.log("[LessonChat] Rendering:", { lessonSlug, authLoading, loading, hasSession: !!session });
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -83,10 +85,47 @@ export default function LessonChat() {
         }
     };
 
-    if (authLoading || loading) {
+    if (authLoading || (loading && !error)) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+                <AppSidebar userName={userName} activeItem="courses" onSignOut={handleSignOut} />
+                <div className="flex-1 flex flex-col items-center justify-center bg-black">
+                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+                    <p className="text-xs font-bold tracking-[0.2em] uppercase text-white/20 animate-pulse">
+                        Synchronizing Knowledge...
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+                <AppSidebar userName={userName} activeItem="courses" onSignOut={handleSignOut} />
+                <div className="flex-1 flex flex-col items-center justify-center bg-black p-6 text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mb-6">
+                        <X className="w-8 h-8 text-red-500" />
+                    </div>
+                    <h2 className="text-xl font-bold text-white mb-2">Connection Error</h2>
+                    <p className="text-white/40 max-w-sm mb-8 leading-relaxed">
+                        {error}
+                    </p>
+                    <div className="flex gap-4">
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="bg-white text-black hover:bg-white/90 px-8 py-3 rounded-full font-bold text-sm transition-all"
+                        >
+                            Retry Connection
+                        </button>
+                        <button
+                            onClick={() => navigate("/courses")}
+                            className="bg-white/5 text-white hover:bg-white/10 px-8 py-3 rounded-full font-bold text-sm transition-all"
+                        >
+                            Back to Courses
+                        </button>
+                    </div>
+                </div>
             </div>
         );
     }
