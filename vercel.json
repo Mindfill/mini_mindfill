@@ -1,5 +1,6 @@
 {
   "rewrites": [
-    { "source": "/((?!images/|video/|favicon\\.ico|.*\\.(png|jpg|jpeg|gif|svg|ico|webp|mp4|webm|ogg|mp3|wav|flac|aac)).*)", "destination": "/" }
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
