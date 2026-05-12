@@ -1,6 +1,14 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/((?!images/|video/|katex\\.min\\.css|.*\\.(png|jpg|jpeg|gif|svg|ico|webp|mp4|webm|ogg|mp3|wav|flac|aac|css|js|json)).*)", "destination": "/index.html" }
+    { "source": "/api/:path*", "destination": "/api/:path*" },
+    { "source": "/(.*)", "destination": "/index.html", "has": [{ "type": "header", "key": "accept", "value": "text/html" }] }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
   ]
 }
