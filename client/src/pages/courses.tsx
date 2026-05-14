@@ -4,7 +4,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import CourseCard from "@/components/courses/CourseCard";
-import { GraduationCap } from "lucide-react";
 
 interface Course {
     id: string;
@@ -108,9 +107,11 @@ export default function Courses() {
                 <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border">
                     <div className="px-8 py-6">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                                <GraduationCap className="w-5 h-5 text-primary" />
-                            </div>
+                            <img
+                                src="/images/mindfill.png"
+                                alt="TECHCESS"
+                                className="w-10 h-10 rounded-xl object-cover"
+                            />
                             <div>
                                 <h1
                                     className="text-2xl font-bold tracking-tight"
