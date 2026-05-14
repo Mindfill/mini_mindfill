@@ -6,7 +6,7 @@ import AppSidebar from "@/components/sidebar/AppSidebar";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatInput from "@/components/chat/ChatInput";
 import TypingIndicator from "@/components/chat/TypingIndicator";
-import { MessageSquare, X } from "lucide-react";
+import { X } from "lucide-react";
 import QuizSection from "@/components/quiz/QuizSection";
 
 export default function LessonChat() {
@@ -172,9 +172,11 @@ export default function LessonChat() {
                         </button>
                         <div className="h-4 w-px bg-border" />
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                                <MessageSquare className="w-4 h-4 text-primary" />
-                            </div>
+                            <img
+                                src="/images/mindfill.png"
+                                alt="TECHCESS"
+                                className="w-8 h-8 rounded-lg object-cover"
+                            />
                             <h1 className="text-sm font-bold text-foreground tracking-tight truncate max-w-[200px] md:max-w-md">
                                 {displayTitle}
                             </h1>
@@ -208,9 +210,11 @@ export default function LessonChat() {
                         <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
                             {messages.length === 0 && !sending && (
                                 <div className="flex flex-col items-center justify-center py-20">
-                                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-                                        <MessageSquare className="w-8 h-8 text-primary" />
-                                    </div>
+                                    <img
+                                        src="/images/mindfill.png"
+                                        alt="TECHCESS"
+                                        className="w-16 h-16 rounded-2xl object-cover mb-4"
+                                    />
                                     <h2 className="text-xl font-bold mb-2 text-foreground">Start learning</h2>
                                     <p className="text-muted-foreground text-sm text-center max-w-sm">
                                         Ask TECHCESS anything about this lesson. Get clear, layered explanations with deep reasoning.
