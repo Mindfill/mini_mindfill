@@ -9,6 +9,7 @@
   "icons": [
     {
       "src": "/images/mindfill.png",
+      "sizes": "896x1152",
       "type": "image/png",
       "purpose": "any maskable"
     }
