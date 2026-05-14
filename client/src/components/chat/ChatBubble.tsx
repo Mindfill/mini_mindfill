@@ -20,8 +20,8 @@ export default function ChatBubble({ role, content }: ChatBubbleProps) {
                     className={`
                         w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-[10px] font-black italic
                         ${isUser
-                            ? "bg-white/10 text-white/40"
-                            : "bg-primary text-white shadow-lg"
+                            ? "bg-muted text-muted-foreground"
+                            : "bg-primary text-primary-foreground shadow-lg"
                         }
                     `}
                 >
@@ -33,8 +33,8 @@ export default function ChatBubble({ role, content }: ChatBubbleProps) {
                     className={`
                         rounded-2xl px-5 py-4 text-[15px] leading-relaxed
                         ${isUser
-                            ? "bg-white/5 border border-white/5 text-white/90 rounded-tr-sm"
-                            : "bg-white/5 border border-white/5 text-white/80 rounded-tl-sm backdrop-blur-sm"
+                            ? "bg-muted border border-border text-foreground rounded-tr-sm"
+                            : "bg-card border border-border text-foreground rounded-tl-sm backdrop-blur-sm"
                         }
                     `}
                 >
