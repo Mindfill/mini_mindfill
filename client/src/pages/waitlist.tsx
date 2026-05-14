@@ -14,14 +14,6 @@ export default function Waitlist() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    // Simulate submission
-
-  };
-
   return (
     <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
       <ParticleBackground />
@@ -52,9 +44,9 @@ export default function Waitlist() {
               >
                 <div className="text-center mb-10">
                   <div className="flex items-center justify-center gap-3 mb-6">
-                    <img 
-                      src="/images/mindfill.png" 
-                      alt="TECHCESS Logo" 
+                    <img
+                      src="/images/mindfill.png"
+                      alt="TECHCESS Logo"
                       className="w-10 h-10 object-contain"
                     />
                     <h1
@@ -76,13 +68,10 @@ export default function Waitlist() {
                 <form
                   onSubmit={async (e) => {
                     e.preventDefault();
-                    console.log("Submitting form...");   // debug
                     setIsSubmitting(true);
 
                     try {
                       const backendUrl = import.meta.env.VITE_BACKEND_URL;
-                      console.log("Backend URL:", backendUrl);
-
                       const res = await fetch(`${backendUrl}/api/join`, {
                         method: "POST",
                         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -92,8 +81,6 @@ export default function Waitlist() {
                       if (!res.ok) throw new Error("Failed to join waitlist");
 
                       setIsSubmitted(true);
-                      console.log("isSubmitted set to true");
-
                       toast({
                         title: "You're on the list!",
                         description: "We'll notify you when TECHCESS launches.",
@@ -103,6 +90,7 @@ export default function Waitlist() {
                       toast({
                         title: "Error",
                         description: "Something went wrong. Please try again.",
+                        variant: "destructive",
                       });
                     } finally {
                       setIsSubmitting(false);
@@ -149,7 +137,6 @@ export default function Waitlist() {
                     {isSubmitting ? "Joining..." : "Join Waitlist"}
                   </Button>
                 </form>
-
               </div>
             ) : (
               <div
@@ -173,7 +160,7 @@ export default function Waitlist() {
                   You're on the list!
                 </h2>
                 <p className="text-muted-foreground mb-8" data-testid="text-success-message">
-                  We'll notify you when Mindfill launches. Get ready to master anything.
+                  We'll notify you when TECHCESS launches. Get ready to master anything.
                 </p>
                 <Link href="/">
                   <Button
