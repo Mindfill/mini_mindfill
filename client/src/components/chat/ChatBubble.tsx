@@ -16,17 +16,14 @@ export default function ChatBubble({ role, content }: ChatBubbleProps) {
                 className={`flex items-start gap-3 ${isUser ? "flex-row-reverse max-w-[75%]" : "max-w-3xl w-full"}`}
             >
                 {/* Avatar */}
-                <div
+                <img
+                    src="/images/mindfill.png"
+                    alt={isUser ? "User" : "TECHCESS"}
                     className={`
-                        w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-[10px] font-black italic
-                        ${isUser
-                            ? "bg-muted text-muted-foreground"
-                            : "bg-primary text-primary-foreground shadow-lg"
-                        }
+                        w-8 h-8 rounded-lg flex-shrink-0 object-cover
+                        ${isUser ? "" : "shadow-lg"}
                     `}
-                >
-                    {isUser ? "Y" : "T"}
-                </div>
+                />
 
                 {/* Message bubble */}
                 <div
