@@ -109,9 +109,9 @@ export default function LessonChat() {
         return (
             <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
                 <AppSidebar userName={userName} activeItem="courses" onSignOut={handleSignOut} />
-                <div className="flex-1 flex flex-col items-center justify-center bg-black">
+                <div className="flex-1 flex flex-col items-center justify-center bg-background">
                     <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-                    <p className="text-xs font-bold tracking-[0.2em] uppercase text-white/20 animate-pulse">
+                    <p className="text-xs font-bold tracking-[0.2em] uppercase text-muted-foreground animate-pulse">
                         Synchronizing Knowledge...
                     </p>
                 </div>
@@ -123,24 +123,24 @@ export default function LessonChat() {
         return (
             <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
                 <AppSidebar userName={userName} activeItem="courses" onSignOut={handleSignOut} />
-                <div className="flex-1 flex flex-col items-center justify-center bg-black p-6 text-center">
+                <div className="flex-1 flex flex-col items-center justify-center bg-background p-6 text-center">
                     <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mb-6">
                         <X className="w-8 h-8 text-red-500" />
                     </div>
-                    <h2 className="text-xl font-bold text-white mb-2">Connection Error</h2>
-                    <p className="text-white/40 max-w-sm mb-8 leading-relaxed">
+                    <h2 className="text-xl font-bold text-foreground mb-2">Connection Error</h2>
+                    <p className="text-muted-foreground max-w-sm mb-8 leading-relaxed">
                         {error}
                     </p>
                     <div className="flex gap-4">
                         <button
                             onClick={() => window.location.reload()}
-                            className="bg-white text-black hover:bg-white/90 px-8 py-3 rounded-full font-bold text-sm transition-all"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 rounded-full font-bold text-sm transition-all"
                         >
                             Retry Connection
                         </button>
                         <button
                             onClick={() => navigate("/courses")}
-                            className="bg-white/5 text-white hover:bg-white/10 px-8 py-3 rounded-full font-bold text-sm transition-all"
+                            className="bg-muted text-foreground hover:bg-muted/80 px-8 py-3 rounded-full font-bold text-sm transition-all"
                         >
                             Back to Courses
                         </button>
@@ -160,37 +160,37 @@ export default function LessonChat() {
                 onSignOut={handleSignOut}
             />
 
-            <div className="flex-1 flex flex-col min-h-screen bg-black">
+            <div className="flex-1 flex flex-col min-h-screen bg-background">
                 {/* Header */}
-                <header className="sticky top-0 z-20 bg-black/40 backdrop-blur-xl border-b border-white/5 px-6 py-5 flex justify-between items-center">
+                <header className="sticky top-0 z-20 bg-background/40 backdrop-blur-xl border-b border-border px-6 py-5 flex justify-between items-center">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => navigate("/courses")}
-                            className="text-white/30 hover:text-white transition-all text-xs font-bold tracking-widest uppercase"
+                            className="text-muted-foreground hover:text-foreground transition-all text-xs font-bold tracking-widest uppercase"
                         >
                             ← Back
                         </button>
-                        <div className="h-4 w-px bg-white/10" />
+                        <div className="h-4 w-px bg-border" />
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                                 <MessageSquare className="w-4 h-4 text-primary" />
                             </div>
-                            <h1 className="text-sm font-bold text-white tracking-tight truncate max-w-[200px] md:max-w-md">
+                            <h1 className="text-sm font-bold text-foreground tracking-tight truncate max-w-[200px] md:max-w-md">
                                 {displayTitle}
                             </h1>
                         </div>
                     </div>
 
-                    <div className="flex items-center bg-white/5 rounded-full p-1 border border-white/5">
+                    <div className="flex items-center bg-muted rounded-full p-1 border border-border">
                         <button
                             onClick={() => setActiveTab("chat")}
-                            className={`px-6 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "chat" ? "bg-white text-black shadow-lg" : "text-white/40 hover:text-white"}`}
+                            className={`px-6 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "chat" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
                         >
                             Chat
                         </button>
                         <button
                             onClick={() => setActiveTab("quiz")}
-                            className={`px-6 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "quiz" ? "bg-white text-black shadow-lg" : "text-white/40 hover:text-white"}`}
+                            className={`px-6 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "quiz" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
                         >
                             Quiz
                         </button>
@@ -211,8 +211,8 @@ export default function LessonChat() {
                                     <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                                         <MessageSquare className="w-8 h-8 text-primary" />
                                     </div>
-                                    <h2 className="text-xl font-bold mb-2 text-white">Start learning</h2>
-                                    <p className="text-white/40 text-sm text-center max-w-sm">
+                                    <h2 className="text-xl font-bold mb-2 text-foreground">Start learning</h2>
+                                    <p className="text-muted-foreground text-sm text-center max-w-sm">
                                         Ask TECHCESS anything about this lesson. Get clear, layered explanations with deep reasoning.
                                     </p>
                                 </div>
