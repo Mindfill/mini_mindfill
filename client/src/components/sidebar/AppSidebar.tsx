@@ -7,7 +7,7 @@ import { DropReviewDialog } from "./DropReviewDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import mindfillLogo from "/images/mindfill.png";
+import mindfillLogo from "@/assets/mindfill.png";
 
 interface AppSidebarProps {
     userName: string;

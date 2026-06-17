@@ -1,4 +1,4 @@
-import mindfillIcon from "/images/mindfill.png";
+import mindfillIcon from "@/assets/mindfill.png";
 
 export default function TypingIndicator() {
     return (

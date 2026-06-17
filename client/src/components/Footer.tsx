@@ -1,5 +1,5 @@
 import { SiX, SiInstagram } from "react-icons/si";
-import mindfillLogo from "/images/mindfill.png";
+import mindfillLogo from "@/assets/mindfill.png";
 
 export default function Footer() {
   return (
