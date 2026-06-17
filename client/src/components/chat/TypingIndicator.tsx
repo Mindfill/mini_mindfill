@@ -1,8 +1,10 @@
+import mindfillIcon from "/images/mindfill.png";
+
 export default function TypingIndicator() {
     return (
         <div className="flex items-start gap-3 max-w-3xl">
             <img
-                src="/images/mindfill.png"
+                src={mindfillIcon}
                 alt="TECHCESS"
                 className="w-8 h-8 rounded-lg flex-shrink-0 object-cover shadow-lg"
             />

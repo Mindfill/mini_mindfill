@@ -8,6 +8,7 @@ import ChatInput from "@/components/chat/ChatInput";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 import { X } from "lucide-react";
 import QuizSection from "@/components/quiz/QuizSection";
+import mindfillIcon from "/images/mindfill.png";
 
 export default function LessonChat() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
@@ -173,7 +174,7 @@ export default function LessonChat() {
                         <div className="h-4 w-px bg-border" />
                         <div className="flex items-center gap-3">
                             <img
-                                src="/images/mindfill.png"
+                                src={mindfillIcon}
                                 alt="TECHCESS"
                                 className="w-8 h-8 rounded-lg object-cover"
                             />
@@ -211,7 +212,7 @@ export default function LessonChat() {
                             {messages.length === 0 && !sending && (
                                 <div className="flex flex-col items-center justify-center py-20">
                                     <img
-                                        src="/images/mindfill.png"
+                                        src={mindfillIcon}
                                         alt="TECHCESS"
                                         className="w-16 h-16 rounded-2xl object-cover mb-4"
                                     />

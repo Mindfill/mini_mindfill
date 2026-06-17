@@ -7,6 +7,7 @@ import { DropReviewDialog } from "./DropReviewDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import mindfillLogo from "/images/mindfill.png";
 
 interface AppSidebarProps {
     userName: string;
@@ -75,7 +76,7 @@ export default function AppSidebar({ userName, activeItem, onSignOut }: AppSideb
                         onClick={() => { navigate("/dashboard"); if (window.innerWidth < 768) setSidebarOpen(false); }}
                     >
                         <img 
-                            src="/images/mindfill.png" 
+                            src={mindfillLogo} 
                             alt="TECHCESS Logo" 
                             className="w-8 h-8 object-contain"
                         />

@@ -1,4 +1,5 @@
 import { SiX, SiInstagram } from "react-icons/si";
+import mindfillLogo from "/images/mindfill.png";
 
 export default function Footer() {
   return (
@@ -8,7 +9,7 @@ export default function Footer() {
           <div className="col-span-1 sm:col-span-2 flex flex-col items-start gap-6">
             <div className="flex items-center gap-3">
               <img 
-                src="/images/mindfill.png" 
+                src={mindfillLogo} 
                 alt="TECHCESS Logo" 
                 className="w-8 h-8 object-contain"
               />

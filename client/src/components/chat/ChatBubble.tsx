@@ -1,4 +1,5 @@
 import MarkdownLatex from "@/components/ui/markdown-latex";
+import mindfillIcon from "/images/mindfill.png";
 
 interface ChatBubbleProps {
     role: "user" | "assistant";
@@ -17,7 +18,7 @@ export default function ChatBubble({ role, content }: ChatBubbleProps) {
             >
                 {/* Avatar */}
                 <img
-                    src="/images/mindfill.png"
+                    src={mindfillIcon}
                     alt={isUser ? "User" : "TECHCESS"}
                     className={`
                         w-8 h-8 rounded-lg flex-shrink-0 object-cover
