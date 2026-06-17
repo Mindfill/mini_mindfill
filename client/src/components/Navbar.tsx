@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import mindfillLogo from "/images/mindfill.png";
+import mindfillLogo from "@/assets/mindfill.png";
 
 export default function Navbar() {
   const { session } = useAuth();

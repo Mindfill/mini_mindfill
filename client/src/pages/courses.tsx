@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import CourseCard from "@/components/courses/CourseCard";
-import mindfillIcon from "/images/mindfill.png";
+import mindfillIcon from "@/assets/mindfill.png";
 
 interface Course {
     id: string;

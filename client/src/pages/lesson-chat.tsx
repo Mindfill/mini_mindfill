@@ -8,7 +8,7 @@ import ChatInput from "@/components/chat/ChatInput";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 import { X } from "lucide-react";
 import QuizSection from "@/components/quiz/QuizSection";
-import mindfillIcon from "/images/mindfill.png";
+import mindfillIcon from "@/assets/mindfill.png";
 
 export default function LessonChat() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
