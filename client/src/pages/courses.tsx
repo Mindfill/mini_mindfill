@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import CourseCard from "@/components/courses/CourseCard";
+import mindfillIcon from "/images/mindfill.png";
 
 interface Course {
     id: string;
@@ -108,9 +109,9 @@ export default function Courses() {
                     <div className="px-8 py-6">
                         <div className="flex items-center gap-3">
                             <img
-                                src="/images/mindfill.png"
+                                src={mindfillIcon}
                                 alt="TECHCESS"
-                                className="w-10 h-10 rounded-xl object-cover"
+                                className="w-16 h-16 rounded-2xl object-cover mb-4"
                             />
                             <div>
                                 <h1
@@ -131,9 +132,11 @@ export default function Courses() {
                 <main className="flex-1 p-8">
                     {courses.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-20">
-                            <div className="w-16 h-16 rounded-2xl bg-card flex items-center justify-center mb-4">
-                                <GraduationCap className="w-8 h-8 text-muted-foreground/60" />
-                            </div>
+                            <img
+                                src={mindfillIcon}
+                                alt="TECHCESS"
+                                className="w-16 h-16 rounded-2xl object-cover mb-4"
+                            />
                             <p className="text-muted-foreground text-lg">No courses available yet</p>
                             <p className="text-white/25 text-sm mt-1">
                                 Check back soon for new content

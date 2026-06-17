@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import mindfillLogo from "/images/mindfill.png";
 
 export default function Navbar() {
   const { session } = useAuth();
@@ -42,7 +43,7 @@ export default function Navbar() {
             <Link href="/">
               <div className="flex items-center gap-2 md:gap-3 cursor-pointer group">
                 <img 
-                  src="/images/mindfill.png" 
+                  src={mindfillLogo} 
                   alt="TECHCESS Logo" 
                   className="w-8 h-8 md:w-10 md:h-10 object-contain transition-transform group-hover:scale-110 duration-500"
                 />
