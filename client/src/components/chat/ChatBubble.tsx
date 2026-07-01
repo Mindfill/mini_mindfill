@@ -2,7 +2,7 @@ import MarkdownLatex from "@/components/ui/markdown-latex";
 import mindfillIcon from "@/assets/mindfill.png";
 
 interface ChatBubbleProps {
-    role: "user" | "assistant";
+    role: "user" | "assistant" | "developer";
     content: string;
 }
 

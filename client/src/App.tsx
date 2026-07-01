@@ -11,6 +11,8 @@ import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Courses from "@/pages/courses";
 import LessonChat from "@/pages/lesson-chat";
+import Notes from "@/pages/notes";
+import NoteChat from "@/pages/note-chat";
 
 function Router() {
   return (
@@ -20,6 +22,8 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/courses" component={Courses} />
       <Route path="/lessons/:lessonSlug" component={LessonChat} />
+      <Route path="/notes" component={Notes} />
+      <Route path="/notes/:noteId" component={NoteChat} />
       <Route path="/waitlist" component={Waitlist} />
       <Route component={NotFound} />
     </Switch>
