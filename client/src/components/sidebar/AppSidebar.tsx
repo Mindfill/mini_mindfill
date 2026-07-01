@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Home, BookOpen, Clock, LogOut, Menu, X } from "lucide-react";
+import { Home, BookOpen, Clock, LogOut, Menu, X, FileText } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { DropReviewDialog } from "./DropReviewDialog";
@@ -11,14 +11,14 @@ import mindfillLogo from "@/assets/mindfill.png";
 
 interface AppSidebarProps {
     userName: string;
-    activeItem: "home" | "courses";
+    activeItem: "home" | "courses" | "notes";
     onSignOut: () => void;
 }
 
 type SidebarNavItem = {
     icon: React.ReactNode;
     label: string;
-    key: "home" | "courses" | "coming-soon";
+    key: "home" | "courses" | "notes" | "coming-soon";
     path?: string;
     comingSoon?: boolean;
 };
@@ -26,6 +26,7 @@ type SidebarNavItem = {
 const navItems: SidebarNavItem[] = [
     { icon: <Home className="w-5 h-5" />, label: "Home", key: "home", path: "/dashboard" },
     { icon: <BookOpen className="w-5 h-5" />, label: "Courses", key: "courses", path: "/courses" },
+    { icon: <FileText className="w-5 h-5" />, label: "Notes", key: "notes", path: "/notes" },
     { icon: <Clock className="w-5 h-5" />, label: "Coming Soon", key: "coming-soon", comingSoon: true },
 ];
 
