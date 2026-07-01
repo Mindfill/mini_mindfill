@@ -206,15 +206,11 @@ export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess }: No
                                     <SelectContent>
                                         {courses.length > 0 ? (
                                             courses.map((course) => (
-                                                <SelectItem key={course.id} value={course.id || ""}>
+                                                <SelectItem key={course.id} value={course.id!}>
                                                     {course.name}
                                                 </SelectItem>
                                             ))
-                                        ) : (
-                                            <SelectItem value="" disabled>
-                                                No courses available
-                                            </SelectItem>
-                                        )}
+                                        ) : null}
                                     </SelectContent>
                                 </Select>
                             </div>
