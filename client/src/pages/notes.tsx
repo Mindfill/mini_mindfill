@@ -21,6 +21,10 @@ export default function NotesDashboard() {
         if (!session) return;
 
         console.log("🔄 Loading notes for user:", session.user.id);
+        console.log("🔑 Full session info:", {
+            userId: session.user.id,
+            email: session.user.email
+        });
         setLoading(true);
         setError(null);
         try {
@@ -35,7 +39,8 @@ export default function NotesDashboard() {
                 throw supabaseError;
             }
 
-            console.log("✅ Notes loaded:", data);
+            console.log("✅ Notes loaded from Supabase:", data);
+            console.log("📊 Number of notes:", data?.length);
             setNotes(data || []);
         } catch (err) {
             console.error("❌ Error loading notes:", err);
