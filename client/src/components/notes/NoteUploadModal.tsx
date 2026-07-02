@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { uploadNote, fetchCourses, Course } from "@/lib/api";
-import { X, Upload, FileText, CheckCircle2, Loader2 } from "lucide-react";
+import { uploadNote, fetchCourses, createCourse, Course } from "@/lib/api";
+import { X, Upload, FileText, CheckCircle2, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,11 @@ export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess }: No
     const [courses, setCourses] = useState<Course[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showCreateCourse, setShowCreateCourse] = useState(false);
+    const [newCourseName, setNewCourseName] = useState("");
+    const [newCourseCode, setNewCourseCode] = useState("");
+    const [newCourseDescription, setNewCourseDescription] = useState("");
+    const [creatingCourse, setCreatingCourse] = useState(false);
 
     const resetState = () => {
         setStep("upload");
@@ -32,6 +37,37 @@ export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess }: No
         setCourseId("");
         setError(null);
         setLoading(false);
+        setShowCreateCourse(false);
+        setNewCourseName("");
+        setNewCourseCode("");
+        setNewCourseDescription("");
+        setCreatingCourse(false);
+    };
+
+    const handleCreateCourse = async () => {
+        if (!session || !newCourseName) return;
+
+        setCreatingCourse(true);
+        setError(null);
+
+        try {
+            const newCourse = await createCourse(
+                { name: newCourseName, course_code: newCourseCode, description: newCourseDescription },
+                session.access_token
+            );
+            
+            setCourses([...courses, newCourse]);
+            setCourseId(newCourse.id!);
+            setShowCreateCourse(false);
+            setNewCourseName("");
+            setNewCourseCode("");
+            setNewCourseDescription("");
+        } catch (err: any) {
+            console.error("Failed to create course:", err);
+            setError(err.message || "Failed to create course");
+        } finally {
+            setCreatingCourse(false);
+        }
     };
 
     const handleClose = () => {
@@ -120,7 +156,78 @@ export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess }: No
 
                 {/* Content */}
                 <div className="p-6">
-                    {step === "success" ? (
+                    {showCreateCourse ? (
+                        <div className="space-y-5">
+                            <h3 className="text-lg font-semibold">Create New Course</h3>
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="course-name">Course Name *</Label>
+                                    <Input
+                                        id="course-name"
+                                        value={newCourseName}
+                                        onChange={(e) => setNewCourseName(e.target.value)}
+                                        placeholder="e.g., Calculus I"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="course-code">Course Code (Optional)</Label>
+                                    <Input
+                                        id="course-code"
+                                        value={newCourseCode}
+                                        onChange={(e) => setNewCourseCode(e.target.value)}
+                                        placeholder="e.g., MATH 101"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="course-description">Description (Optional)</Label>
+                                    <Input
+                                        id="course-description"
+                                        value={newCourseDescription}
+                                        onChange={(e) => setNewCourseDescription(e.target.value)}
+                                        placeholder="e.g., Introduction to differential and integral calculus"
+                                    />
+                                </div>
+                            </div>
+                            {error && (
+                                <div className="p-4 rounded-xl bg-destructive/10 text-destructive text-sm">
+                                    {error}
+                                </div>
+                            )}
+                            <div className="pt-2 flex gap-3">
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    className="flex-1"
+                                    onClick={() => {
+                                        setShowCreateCourse(false);
+                                        setError(null);
+                                        setNewCourseName("");
+                                        setNewCourseCode("");
+                                        setNewCourseDescription("");
+                                    }}
+                                    disabled={creatingCourse}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="button"
+                                    className="flex-1"
+                                    onClick={handleCreateCourse}
+                                    disabled={!newCourseName || creatingCourse}
+                                >
+                                    {creatingCourse ? (
+                                        <div className="flex items-center gap-2">
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Creating...
+                                        </div>
+                                    ) : (
+                                        "Create Course"
+                                    )}
+                                </Button>
+                            </div>
+                        </div>
+                    ) : step === "success" ? (
                         <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
                             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
                                 <CheckCircle2 className="w-8 h-8 text-primary" />
@@ -198,7 +305,19 @@ export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess }: No
 
                             {/* Course Select (Optional) */}
                             <div className="space-y-2">
-                                <Label htmlFor="note-course">Course (Optional)</Label>
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="note-course">Course (Optional)</Label>
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        size="sm"
+                                        className="h-8 text-xs"
+                                        onClick={() => setShowCreateCourse(true)}
+                                    >
+                                        <Plus className="w-3 h-3 mr-1" />
+                                        Create Course
+                                    </Button>
+                                </div>
                                 <Select value={courseId} onValueChange={setCourseId}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select a course..." />
