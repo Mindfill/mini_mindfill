@@ -20,6 +20,7 @@ export default function NotesDashboard() {
     const loadNotes = async () => {
         if (!session) return;
 
+        console.log("🔄 Loading notes for user:", session.user.id);
         setLoading(true);
         setError(null);
         try {
@@ -30,12 +31,14 @@ export default function NotesDashboard() {
                 .order("created_at", { ascending: false });
 
             if (supabaseError) {
+                console.error("❌ Supabase error loading notes:", supabaseError);
                 throw supabaseError;
             }
 
+            console.log("✅ Notes loaded:", data);
             setNotes(data || []);
         } catch (err) {
-            console.error(err);
+            console.error("❌ Error loading notes:", err);
             setError("Unable to load your notes");
         } finally {
             setLoading(false);
