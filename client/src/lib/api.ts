@@ -211,6 +211,12 @@ export async function uploadNote(
     courseId?: string,
     accessToken?: string
 ): Promise<NoteUploadResponse> {
+    console.log("📤 Calling uploadNote API:", {
+        BACKEND_URL,
+        title,
+        courseId,
+        hasAccessToken: !!accessToken
+    });
     const formData = new FormData();
     formData.append("file", file);
     formData.append("title", title);
@@ -231,10 +237,13 @@ export async function uploadNote(
 
     if (!res.ok) {
         const text = (await res.text()) || res.statusText;
+        console.error("❌ Upload API error:", res.status, text);
         throw new Error(`Failed to upload note: ${res.status} — ${text}`);
     }
 
-    return res.json();
+    const json = await res.json();
+    console.log("✅ Upload API response:", json);
+    return json;
 }
 
 /**

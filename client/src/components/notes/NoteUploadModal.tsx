@@ -124,24 +124,30 @@ export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess }: No
         e.preventDefault();
         if (!selectedFile || !title || !session) return;
 
+        console.log("🚀 Starting note upload:", {
+            file: selectedFile.name,
+            title: title,
+            courseId: courseId
+        });
         setLoading(true);
         setError(null);
         setStep("processing");
 
         try {
-            await uploadNote(
+            const uploadResponse = await uploadNote(
                 selectedFile,
                 title,
                 courseId || undefined,
                 session.access_token
             );
+            console.log("✅ Note uploaded successfully:", uploadResponse);
             setStep("success");
             setTimeout(() => {
                 handleClose();
                 onUploadSuccess();
             }, 1500);
         } catch (err: any) {
-            console.error(err);
+            console.error("❌ Error uploading note:", err);
             setError(err.message || "Failed to upload note");
             setStep("upload");
         } finally {
