@@ -108,7 +108,7 @@ export default function NotesDashboard() {
         <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
             <AppSidebar
                 userName={userName}
-                activeItem="home"
+                activeItem="notes"
                 onSignOut={handleSignOut}
             />
 
@@ -129,41 +129,35 @@ export default function NotesDashboard() {
                         </button>
                     </div>
 
-                    {/* Notes Grid */}
+                    {/* Notes Grid - Interactive Course Cards */}
                     {notes.length > 0 ? (
-                        <div className="grid gap-4 md:grid-cols-2">
+                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                             {notes.map((note) => (
                                 <div
                                     key={note.id}
-                                    className="group p-5 rounded-2xl border border-border bg-card hover:bg-card transition-all hover:shadow-sm"
+                                    onClick={() => navigate(`/notes/${note.id}`)}
+                                    className="group cursor-pointer p-6 rounded-3xl border border-border bg-card hover:bg-card transition-all hover:shadow-lg hover:scale-[1.02] duration-300"
                                 >
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2.5 rounded-xl bg-primary/10">
-                                                <FileText className="w-5 h-5 text-primary" />
-                                            </div>
-                                            <div>
-                                                <h3 className="font-semibold text-lg">{note.title}</h3>
-                                                <p className="text-muted-foreground text-xs mt-1">
-                                                    {note.file_name} • {formatFileSize(note.file_size_bytes)}
+                                    <div className="flex flex-col gap-4">
+                                        {/* Icon */}
+                                        <div className="p-4 rounded-2xl bg-primary/10 w-fit">
+                                            <FileText className="w-8 h-8 text-primary" />
+                                        </div>
+                                        
+                                        {/* Content */}
+                                        <div>
+                                            <h3 className="font-bold text-xl mb-1">{note.title}</h3>
+                                            <p className="text-muted-foreground text-sm mb-2">
+                                                {note.file_name}
+                                            </p>
+                                            
+                                            {/* Stats */}
+                                            <div className="space-y-2">
+                                                <p className="text-xs text-muted-foreground">
+                                                    {formatFileSize(note.file_size_bytes)}
                                                 </p>
                                             </div>
                                         </div>
-                                        <button
-                                            onClick={() => navigate(`/notes/${note.id}`)}
-                                            className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
-                                        >
-                                            <ArrowRight className="w-4 h-4" />
-                                        </button>
-                                    </div>
-
-                                    <div className="mt-4 flex items-center justify-between">
-                                        <button
-                                            onClick={() => navigate(`/notes/${note.id}`)}
-                                            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-                                        >
-                                            Open Note
-                                        </button>
                                     </div>
                                 </div>
                             ))}
