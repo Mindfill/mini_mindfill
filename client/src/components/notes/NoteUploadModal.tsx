@@ -56,8 +56,21 @@ export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess }: No
                 session.access_token
             );
             
-            setCourses([...courses, newCourse]);
-            setCourseId(newCourse.id!);
+            // Reload courses to get the fresh list from server
+            const refreshedCourses = await fetchCourses(session.access_token);
+            setCourses(refreshedCourses);
+            
+            // Automatically select the new course
+            if (newCourse.id) {
+                setCourseId(newCourse.id);
+            } else {
+                // If id isn't in response, try to find it in fresh list
+                const found = refreshedCourses.find(c => c.name === newCourseName);
+                if (found && found.id) {
+                    setCourseId(found.id);
+                }
+            }
+            
             setShowCreateCourse(false);
             setNewCourseName("");
             setNewCourseCode("");
