@@ -3,8 +3,7 @@
  * All requests attach the Supabase JWT as a Bearer token.
  */
 
-const BACKEND_URL =
-    import.meta.env.VITE_BACKEND_URL || "https://mindfill-api.onrender.com";
+const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "https://mindfill-api.onrender.com").trim().replace(/[`'"]/g, "");
 
 export interface ChatMessage {
     role: "user" | "assistant";
