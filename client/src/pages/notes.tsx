@@ -28,6 +28,23 @@ export default function NotesDashboard() {
         setLoading(true);
         setError(null);
         try {
+            // First, let's fetch ALL notes to check what's in the table!
+            const { data: allNotes, error: allNotesError } = await supabase
+                .from("notes")
+                .select("*")
+                .order("created_at", { ascending: false });
+
+            console.log("📋 ALL notes in the table:", allNotes);
+            console.log("📊 Total notes in table:", allNotes?.length);
+            if (allNotes && allNotes.length > 0) {
+                console.log("📝 First note's user_id:", allNotes[0].user_id);
+            }
+
+            if (allNotesError) {
+                console.error("❌ Supabase error loading ALL notes:", allNotesError);
+            }
+
+            // Now fetch notes for the current user
             const { data, error: supabaseError } = await supabase
                 .from("notes")
                 .select("*")
