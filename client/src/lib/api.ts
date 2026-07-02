@@ -4,7 +4,7 @@
  */
 
 const BACKEND_URL =
-    import.meta.env.VITE_BACKEND_URL || "https://mindfill-mvp-backend.onrender.com";
+    import.meta.env.VITE_BACKEND_URL || "https://mindfill-api.onrender.com";
 
 export interface ChatMessage {
     role: "user" | "assistant";

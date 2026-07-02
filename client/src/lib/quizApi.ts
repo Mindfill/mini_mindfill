@@ -1,6 +1,6 @@
 import { supabase } from "./supabase";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "https://mindfill-mvp-backend.onrender.com";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "https://mindfill-api.onrender.com";
 
 const getHeaders = async () => {
     const { data: { session } } = await supabase.auth.getSession();
