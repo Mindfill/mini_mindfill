@@ -18,7 +18,8 @@ import ChatInput from "@/components/chat/ChatInput";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 import { X, ArrowLeft, BookOpen, CheckCircle2 } from "lucide-react";
 import mindfillIcon from "@/assets/mindfill.png";
-import QuizSection from "@/components/quiz/QuizSection";
+import NoteQuizView from "@/components/notes/NoteQuizView";
+import SectionSelector, { type PlanSection } from "@/components/notes/SectionSelector";
 
 export default function NoteChat() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
@@ -34,6 +35,7 @@ export default function NoteChat() {
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<"chat" | "quiz">("chat");
     const [lessonPlan, setLessonPlan] = useState<NoteLessonPlanResponse | null>(null);
+    const [sections, setSections] = useState<PlanSection[]>([]);
     const [selectedSections, setSelectedSections] = useState<string[]>([]);
     const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
     const [generatingQuiz, setGeneratingQuiz] = useState(false);
@@ -63,6 +65,26 @@ export default function NoteChat() {
             if (noteError) throw noteError;
             setNoteTitle(noteData.title);
 
+            // Load the lesson-plan sections (if onboarding already happened).
+            // The /onboard endpoint only returns structured sections on first
+            // generation, so read them straight from the table on return visits.
+            try {
+                const { data: planData } = await supabase
+                    .from("note_lesson_plans")
+                    .select("content")
+                    .eq("note_id", noteId)
+                    .maybeSingle();
+
+                if (planData?.content) {
+                    const parsed = JSON.parse(planData.content);
+                    if (Array.isArray(parsed?.sections)) {
+                        setSections(parsed.sections as PlanSection[]);
+                    }
+                }
+            } catch (planErr) {
+                console.warn("Could not load lesson plan sections:", planErr);
+            }
+
             // Check if lesson plan exists by trying to fetch history
             try {
                 const history = await fetchNoteHistory(noteId, accessToken);
@@ -88,6 +110,9 @@ export default function NoteChat() {
         try {
             const plan = await onboardNote(noteId, accessToken);
             setLessonPlan(plan);
+            if (plan.lesson_plan?.sections) {
+                setSections(plan.lesson_plan.sections as PlanSection[]);
+            }
             // Display the onboarding message as first message
             setMessages([
                 { role: "assistant", content: plan.onboarding_message }
@@ -157,7 +182,7 @@ export default function NoteChat() {
     };
 
     const handleGenerateQuiz = async () => {
-        if (!session || !lessonPlan || generatingQuiz) return;
+        if (!session || sections.length === 0 || generatingQuiz) return;
 
         setGeneratingQuiz(true);
         try {
@@ -293,14 +318,7 @@ export default function NoteChat() {
                             Chat
                         </button>
                         <button
-                            onClick={() => {
-                                if (quizQuestions.length === 0) {
-                                    handleGenerateQuiz();
-                                } else {
-                                    setActiveTab("quiz");
-                                }
-                            }}
-                            disabled={generatingQuiz}
+                            onClick={() => setActiveTab("quiz")}
                             className={`px-6 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "quiz" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
                         >
                             {generatingQuiz ? "Generating..." : "Quiz"}
@@ -310,15 +328,23 @@ export default function NoteChat() {
 
                 {/* Quiz tab */}
                 <div className="flex-1 overflow-y-auto" style={{ display: activeTab === "quiz" ? "block" : "none" }}>
-                    <QuizSection
-                        lessonId={noteId}
-                        lessonTitle={noteTitle}
+                    <NoteQuizView
+                        questions={quizQuestions}
+                        title={noteTitle}
                         onClose={() => setActiveTab("chat")}
+                        onRegenerate={handleGenerateQuiz}
+                        regenerating={generatingQuiz}
                     />
                 </div>
 
                 {/* Chat tab */}
                 <div className="flex-1 flex flex-col min-h-0" style={{ display: activeTab === "chat" ? "flex" : "none" }}>
+                    <SectionSelector
+                        sections={sections}
+                        selected={selectedSections}
+                        onChange={setSelectedSections}
+                        disabled={sending}
+                    />
                     <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
                         <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
                             {messages.length === 0 && !sending && (
