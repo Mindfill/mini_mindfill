@@ -42,8 +42,13 @@ export default function NoteQuizView({
     const total = questions.length;
     const current = questions[currentIndex];
 
-    const isCorrect = (q: QuizQuestion, answer: string | null) =>
-        answer != null && normalize(answer) === normalize(q.correct_answer);
+    // `answer` and `correct_answer` are option ids.
+    const isCorrect = (q: QuizQuestion, answerId: string | null) =>
+        answerId != null && normalize(answerId) === normalize(q.correct_answer);
+
+    // Resolve an option id to its display text (falls back to the id itself).
+    const optionText = (q: QuizQuestion, id: string | null) =>
+        (id != null && q.options.find((o) => normalize(o.id) === normalize(id))?.text) || (id ?? "Unanswered");
 
     const score = useMemo(
         () => answers.reduce((acc, a, i) => acc + (isCorrect(questions[i], a) ? 1 : 0), 0),
@@ -197,7 +202,7 @@ export default function NoteQuizView({
                                             Your Answer
                                         </span>
                                         <span className={`text-sm font-medium ${correct ? "text-emerald-500" : "text-red-500"}`}>
-                                            {ans ?? "Unanswered"}
+                                            {optionText(q, ans)}
                                         </span>
                                     </div>
                                     {!correct && (
@@ -205,7 +210,7 @@ export default function NoteQuizView({
                                             <span className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
                                                 Correct Answer
                                             </span>
-                                            <span className="text-sm font-medium text-foreground/90">{q.correct_answer}</span>
+                                            <span className="text-sm font-medium text-foreground/90">{optionText(q, q.correct_answer)}</span>
                                         </div>
                                     )}
                                     {q.explanation && (
@@ -261,8 +266,8 @@ export default function NoteQuizView({
                 </div>
                 <div className="space-y-3">
                     {current.options.map((opt, i) => {
-                        const isSelected = selected === opt;
-                        const isCorrectOpt = normalize(opt) === normalize(current.correct_answer);
+                        const isSelected = selected === opt.id;
+                        const isCorrectOpt = normalize(opt.id) === normalize(current.correct_answer);
                         let btnClass = "border-border hover:bg-muted text-foreground/90";
 
                         if (submitted) {
@@ -279,16 +284,16 @@ export default function NoteQuizView({
 
                         return (
                             <button
-                                key={i}
+                                key={opt.id ?? i}
                                 disabled={submitted}
-                                onClick={() => setSelected(opt)}
+                                onClick={() => setSelected(opt.id)}
                                 className={`w-full text-left p-4 rounded-xl border transition-all duration-200 flex items-start ${btnClass}`}
                             >
                                 <span className="mr-3 text-muted-foreground font-mono text-sm mt-0.5">
                                     {String.fromCharCode(65 + i)}
                                 </span>
                                 <div className="flex-1">
-                                    <MarkdownLatex content={opt} className="text-inherit" />
+                                    <MarkdownLatex content={opt.text} className="text-inherit" />
                                 </div>
                             </button>
                         );
@@ -315,7 +320,7 @@ export default function NoteQuizView({
                         {!answeredCorrect && (
                             <div className="text-sm text-foreground/90 mb-3 flex gap-1">
                                 <span className="text-muted-foreground flex-shrink-0">Correct answer:</span>
-                                <span className="font-medium">{current.correct_answer}</span>
+                                <span className="font-medium">{optionText(current, current.correct_answer)}</span>
                             </div>
                         )}
                         {current.explanation && (

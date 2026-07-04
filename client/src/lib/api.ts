@@ -187,10 +187,16 @@ export interface NoteChatResponse {
     completed?: boolean;
 }
 
+export interface QuizOption {
+    id: string;
+    text: string;
+}
+
 export interface QuizQuestion {
     id?: string;
     question: string;
-    options: string[];
+    options: QuizOption[];
+    /** The `id` of the correct option. */
     correct_answer: string;
     explanation?: string;
 }
