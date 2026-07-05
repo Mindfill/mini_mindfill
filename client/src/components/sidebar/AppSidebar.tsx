@@ -11,7 +11,7 @@ import mindfillLogo from "@/assets/mindfill.png";
 
 interface AppSidebarProps {
     userName: string;
-    activeItem: "home" | "courses" | "notes";
+    activeItem: "home" | "courses" | "notes" | "profile";
     onSignOut: () => void;
 }
 
@@ -135,12 +135,16 @@ export default function AppSidebar({ userName, activeItem, onSignOut }: AppSideb
 
                 {/* User section */}
                 <div className="p-4 border-t border-border flex flex-col gap-2 min-w-[256px]">
-                    <div className="flex items-center gap-3 px-4 py-3">
+                    <button
+                        onClick={() => { navigate("/profile"); if (window.innerWidth < 768) setSidebarOpen(false); }}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl w-full text-left transition-colors ${activeItem === "profile" ? "bg-primary/10" : "hover:bg-card"}`}
+                        data-testid="sidebar-profile"
+                    >
                         <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-bold flex-shrink-0">
                             {userName.charAt(0).toUpperCase()}
                         </div>
-                        <span className="text-sm text-foreground/90 truncate font-medium">{userName}</span>
-                    </div>
+                        <span className={`text-sm truncate font-medium ${activeItem === "profile" ? "text-primary" : "text-foreground/90"}`}>{userName}</span>
+                    </button>
                     <ThemeToggle />
                     <Button
                         variant="outline"

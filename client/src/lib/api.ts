@@ -365,6 +365,61 @@ export async function createCourse(
     return res.json();
 }
 
+// ── PROFILE API ─────────────────────────────────────────────────────────────
+
+export interface Profile {
+    email: string | null;
+    full_name: string | null;
+    /** ISO date string (YYYY-MM-DD) */
+    date_of_birth: string | null;
+}
+
+export interface ProfileUpdate {
+    full_name?: string | null;
+    date_of_birth?: string | null;
+}
+
+/**
+ * Fetch the current user's profile.
+ * GET /profile
+ */
+export async function fetchProfile(accessToken: string): Promise<Profile> {
+    const res = await fetch(`${BACKEND_URL}/profile`, {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to fetch profile: ${res.status} — ${text}`);
+    }
+
+    return res.json();
+}
+
+/**
+ * Create or update the current user's profile.
+ * POST /profile
+ */
+export async function updateProfile(update: ProfileUpdate, accessToken: string): Promise<Profile> {
+    const res = await fetch(`${BACKEND_URL}/profile`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(update),
+    });
+
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to update profile: ${res.status} — ${text}`);
+    }
+
+    return res.json();
+}
+
 /**
  * Generate a quiz for a note
  * POST /notes/{note_id}/quiz
