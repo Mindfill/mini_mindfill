@@ -4,10 +4,12 @@ import { useAuth } from "@/hooks/use-auth";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import { supabase } from "@/lib/supabase";
 import { Note, Course, fetchCourses } from "@/lib/api";
-import { Plus, FileSearch } from "lucide-react";
+import { Plus, FileSearch, FolderPlus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import NoteUploadModal from "@/components/notes/NoteUploadModal";
 import NoteCourseCard from "@/components/notes/NoteCourseCard";
 import NoteCard from "@/components/notes/NoteCard";
+import CreateCourseDialog from "@/components/notes/CreateCourseDialog";
 
 export default function NotesDashboard() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
@@ -19,6 +21,8 @@ export default function NotesDashboard() {
     const [courses, setCourses] = useState<Course[]>([]);
     const [courseStats, setCourseStats] = useState<Record<string, { count: number; progress: number }>>({});
     const [uploadModalOpen, setUploadModalOpen] = useState(false);
+    const [createCourseOpen, setCreateCourseOpen] = useState(false);
+    const { toast } = useToast();
 
     const userName = user?.user_metadata?.full_name || user?.email || "User";
 
@@ -122,6 +126,40 @@ export default function NotesDashboard() {
         }
     }, [session, authLoading, navigate]);
 
+    const assignNoteToCourse = async (noteId: string, courseId: string) => {
+        if (!session) return;
+        try {
+            const { data, error: updateError } = await supabase
+                .from("notes")
+                .update({ course_id: courseId })
+                .eq("id", noteId)
+                .eq("user_id", session.user.id)
+                .select("id");
+
+            if (updateError) throw updateError;
+
+            if (!data || data.length === 0) {
+                // RLS silently blocked the update (no UPDATE policy on notes).
+                toast({
+                    variant: "destructive",
+                    title: "Couldn't move note",
+                    description: "The update was blocked. Add an UPDATE policy on the notes table.",
+                });
+                return;
+            }
+
+            toast({ title: "Note moved", description: "Added to the course." });
+            loadNotes();
+        } catch (err: any) {
+            console.error("Failed to assign note to course:", err);
+            toast({
+                variant: "destructive",
+                title: "Couldn't move note",
+                description: err.message || "Please try again.",
+            });
+        }
+    };
+
     const handleSignOut = async () => {
         await supabaseSignOut();
         navigate("/login");
@@ -187,12 +225,20 @@ export default function NotesDashboard() {
                             <h1 className="text-2xl font-semibold tracking-tight">Your Notes</h1>
                             <p className="text-muted-foreground text-sm">Upload PDFs and learn interactively</p>
                         </div>
-                        <button
-                            onClick={() => setUploadModalOpen(true)}
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2.5 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 flex-shrink-0"
-                        >
-                            <Plus className="w-4 h-4" /> Upload Note
-                        </button>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                            <button
+                                onClick={() => setCreateCourseOpen(true)}
+                                className="border border-border hover:bg-muted text-foreground px-4 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2"
+                            >
+                                <FolderPlus className="w-4 h-4" /> New Course
+                            </button>
+                            <button
+                                onClick={() => setUploadModalOpen(true)}
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2.5 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
+                            >
+                                <Plus className="w-4 h-4" /> Upload Note
+                            </button>
+                        </div>
                     </div>
 
                     {showBigEmptyState ? (
@@ -245,7 +291,12 @@ export default function NotesDashboard() {
                                     )}
                                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                                         {looseNotes.map((note) => (
-                                            <NoteCard key={note.id} note={note} />
+                                            <NoteCard
+                                                key={note.id}
+                                                note={note}
+                                                courses={courses}
+                                                onAssign={(courseId) => assignNoteToCourse(note.id, courseId)}
+                                            />
                                         ))}
                                     </div>
                                 </section>
@@ -259,6 +310,16 @@ export default function NotesDashboard() {
                 isOpen={uploadModalOpen}
                 onClose={() => setUploadModalOpen(false)}
                 onUploadSuccess={loadNotes}
+            />
+
+            <CreateCourseDialog
+                isOpen={createCourseOpen}
+                onClose={() => setCreateCourseOpen(false)}
+                onCreated={() => {
+                    setCreateCourseOpen(false);
+                    toast({ title: "Course created", description: "Your new course is ready." });
+                    loadNotes();
+                }}
             />
         </div>
     );
