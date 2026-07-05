@@ -29,6 +29,7 @@ export default function NoteChat() {
 
     const [noteTitle, setNoteTitle] = useState("Note");
     const [loading, setLoading] = useState(true);
+    const [hasLoaded, setHasLoaded] = useState(false);
     const [onboarding, setOnboarding] = useState(false);
     const [messages, setMessages] = useState<NoteChatMessage[]>([]);
     const [sending, setSending] = useState(false);
@@ -98,6 +99,7 @@ export default function NoteChat() {
             setError("Could not load note data");
         } finally {
             setLoading(false);
+            setHasLoaded(true);
         }
     };
 
@@ -197,7 +199,7 @@ export default function NoteChat() {
         }
     };
 
-    if (authLoading || (loading && !error)) {
+    if (authLoading || (loading && !hasLoaded && !error)) {
         return (
             <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
                 <AppSidebar userName={userName} activeItem="courses" onSignOut={handleSignOut} />

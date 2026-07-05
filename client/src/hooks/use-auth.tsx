@@ -38,13 +38,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         getInitialSession();
 
-        // 2. Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            if (mounted) {
-                setSession(session);
-                setUser(session?.user ?? null);
-                setIsLoading(false);
-            }
+        // 2. Listen for auth changes.
+        //    Supabase re-emits SIGNED_IN / TOKEN_REFRESHED every time the tab
+        //    regains focus. Only update state when the token actually changes,
+        //    otherwise a new session object reference would churn every consumer
+        //    on each tab switch (which unmounts in-flight UI like the upload modal).
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+            if (!mounted) return;
+            setSession((prev) =>
+                prev?.access_token === newSession?.access_token ? prev : newSession
+            );
+            setUser((prev) =>
+                prev?.id === newSession?.user?.id ? prev : newSession?.user ?? null
+            );
+            setIsLoading(false);
         });
 
         return () => {

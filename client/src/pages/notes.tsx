@@ -11,6 +11,7 @@ export default function NotesDashboard() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
     const [, navigate] = useLocation();
     const [loading, setLoading] = useState(true);
+    const [hasLoaded, setHasLoaded] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [notes, setNotes] = useState<Note[]>([]);
     const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -64,6 +65,7 @@ export default function NotesDashboard() {
             setError("Unable to load your notes");
         } finally {
             setLoading(false);
+            setHasLoaded(true);
         }
     };
 
@@ -89,7 +91,7 @@ export default function NotesDashboard() {
         return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     };
 
-    if (authLoading || loading) {
+    if (authLoading || (loading && !hasLoaded)) {
         return (
             <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
                 <AppSidebar userName={userName || "Loading..."} activeItem="home" onSignOut={handleSignOut} />
