@@ -92,7 +92,7 @@ export function DropReviewDialog({ accessToken, triggerButton }: DropReviewDialo
                             placeholder="What could be better?"
                             value={suggestion}
                             onChange={(e) => setSuggestion(e.target.value)}
-                            className="min-h-[100px] bg-card border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-[#F59E0B] resize-none"
+                            className="min-h-[100px] bg-card border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary resize-none"
                             required
                             disabled={isSubmitting}
                         />
