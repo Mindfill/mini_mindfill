@@ -12,6 +12,7 @@ import Dashboard from "@/pages/dashboard";
 import Courses from "@/pages/courses";
 import LessonChat from "@/pages/lesson-chat";
 import Notes from "@/pages/notes";
+import CourseNotes from "@/pages/course-notes";
 import NoteChat from "@/pages/note-chat";
 
 function Router() {
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/courses" component={Courses} />
       <Route path="/lessons/:lessonSlug" component={LessonChat} />
       <Route path="/notes" component={Notes} />
+      <Route path="/notes/course/:courseId" component={CourseNotes} />
       <Route path="/notes/:noteId" component={NoteChat} />
       <Route path="/waitlist" component={Waitlist} />
       <Route component={NotFound} />
