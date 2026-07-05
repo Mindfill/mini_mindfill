@@ -101,7 +101,7 @@ export function DropReviewDialog({ accessToken, triggerButton }: DropReviewDialo
                         <Button
                             type="submit"
                             disabled={isSubmitting || !name.trim() || !suggestion.trim()}
-                            className="bg-primary text-black hover:bg-[hsl(158,100%,45%)] font-medium gap-2"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium gap-2"
                         >
                             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
                             Submit Suggestion
