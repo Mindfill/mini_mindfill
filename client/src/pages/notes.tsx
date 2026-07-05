@@ -4,9 +4,10 @@ import { useAuth } from "@/hooks/use-auth";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import { supabase } from "@/lib/supabase";
 import { Note, Course, fetchCourses } from "@/lib/api";
-import { FileText, Plus, FileSearch, ArrowLeft } from "lucide-react";
+import { Plus, FileSearch } from "lucide-react";
 import NoteUploadModal from "@/components/notes/NoteUploadModal";
 import NoteCourseCard from "@/components/notes/NoteCourseCard";
+import NoteCard from "@/components/notes/NoteCard";
 
 export default function NotesDashboard() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
@@ -17,7 +18,6 @@ export default function NotesDashboard() {
     const [notes, setNotes] = useState<Note[]>([]);
     const [courses, setCourses] = useState<Course[]>([]);
     const [courseStats, setCourseStats] = useState<Record<string, { count: number; progress: number }>>({});
-    const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
     const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
     const userName = user?.user_metadata?.full_name || user?.email || "User";
@@ -127,12 +127,6 @@ export default function NotesDashboard() {
         navigate("/login");
     };
 
-    const formatFileSize = (bytes: number) => {
-        if (bytes < 1024) return `${bytes} B`;
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-    };
-
     if (authLoading || (loading && !hasLoaded)) {
         return (
             <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
@@ -174,10 +168,6 @@ export default function NotesDashboard() {
     }
 
     const looseNotes = notes.filter((n) => !n.course_id);
-    const selectedCourse = courses.find((c) => c.id === selectedCourseId) || null;
-    const notesToShow = selectedCourse
-        ? notes.filter((n) => n.course_id === selectedCourse.id)
-        : looseNotes;
     const showBigEmptyState = notes.length === 0 && courses.length === 0;
 
     return (
@@ -194,27 +184,8 @@ export default function NotesDashboard() {
                     {/* Header */}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
-                            {selectedCourse ? (
-                                <>
-                                    <button
-                                        onClick={() => setSelectedCourseId(null)}
-                                        className="text-muted-foreground hover:text-foreground transition-all text-xs font-bold tracking-widest uppercase flex items-center gap-1 mb-2"
-                                    >
-                                        <ArrowLeft className="w-3 h-3" /> All Courses
-                                    </button>
-                                    <h1 className="text-2xl font-semibold tracking-tight">
-                                        {selectedCourse.course_code || selectedCourse.name}
-                                    </h1>
-                                    <p className="text-muted-foreground text-sm">
-                                        {selectedCourse.course_code ? selectedCourse.name : "Course notes"}
-                                    </p>
-                                </>
-                            ) : (
-                                <>
-                                    <h1 className="text-2xl font-semibold tracking-tight">Your Notes</h1>
-                                    <p className="text-muted-foreground text-sm">Upload PDFs and learn interactively</p>
-                                </>
-                            )}
+                            <h1 className="text-2xl font-semibold tracking-tight">Your Notes</h1>
+                            <p className="text-muted-foreground text-sm">Upload PDFs and learn interactively</p>
                         </div>
                         <button
                             onClick={() => setUploadModalOpen(true)}
@@ -243,8 +214,8 @@ export default function NotesDashboard() {
                         </div>
                     ) : (
                         <>
-                            {/* Courses grid — default view only */}
-                            {!selectedCourse && courses.length > 0 && (
+                            {/* Courses grid — each card opens its own route */}
+                            {courses.length > 0 && (
                                 <section className="space-y-4">
                                     <h2 className="text-xs font-bold tracking-widest uppercase text-muted-foreground">
                                         Courses
@@ -257,70 +228,28 @@ export default function NotesDashboard() {
                                                 name={c.name}
                                                 noteCount={courseStats[c.id!]?.count || 0}
                                                 progress={courseStats[c.id!]?.progress || 0}
-                                                onClick={() => setSelectedCourseId(c.id!)}
+                                                onClick={() => navigate(`/notes/course/${c.id}`)}
                                             />
                                         ))}
                                     </div>
                                 </section>
                             )}
 
-                            {/* Notes grid — loose notes (default) or the selected course's notes */}
-                            <section className="space-y-4">
-                                {!selectedCourse && courses.length > 0 && looseNotes.length > 0 && (
-                                    <h2 className="text-xs font-bold tracking-widest uppercase text-muted-foreground">
-                                        Uncategorized Notes
-                                    </h2>
-                                )}
-
-                                {notesToShow.length > 0 ? (
+                            {/* Uncategorized notes (notes not assigned to any course) */}
+                            {looseNotes.length > 0 && (
+                                <section className="space-y-4">
+                                    {courses.length > 0 && (
+                                        <h2 className="text-xs font-bold tracking-widest uppercase text-muted-foreground">
+                                            Uncategorized Notes
+                                        </h2>
+                                    )}
                                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                        {notesToShow.map((note) => (
-                                            <div
-                                                key={note.id}
-                                                onClick={() => navigate(`/notes/${note.id}`)}
-                                                className="group cursor-pointer p-6 rounded-3xl border border-border bg-card hover:bg-card transition-all hover:shadow-lg hover:scale-[1.02] duration-300"
-                                            >
-                                                <div className="flex flex-col gap-4">
-                                                    {/* Icon */}
-                                                    <div className="p-4 rounded-2xl bg-primary/10 w-fit">
-                                                        <FileText className="w-8 h-8 text-primary" />
-                                                    </div>
-
-                                                    {/* Content */}
-                                                    <div>
-                                                        <h3 className="font-bold text-xl mb-1">{note.title}</h3>
-                                                        <p className="text-muted-foreground text-sm mb-2">
-                                                            {note.file_name}
-                                                        </p>
-                                                        <div className="space-y-2">
-                                                            <p className="text-xs text-muted-foreground">
-                                                                {formatFileSize(note.file_size_bytes)}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                        {looseNotes.map((note) => (
+                                            <NoteCard key={note.id} note={note} />
                                         ))}
                                     </div>
-                                ) : selectedCourse ? (
-                                    /* Empty state — inside a course with no notes */
-                                    <div className="rounded-3xl p-10 border border-border bg-card text-center">
-                                        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                                            <FileSearch className="w-8 h-8 text-primary" />
-                                        </div>
-                                        <h3 className="text-xl font-semibold mb-2">No notes in this course yet</h3>
-                                        <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-                                            Upload a note and assign it to this course to get started.
-                                        </p>
-                                        <button
-                                            onClick={() => setUploadModalOpen(true)}
-                                            className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] inline-flex items-center gap-2"
-                                        >
-                                            <Plus className="w-4 h-4" /> Upload Note
-                                        </button>
-                                    </div>
-                                ) : null}
-                            </section>
+                                </section>
+                            )}
                         </>
                     )}
                 </main>

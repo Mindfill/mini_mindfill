@@ -11,16 +11,18 @@ interface NoteUploadModalProps {
     isOpen: boolean;
     onClose: () => void;
     onUploadSuccess: () => void;
+    /** Pre-select this course when the modal opens (e.g. from a course page). */
+    defaultCourseId?: string;
 }
 
-export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess }: NoteUploadModalProps) {
+export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess, defaultCourseId = "" }: NoteUploadModalProps) {
     const { session } = useAuth();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [step, setStep] = useState<"upload" | "processing" | "success">("upload");
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [title, setTitle] = useState("");
-    const [courseId, setCourseId] = useState<string>("");
+    const [courseId, setCourseId] = useState<string>(defaultCourseId);
     const [courses, setCourses] = useState<Course[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -34,7 +36,7 @@ export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess }: No
         setStep("upload");
         setSelectedFile(null);
         setTitle("");
-        setCourseId("");
+        setCourseId(defaultCourseId);
         setError(null);
         setLoading(false);
         setShowCreateCourse(false);
@@ -117,8 +119,9 @@ export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess }: No
     useEffect(() => {
         if (isOpen) {
             loadCourses();
+            setCourseId(defaultCourseId);
         }
-    }, [isOpen, session]);
+    }, [isOpen, session, defaultCourseId]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
