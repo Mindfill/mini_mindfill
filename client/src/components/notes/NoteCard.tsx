@@ -1,5 +1,5 @@
 import { useLocation } from "wouter";
-import { FileText } from "lucide-react";
+import { FileText, FolderMinus } from "lucide-react";
 import type { Note, Course } from "@/lib/api";
 
 function formatFileSize(bytes: number) {
@@ -13,10 +13,12 @@ interface NoteCardProps {
     /** When provided, shows an "Add to course" selector on the card. */
     courses?: Course[];
     onAssign?: (courseId: string) => void;
+    /** When provided, shows a "Remove from course" button on the card. */
+    onRemoveFromCourse?: () => void;
 }
 
 /** A single note tile that navigates to the note chat on click. */
-export default function NoteCard({ note, courses, onAssign }: NoteCardProps) {
+export default function NoteCard({ note, courses, onAssign, onRemoveFromCourse }: NoteCardProps) {
     const [, navigate] = useLocation();
     const showAssign = !!onAssign && !!courses && courses.length > 0;
 
@@ -59,6 +61,18 @@ export default function NoteCard({ note, courses, onAssign }: NoteCardProps) {
                                 </option>
                             ))}
                         </select>
+                    </div>
+                )}
+
+                {/* Remove from course (stops propagation so it doesn't open the note) */}
+                {onRemoveFromCourse && (
+                    <div onClick={(e) => e.stopPropagation()}>
+                        <button
+                            onClick={onRemoveFromCourse}
+                            className="w-full text-xs text-muted-foreground hover:text-red-400 border border-border hover:border-red-400/40 rounded-lg px-2 py-2 transition-colors flex items-center justify-center gap-1.5"
+                        >
+                            <FolderMinus className="w-3.5 h-3.5" /> Remove from course
+                        </button>
                     </div>
                 )}
             </div>

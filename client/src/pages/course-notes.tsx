@@ -6,6 +6,7 @@ import { Note, Course, fetchCourses } from "@/lib/api";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import NoteUploadModal from "@/components/notes/NoteUploadModal";
 import NoteCard from "@/components/notes/NoteCard";
+import { useToast } from "@/hooks/use-toast";
 import { Plus, FileSearch, ArrowLeft } from "lucide-react";
 
 export default function CourseNotes() {
@@ -22,6 +23,41 @@ export default function CourseNotes() {
     const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
     const userName = user?.user_metadata?.full_name || user?.email || "User";
+    const { toast } = useToast();
+
+    const removeNoteFromCourse = async (noteId: string) => {
+        if (!session) return;
+        try {
+            const { data, error: updateError } = await supabase
+                .from("notes")
+                .update({ course_id: null })
+                .eq("id", noteId)
+                .eq("user_id", session.user.id)
+                .select("id");
+
+            if (updateError) throw updateError;
+
+            if (!data || data.length === 0) {
+                // RLS silently blocked the update (no UPDATE policy on notes).
+                toast({
+                    variant: "destructive",
+                    title: "Couldn't remove note",
+                    description: "The update was blocked. Add an UPDATE policy on the notes table.",
+                });
+                return;
+            }
+
+            toast({ title: "Note removed", description: "Moved back to uncategorized." });
+            loadData();
+        } catch (err: any) {
+            console.error("Failed to remove note from course:", err);
+            toast({
+                variant: "destructive",
+                title: "Couldn't remove note",
+                description: err.message || "Please try again.",
+            });
+        }
+    };
 
     const loadData = async () => {
         if (!session || !courseId) return;
@@ -141,7 +177,11 @@ export default function CourseNotes() {
                     {notes.length > 0 ? (
                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                             {notes.map((note) => (
-                                <NoteCard key={note.id} note={note} />
+                                <NoteCard
+                                    key={note.id}
+                                    note={note}
+                                    onRemoveFromCourse={() => removeNoteFromCourse(note.id)}
+                                />
                             ))}
                         </div>
                     ) : (
