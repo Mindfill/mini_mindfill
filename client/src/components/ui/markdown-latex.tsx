@@ -7,18 +7,41 @@ import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 interface MarkdownLatexProps {
     content: string;
     className?: string;
+    /** Render inline (span wrapper, no block paragraphs) — for chips, labels, table cells. */
+    inline?: boolean;
 }
 
 /**
  * Renders Markdown with inline and block LaTeX math via KaTeX.
  * Also includes premium code syntax highlighting.
  */
-export default function MarkdownLatex({ content, className = "" }: MarkdownLatexProps) {
-    const processedContent = content
+export default function MarkdownLatex({ content, className = "", inline = false }: MarkdownLatexProps) {
+    const processedContent = (content ?? "")
         .replace(/\\\[/g, () => "$$")
         .replace(/\\\]/g, () => "$$")
         .replace(/\\\(/g, () => "$")
         .replace(/\\\)/g, () => "$");
+
+    // Inline mode: render into a span with no block paragraphs, so it can live
+    // inside chips/labels without breaking flex or truncate layouts. Math still
+    // renders via KaTeX; only the paragraph wrapper is flattened.
+    if (inline) {
+        return (
+            <span className={className}>
+                <ReactMarkdown
+                    remarkPlugins={[remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                    components={{
+                        p: ({ children }) => <>{children}</>,
+                        strong: ({ children }) => <strong className="font-bold text-inherit">{children}</strong>,
+                        em: ({ children }) => <em className="italic text-inherit">{children}</em>,
+                    }}
+                >
+                    {processedContent}
+                </ReactMarkdown>
+            </span>
+        );
+    }
 
     return (
         <div className={`prose prose-sm dark:prose-invert max-w-none ${className}`}>

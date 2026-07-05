@@ -1,4 +1,5 @@
 import { Check, Layers } from "lucide-react";
+import MarkdownLatex from "@/components/ui/markdown-latex";
 
 export interface PlanSection {
     id: string;
@@ -72,7 +73,7 @@ export default function SectionSelector({
                             className={chipClass(active)}
                         >
                             {active && <Check className="w-3 h-3 flex-shrink-0" />}
-                            <span className="truncate max-w-[180px]">{s.title}</span>
+                            <MarkdownLatex inline content={s.title} className="truncate max-w-[180px] inline-block align-middle" />
                         </button>
                     );
                 })}

@@ -643,7 +643,7 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
                             return (
                                 <div key={i} className={`p-6 rounded-2xl border ${isCorrect ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-red-500/20 bg-red-500/5'}`}>
                                     <div className="flex items-start justify-between gap-4 mb-4">
-                                        <h4 className="text-lg font-medium text-foreground">{i + 1}. {q.question}</h4>
+                                        <div className="flex-1"><MarkdownLatex content={`${i + 1}. ${q.question}`} className="text-lg font-medium text-foreground" /></div>
                                         {isCorrect ? (
                                             <span className="flex items-center gap-1 text-emerald-500 font-medium text-sm bg-emerald-500/10 px-3 py-1 rounded-full"><CheckCircle className="w-4 h-4" /> Correct</span>
                                         ) : (
@@ -654,17 +654,17 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
                                     <div className="space-y-3 mb-6">
                                         <div className="flex flex-col">
                                             <span className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Your Answer</span>
-                                            <span className={`text-sm font-medium ${isCorrect ? 'text-emerald-500' : 'text-red-500'}`}>{studentAnsText}</span>
+                                            <MarkdownLatex content={studentAnsText} className={`text-sm font-medium ${isCorrect ? 'text-emerald-500' : 'text-red-500'}`} />
                                         </div>
                                         {!isCorrect && (
                                             <div className="flex flex-col">
                                                 <span className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Correct Answer</span>
-                                                <span className="text-sm font-medium text-foreground/90">{correctAnsText}</span>
+                                                <MarkdownLatex content={correctAnsText} className="text-sm font-medium text-foreground/90" />
                                             </div>
                                         )}
                                         <div className="flex flex-col pt-3 border-t border-border/50">
                                             <span className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Explanation</span>
-                                            <span className="text-sm text-foreground/80 leading-relaxed">{q.explanation}</span>
+                                            <MarkdownLatex content={q.explanation} className="text-sm text-foreground/80 leading-relaxed" />
                                         </div>
                                     </div>
 

@@ -201,16 +201,14 @@ export default function NoteQuizView({
                                         <span className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
                                             Your Answer
                                         </span>
-                                        <span className={`text-sm font-medium ${correct ? "text-emerald-500" : "text-red-500"}`}>
-                                            {optionText(q, ans)}
-                                        </span>
+                                        <MarkdownLatex content={optionText(q, ans)} className={`text-sm font-medium ${correct ? "text-emerald-500" : "text-red-500"}`} />
                                     </div>
                                     {!correct && (
                                         <div className="flex flex-col">
                                             <span className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
                                                 Correct Answer
                                             </span>
-                                            <span className="text-sm font-medium text-foreground/90">{optionText(q, q.correct_answer)}</span>
+                                            <MarkdownLatex content={optionText(q, q.correct_answer)} className="text-sm font-medium text-foreground/90" />
                                         </div>
                                     )}
                                     {q.explanation && (
@@ -320,7 +318,7 @@ export default function NoteQuizView({
                         {!answeredCorrect && (
                             <div className="text-sm text-foreground/90 mb-3 flex gap-1">
                                 <span className="text-muted-foreground flex-shrink-0">Correct answer:</span>
-                                <span className="font-medium">{optionText(current, current.correct_answer)}</span>
+                                <MarkdownLatex content={optionText(current, current.correct_answer)} className="font-medium" />
                             </div>
                         )}
                         {current.explanation && (
