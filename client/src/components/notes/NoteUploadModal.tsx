@@ -307,6 +307,7 @@ export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess, defa
                                             <div>
                                                 <p className="font-medium text-muted-foreground">Click to upload PDF</p>
                                                 <p className="text-muted-foreground text-xs">or drag and drop</p>
+                                                <p className="text-muted-foreground/70 text-xs mt-1">Max 80 pages · 20MB</p>
                                             </div>
                                         </div>
                                     )}

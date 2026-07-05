@@ -80,7 +80,7 @@ async def upload_note(
     try:
         pages = []
         with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
-            if len(pdf.pages) > 70:
+            if len(pdf.pages) > 80:
                 await supabase.storage.from_("notes-pdfs").remove([storage_path])
                 raise HTTPException(status_code=400, detail="PDF exceeds 80 page limit.")
 
