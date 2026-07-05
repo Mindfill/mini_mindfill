@@ -1,6 +1,6 @@
 import { useLocation } from "wouter";
 import { FileText } from "lucide-react";
-import type { Note } from "@/lib/api";
+import type { Note, Course } from "@/lib/api";
 
 function formatFileSize(bytes: number) {
     if (bytes < 1024) return `${bytes} B`;
@@ -8,9 +8,17 @@ function formatFileSize(bytes: number) {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+interface NoteCardProps {
+    note: Note;
+    /** When provided, shows an "Add to course" selector on the card. */
+    courses?: Course[];
+    onAssign?: (courseId: string) => void;
+}
+
 /** A single note tile that navigates to the note chat on click. */
-export default function NoteCard({ note }: { note: Note }) {
+export default function NoteCard({ note, courses, onAssign }: NoteCardProps) {
     const [, navigate] = useLocation();
+    const showAssign = !!onAssign && !!courses && courses.length > 0;
 
     return (
         <div
@@ -31,6 +39,28 @@ export default function NoteCard({ note }: { note: Note }) {
                         <p className="text-xs text-muted-foreground">{formatFileSize(note.file_size_bytes)}</p>
                     </div>
                 </div>
+
+                {/* Assign to a course (stops propagation so it doesn't open the note) */}
+                {showAssign && (
+                    <div onClick={(e) => e.stopPropagation()}>
+                        <select
+                            value=""
+                            onChange={(e) => {
+                                if (e.target.value) onAssign!(e.target.value);
+                            }}
+                            className="w-full text-xs bg-muted border border-border rounded-lg px-2 py-2 text-foreground/80 focus:outline-none focus:border-primary/50 cursor-pointer"
+                        >
+                            <option value="" disabled>
+                                Add to course…
+                            </option>
+                            {courses!.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                    {c.course_code ? `${c.course_code} — ${c.name}` : c.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
             </div>
         </div>
     );
