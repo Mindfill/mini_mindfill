@@ -51,7 +51,7 @@ export function DropReviewDialog({ accessToken, triggerButton }: DropReviewDialo
             <DialogTrigger asChild>
                 {triggerButton || (
                     <button
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-primary bg-primary/10 hover:bg-primary/20 shadow-[0_0_15px_rgba(245, 158, 11,0.2)] hover:shadow-[0_0_20px_rgba(245, 158, 11,0.4)] border border-primary/20"
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20"
                         data-testid="sidebar-drop-review"
                     >
                         <MessageSquarePlus className="w-5 h-5" />
