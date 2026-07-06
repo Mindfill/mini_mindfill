@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Home, BookOpen, Clock, LogOut, Menu, X, FileText } from "lucide-react";
+import { Home, BookOpen, LogOut, Menu, X, FileText } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { DropReviewDialog } from "./DropReviewDialog";
@@ -18,16 +18,14 @@ interface AppSidebarProps {
 type SidebarNavItem = {
     icon: React.ReactNode;
     label: string;
-    key: "home" | "courses" | "notes" | "coming-soon";
-    path?: string;
-    comingSoon?: boolean;
+    key: "home" | "courses" | "notes";
+    path: string;
 };
 
 const navItems: SidebarNavItem[] = [
     { icon: <Home className="w-5 h-5" />, label: "Home", key: "home", path: "/dashboard" },
     { icon: <BookOpen className="w-5 h-5" />, label: "Courses", key: "courses", path: "/courses" },
     { icon: <FileText className="w-5 h-5" />, label: "Notes", key: "notes", path: "/notes" },
-    { icon: <Clock className="w-5 h-5" />, label: "Coming Soon", key: "coming-soon", comingSoon: true },
 ];
 
 export default function AppSidebar({ userName, activeItem, onSignOut }: AppSidebarProps) {
@@ -106,24 +104,15 @@ export default function AppSidebar({ userName, activeItem, onSignOut }: AppSideb
                                         ? "bg-primary/10 text-primary"
                                         : "text-muted-foreground hover:text-foreground hover:bg-card"
                                     }
-                  ${item.comingSoon ? "opacity-50 cursor-not-allowed" : ""}
                 `}
-                                disabled={item.comingSoon}
                                 onClick={() => {
-                                    if (item.path && !item.comingSoon) {
-                                        navigate(item.path);
-                                        setSidebarOpen(false);
-                                    }
+                                    navigate(item.path);
+                                    setSidebarOpen(false);
                                 }}
                                 data-testid={`sidebar-${item.key}`}
                             >
                                 {item.icon}
                                 {item.label}
-                                {item.comingSoon && (
-                                    <span className="ml-auto text-[10px] uppercase tracking-wider bg-muted px-2 py-0.5 rounded-full">
-                                        Soon
-                                    </span>
-                                )}
                             </button>
                         );
                     })}
