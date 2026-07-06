@@ -68,8 +68,10 @@ async def get_profile(
         logger.exception("Failed to fetch profile", extra={"user_id": user_id})
         raise HTTPException(status_code=500, detail=f"Failed to fetch profile: {e}")
 
-    email = auth_res.user.email if auth_res and auth_res.user else None
-    profile = profile_res.data or {}
+    # Guard against a user with no profile row yet: maybe_single() returns None
+    # for 0 rows in this supabase version, so profile_res / auth_res may be None.
+    email = auth_res.user.email if auth_res and getattr(auth_res, "user", None) else None
+    profile = (profile_res.data if profile_res else None) or {}
 
     return {
         "email": email,
