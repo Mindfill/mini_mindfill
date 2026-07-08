@@ -1,5 +1,5 @@
 import { useLocation } from "wouter";
-import { FileText, FolderMinus } from "lucide-react";
+import { FileText, FolderMinus, BookOpen } from "lucide-react";
 import type { Note, Course } from "@/lib/api";
 
 function formatFileSize(bytes: number) {
@@ -28,9 +28,24 @@ export default function NoteCard({ note, courses, onAssign, onRemoveFromCourse }
             className="group cursor-pointer p-6 rounded-3xl border border-border bg-card hover:bg-card transition-all hover:shadow-lg hover:scale-[1.02] duration-300"
         >
             <div className="flex flex-col gap-4">
-                {/* Icon */}
-                <div className="p-4 rounded-2xl bg-primary/10 w-fit">
-                    <FileText className="w-8 h-8 text-primary" />
+                {/* Icon + open-PDF action */}
+                <div className="flex items-start justify-between gap-2">
+                    <div className="p-4 rounded-2xl bg-primary/10 w-fit">
+                        <FileText className="w-8 h-8 text-primary" />
+                    </div>
+                    {note.file_url && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/notes/${note.id}/read`);
+                            }}
+                            className="text-muted-foreground hover:text-foreground border border-border hover:border-primary/40 rounded-full p-2 transition-colors flex-shrink-0"
+                            aria-label="Read PDF"
+                            title="Read PDF"
+                        >
+                            <BookOpen className="w-4 h-4" />
+                        </button>
+                    )}
                 </div>
 
                 {/* Content */}

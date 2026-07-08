@@ -14,6 +14,7 @@ import LessonChat from "@/pages/lesson-chat";
 import Notes from "@/pages/notes";
 import CourseNotes from "@/pages/course-notes";
 import NoteChat from "@/pages/note-chat";
+import NoteReader from "@/pages/note-reader";
 import Profile from "@/pages/profile";
 
 function Router() {
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/lessons/:lessonSlug" component={LessonChat} />
       <Route path="/notes" component={Notes} />
       <Route path="/notes/course/:courseId" component={CourseNotes} />
+      <Route path="/notes/:noteId/read" component={NoteReader} />
       <Route path="/notes/:noteId" component={NoteChat} />
       <Route path="/profile" component={Profile} />
       <Route path="/waitlist" component={Waitlist} />
