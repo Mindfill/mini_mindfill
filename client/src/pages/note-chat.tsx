@@ -408,16 +408,14 @@ export default function NoteChat() {
                             <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
                         </button>
                         {noteUrl && (
-                            <a
-                                href={noteUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                            <button
+                                onClick={() => navigate(`/notes/${noteId}/read`)}
                                 className="text-muted-foreground hover:text-foreground border border-border hover:border-primary/40 rounded-full p-2 transition-colors"
-                                aria-label="View PDF"
-                                title="View PDF"
+                                aria-label="Read PDF"
+                                title="Read PDF"
                             >
                                 <FileText className="w-4 h-4" />
-                            </a>
+                            </button>
                         )}
                         <div className="flex items-center bg-muted rounded-full p-1 border border-border">
                             <button
