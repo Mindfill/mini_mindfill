@@ -206,6 +206,33 @@ export interface QuizResponse {
     questions: QuizQuestion[];
 }
 
+export interface QuizSectionOption {
+    id: string;
+    title: string;
+}
+
+/**
+ * Fetch the note's sections (id + title) for the quiz section picker.
+ * GET /quiz/{note_id}
+ */
+export async function fetchQuizSections(
+    noteId: string,
+    accessToken: string
+): Promise<QuizSectionOption[]> {
+    const res = await fetch(`${BACKEND_URL}/quiz/${noteId}`, {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to fetch quiz sections: ${res.status} — ${text}`);
+    }
+
+    return res.json();
+}
+
 /**
  * Upload a PDF note
  * POST /notes/upload

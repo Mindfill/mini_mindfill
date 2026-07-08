@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import type { QuizQuestion } from "@/lib/api";
+import { useEffect, useMemo, useState } from "react";
+import { fetchQuizSections, type QuizQuestion, type QuizSectionOption } from "@/lib/api";
 import MarkdownLatex from "@/components/ui/markdown-latex";
 import {
     CheckCircle,
@@ -9,35 +9,91 @@ import {
     RefreshCw,
     Sparkles,
     ArrowLeft,
+    Check,
 } from "lucide-react";
 
 interface NoteQuizViewProps {
     questions: QuizQuestion[];
     title: string;
+    noteId: string;
+    accessToken: string;
     onClose: () => void;
-    onRegenerate: () => void;
-    regenerating?: boolean;
+    /** Generate a quiz for the chosen section ids. */
+    onGenerate: (sectionIds: string[]) => void;
+    /** Clear the current quiz to return to the section picker. */
+    onClearQuiz: () => void;
+    generating?: boolean;
 }
 
 const normalize = (s: string) => (s ?? "").trim();
 
 /**
- * Interactive multiple-choice quiz driven entirely by the questions returned
- * from POST /notes/{note_id}/quiz. Correctness is evaluated locally by
- * matching the selected option against `correct_answer`.
+ * Interactive multiple-choice quiz. The section picker fetches sections from
+ * GET /quiz/{note_id}; the chosen section ids are sent to POST
+ * /notes/{note_id}/quiz. Correctness is evaluated locally against `correct_answer`.
  */
 export default function NoteQuizView({
     questions,
     title,
+    noteId,
+    accessToken,
     onClose,
-    onRegenerate,
-    regenerating = false,
+    onGenerate,
+    onClearQuiz,
+    generating = false,
 }: NoteQuizViewProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selected, setSelected] = useState<string | null>(null);
     const [submitted, setSubmitted] = useState(false);
     const [answers, setAnswers] = useState<(string | null)[]>([]);
     const [finished, setFinished] = useState(false);
+
+    // Section picker state (shown when there's no quiz yet)
+    const [sectionOptions, setSectionOptions] = useState<QuizSectionOption[]>([]);
+    const [selectedSectionIds, setSelectedSectionIds] = useState<string[]>([]);
+    const [loadingSections, setLoadingSections] = useState(false);
+    const [sectionsError, setSectionsError] = useState<string | null>(null);
+
+    const showPicker = questions.length === 0;
+
+    // Load sections whenever we're on the picker.
+    useEffect(() => {
+        if (!showPicker || !noteId || !accessToken) return;
+        let cancelled = false;
+        setLoadingSections(true);
+        setSectionsError(null);
+        fetchQuizSections(noteId, accessToken)
+            .then((secs) => {
+                if (!cancelled) setSectionOptions(secs);
+            })
+            .catch((err) => {
+                console.error("Failed to load quiz sections:", err);
+                if (!cancelled) setSectionsError("Couldn't load sections. Make sure the note has been onboarded first.");
+            })
+            .finally(() => {
+                if (!cancelled) setLoadingSections(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [showPicker, noteId, accessToken]);
+
+    const toggleSection = (id: string) => {
+        setSelectedSectionIds((prev) =>
+            prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
+        );
+    };
+
+    const allSelected = sectionOptions.length > 0 && selectedSectionIds.length === sectionOptions.length;
+    const toggleAll = () => {
+        setSelectedSectionIds(allSelected ? [] : sectionOptions.map((s) => s.id));
+    };
+
+    const handleNewQuiz = () => {
+        reset();
+        setSelectedSectionIds([]);
+        onClearQuiz();
+    };
 
     const total = questions.length;
     const current = questions[currentIndex];
@@ -83,32 +139,92 @@ export default function NoteQuizView({
         }
     };
 
-    // ── Empty / not-yet-generated state ───────────────────────────────────
-    if (total === 0) {
+    // ── Section picker (shown when there's no quiz yet) ───────────────────
+    if (showPicker) {
         return (
-            <div className="max-w-2xl mx-auto py-16 px-6 text-center flex flex-col items-center">
-                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
-                    <Sparkles className="w-8 h-8 text-primary" />
+            <div className="max-w-2xl mx-auto py-12 px-6">
+                <div className="flex flex-col items-center text-center mb-8">
+                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
+                        <Sparkles className="w-8 h-8 text-primary" />
+                    </div>
+                    <h2 className="text-xl font-bold text-foreground mb-2">Build a quiz</h2>
+                    <p className="text-muted-foreground max-w-sm leading-relaxed">
+                        Choose the sections you want to be tested on.
+                    </p>
                 </div>
-                <h2 className="text-xl font-bold text-foreground mb-2">No quiz yet</h2>
-                <p className="text-muted-foreground max-w-sm mb-8 leading-relaxed">
-                    Generate a set of questions from your selected sections to test what you've learned.
-                </p>
-                <button
-                    onClick={onRegenerate}
-                    disabled={regenerating}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-full font-bold text-sm transition-all disabled:opacity-50 flex items-center gap-2"
-                >
-                    {regenerating ? (
-                        <>
-                            <Loader2 className="w-4 h-4 animate-spin" /> Generating...
-                        </>
-                    ) : (
-                        <>
-                            <Sparkles className="w-4 h-4" /> Generate Quiz
-                        </>
-                    )}
-                </button>
+
+                {loadingSections ? (
+                    <div className="flex justify-center py-10">
+                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                    </div>
+                ) : sectionsError ? (
+                    <div className="text-center bg-red-500/10 border border-red-500/20 rounded-2xl p-6">
+                        <p className="text-red-400/90 text-sm">{sectionsError}</p>
+                    </div>
+                ) : sectionOptions.length === 0 ? (
+                    <div className="text-center bg-card border border-border rounded-2xl p-6">
+                        <p className="text-muted-foreground text-sm">No sections found for this note.</p>
+                    </div>
+                ) : (
+                    <>
+                        <div className="flex justify-between items-center mb-3">
+                            <span className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground">
+                                {selectedSectionIds.length} selected
+                            </span>
+                            <button
+                                onClick={toggleAll}
+                                className="text-xs font-semibold text-primary hover:underline"
+                            >
+                                {allSelected ? "Clear all" : "Select all"}
+                            </button>
+                        </div>
+
+                        <div className="space-y-2 mb-8">
+                            {sectionOptions.map((s) => {
+                                const active = selectedSectionIds.includes(s.id);
+                                return (
+                                    <button
+                                        key={s.id}
+                                        onClick={() => toggleSection(s.id)}
+                                        className={`w-full flex items-center gap-3 text-left p-4 rounded-xl border transition-all ${
+                                            active
+                                                ? "border-primary bg-primary/5 text-foreground"
+                                                : "border-border bg-card text-foreground/90 hover:border-muted-foreground/40"
+                                        }`}
+                                    >
+                                        <span
+                                            className={`w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center border ${
+                                                active ? "bg-primary border-primary text-primary-foreground" : "border-border"
+                                            }`}
+                                        >
+                                            {active && <Check className="w-3.5 h-3.5" />}
+                                        </span>
+                                        <span className="text-sm font-medium">
+                                            <span className="text-muted-foreground mr-1">{s.id}.</span>
+                                            {s.title}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        <button
+                            onClick={() => onGenerate(selectedSectionIds)}
+                            disabled={generating || selectedSectionIds.length === 0}
+                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-4 rounded-xl font-bold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                            {generating ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" /> Generating…
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles className="w-4 h-4" /> Generate Quiz
+                                </>
+                            )}
+                        </button>
+                    </>
+                )}
             </div>
         );
     }
@@ -145,16 +261,12 @@ export default function NoteQuizView({
                             Try Again
                         </button>
                         <button
-                            onClick={onRegenerate}
-                            disabled={regenerating}
+                            onClick={handleNewQuiz}
+                            disabled={generating}
                             className="px-8 py-3 rounded-xl border border-border hover:bg-card transition-colors text-foreground font-medium flex items-center justify-center gap-2 disabled:opacity-50"
                         >
-                            {regenerating ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <RefreshCw className="w-4 h-4" />
-                            )}
-                            New Questions
+                            <RefreshCw className="w-4 h-4" />
+                            New Quiz
                         </button>
                         <button
                             onClick={onClose}

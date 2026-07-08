@@ -7,7 +7,6 @@ import json
 from datetime import datetime, timezone
 import pdfplumber
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form
-from app.utils import *
 from pydantic import BaseModel
 from supabase import AsyncClient
 from openai import OpenAI
@@ -24,6 +23,8 @@ client = OpenAI()
 logger = logging.getLogger(__name__)
 
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
+MAX_PDF_PAGES = 80
+
 
 def format_lesson_plan(plan: dict) -> str:
     section_text = "\n\n".join(
@@ -36,6 +37,7 @@ def format_lesson_plan(plan: dict) -> str:
         f"{plan['introduction']}\n\n"
         f"**Sections:**\n\n{section_text}\n\n"
     )
+
 
 @router.post("/notes/upload")
 @limiter.limit("5/minute")
@@ -63,8 +65,6 @@ async def upload_note(
     safe_filename = re.sub(r"[^\w\-.]", "_", file.filename)
     storage_path = f"{user_id}/{safe_filename}"
 
-    logger.info("About to insert note metadata")
-    logger.info("Note inserted, about to insert pages")
     try:
         await supabase.storage.from_("notes-pdfs").upload(
             path=storage_path,
@@ -81,9 +81,9 @@ async def upload_note(
     try:
         pages = []
         with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
-            if len(pdf.pages) > 80:
+            if len(pdf.pages) > MAX_PDF_PAGES:
                 await supabase.storage.from_("notes-pdfs").remove([storage_path])
-                raise HTTPException(status_code=400, detail="PDF exceeds 80 page limit.")
+                raise HTTPException(status_code=400, detail=f"PDF exceeds {MAX_PDF_PAGES} page limit.")
 
             for i, page in enumerate(pdf.pages):
                 text = page.extract_text()
@@ -97,7 +97,7 @@ async def upload_note(
         raise HTTPException(status_code=500, detail=f"PDF text extraction failed: {e}")
 
     if not pages:
-        await supabase.storage.from_("notes-pdfs").remove([storage_path])  # one delete covers everything
+        await supabase.storage.from_("notes-pdfs").remove([storage_path])
         raise HTTPException(status_code=422, detail="No extractable text found in PDF. It may be a scanned image.")
 
     # ── Insert into notes table ───────────────────────────────────────────
@@ -135,6 +135,7 @@ async def upload_note(
         "pages_extracted": len(pages)
     }
 
+
 @router.get("/notes/{note_id}/onboard")
 @limiter.limit("10/minute")
 async def user_onboard(
@@ -143,7 +144,6 @@ async def user_onboard(
     user_id: str = Depends(get_current_user_id),
     supabase: AsyncClient = Depends(get_supabase)
 ):
-
     # ── Verify note ownership ─────────────────────────────────────────────
     try:
         note_res = await (
@@ -221,16 +221,12 @@ async def user_onboard(
                 "version": "9"
             },
             input=pages_text,
-            text={
-                "format": {
-                "type": "text"
-                }
-            },
+            text={"format": {"type": "text"}},
             reasoning={},
-            max_output_tokens=1500,  # was 1000 — too small, truncated the JSON mid-string
+            max_output_tokens=4000,
             store=True,
             include=["web_search_call.action.sources"]
-            )
+        )
     except Exception as e:
         logger.exception("Failed to generate lesson plan", extra={"note_id": note_id})
         raise HTTPException(status_code=500, detail=f"Failed to generate lesson plan: {e}")
@@ -266,13 +262,11 @@ async def user_onboard(
             for page_num, section_ids in page_map.items()
         ])
 
-
-    ui_response = format_lesson_plan(plan)
-
     return {
-    "onboarding_message": ui_response,
-    "lesson_plan": plan
+        "onboarding_message": format_lesson_plan(plan),
+        "lesson_plan": plan
     }
+
 
 @router.post("/notes/{note_id}/chat")
 @limiter.limit("20/minute")
@@ -283,7 +277,6 @@ async def notes_chat(
     user_id: str = Depends(get_current_user_id),
     supabase: AsyncClient = Depends(get_supabase)
 ):
-
     # ── Verify note ownership ─────────────────────────────────────────────
     try:
         note_res = await (
@@ -301,29 +294,29 @@ async def notes_chat(
     if not note_res or not note_res.data:
         raise HTTPException(status_code=404, detail="Note not found")
 
-    # ── Fetch history and lesson plan concurrently ────────────────────────
+    # ── Fetch history, lesson plan and progress concurrently ──────────────
     try:
         history_res, plan_res, progress_res = await asyncio.gather(
-        supabase.table("note_conversations")
-            .select("role, content")
-            .eq("user_id", user_id)
-            .eq("note_id", note_id)
-            .order("created_at")
-            .execute(),
+            supabase.table("note_conversations")
+                .select("role, content")
+                .eq("user_id", user_id)
+                .eq("note_id", note_id)
+                .order("created_at")
+                .execute(),
 
-        supabase.table("note_lesson_plans")
-            .select("content")
-            .eq("user_id", user_id)
-            .eq("note_id", note_id)
-            .maybe_single()
-            .execute(),
+            supabase.table("note_lesson_plans")
+                .select("content")
+                .eq("user_id", user_id)
+                .eq("note_id", note_id)
+                .maybe_single()
+                .execute(),
 
-        supabase.table("note_progress")
-            .select("id, current_layer, exchange_count, status")
-            .eq("user_id", user_id)
-            .eq("note_id", note_id)
-            .maybe_single()
-            .execute()
+            supabase.table("note_progress")
+                .select("id, current_layer, exchange_count, status")
+                .eq("user_id", user_id)
+                .eq("note_id", note_id)
+                .maybe_single()
+                .execute()
         )
     except Exception as e:
         logger.exception("Failed to fetch chat data", extra={"note_id": note_id})
@@ -332,7 +325,7 @@ async def notes_chat(
     if not plan_res or not plan_res.data:
         raise HTTPException(status_code=400, detail="No lesson plan found. Please onboard first.")
 
-   # ── Get or create session ─────────────────────────────────────────────
+    # ── Get or create session ─────────────────────────────────────────────
     try:
         session_res = await (
             supabase.table("note_sessions")
@@ -373,7 +366,7 @@ async def notes_chat(
             logger.exception("Failed to create session", extra={"note_id": note_id})
             raise HTTPException(status_code=500, detail=f"Failed to create session: {e}")
 
-        # ── Get or create progress ────────────────────────────────────────────
+    # ── Get or create progress ────────────────────────────────────────────
     current_layer = "LAYER_1"
     exchange_count = 0
 
@@ -407,37 +400,17 @@ async def notes_chat(
     # ── Call model ────────────────────────────────────────────────────────
     try:
         response = client.responses.create(
-        prompt={
-            "id": "pmpt_6a138ea1b574819497a8a750648902e9090dad6aa4f1ee56",
-            "version": "4"
-        },
-        input=messages,
-        prompt_cache_key=f"mindfill:notes:{note_id}",
-        text={
-    "format": {
-        "type": "json_schema",
-        "name": "chat_response",
-        "schema": {
-            "type": "object",
-            "properties": {
-                "content": {"type": "string"},
-                "layer": {
-                    "type": "string",
-                    "enum": ["LAYER_1", "LAYER_2", "DEFINITION"]
-                },
-                "phase_two": {"type": "boolean"},
-                "completed": {"type": "boolean"}
+            prompt={
+                "id": "pmpt_6a138ea1b574819497a8a750648902e9090dad6aa4f1ee56",
+                "version": "4"
             },
-            "required": ["content", "layer", "phase_two", "completed"],
-            "additionalProperties": False
-        },
-        "strict": True
-    }
-    },
-        reasoning={},
-        max_output_tokens=700,  # was 500 — too tight, truncated the JSON on longer answers
-        store=True,
-        include=["web_search_call.action.sources"]
+            input=messages,
+            prompt_cache_key=f"mindfill:notes:{note_id}",
+            text={"format": {"type": "text"}},
+            reasoning={},
+            max_output_tokens=1500,
+            store=True,
+            include=["web_search_call.action.sources"]
         )
     except Exception as e:
         logger.exception("Failed to call model", extra={"note_id": note_id})
@@ -447,7 +420,6 @@ async def notes_chat(
     try:
         response_dict = json.loads(response.output_text)
     except json.JSONDecodeError:
-        print(response.output_text)
         logger.error("Model returned invalid JSON for chat response", extra={"note_id": note_id})
         raise HTTPException(status_code=502, detail="Chat response was malformed. Please try again.")
 
@@ -455,7 +427,6 @@ async def notes_chat(
         logger.error("Chat response missing 'content' field", extra={"note_id": note_id})
         raise HTTPException(status_code=502, detail="Chat response was incomplete. Please try again.")
 
-    phase_two = response_dict.get("phase_two", False)
     completed = response_dict.get("completed", False)
     new_layer = response_dict.get("layer", current_layer)
 
@@ -474,9 +445,7 @@ async def notes_chat(
             "exchange_count": exchange_count + 1
         })
 
-    # ── Save conversation ─────────────────────────────────────────────────
     # ── Write conversations + progress concurrently ───────────────────────
-
     try:
         await asyncio.gather(
             supabase.table("note_conversations").insert([
@@ -508,23 +477,38 @@ async def notes_chat(
 
     return response_dict
 
+
 @router.post("/courses")
 @limiter.limit("10/minute")
-async def create_course(request: Request, input: Course, supabase: AsyncClient = Depends(get_supabase), user_id: str = Depends(get_current_user_id)):
+async def create_course(
+    request: Request,
+    input: Course,
+    supabase: AsyncClient = Depends(get_supabase),
+    user_id: str = Depends(get_current_user_id)
+):
     try:
         response = await (
             supabase.table("user_courses")
-            .insert({"user_id": user_id, "name": input.name, "course_code": input.course_code, "description": input.description})
+            .insert({
+                "user_id": user_id,
+                "name": input.name,
+                "course_code": input.course_code,
+                "description": input.description
+            })
             .execute()
         )
     except Exception as e:
-        logging.exception("Failed to create course")
+        logger.exception("Failed to create course")
         raise HTTPException(status_code=502, detail=f"Failed to create course: {e}")
 
     return response.data[0]
 
+
 @router.get("/courses")
-async def get_courses(supabase: AsyncClient = Depends(get_supabase), user_id: str = Depends(get_current_user_id)):
+async def get_courses(
+    supabase: AsyncClient = Depends(get_supabase),
+    user_id: str = Depends(get_current_user_id)
+):
     try:
         response = await (
             supabase.table("user_courses")
@@ -533,27 +517,39 @@ async def get_courses(supabase: AsyncClient = Depends(get_supabase), user_id: st
             .execute()
         )
     except Exception as e:
-        logging.exception("Failed to get courses")
-        raise HTTPException(status_code=502, detail=f"Failed to get course: {e}")
+        logger.exception("Failed to get courses")
+        raise HTTPException(status_code=502, detail=f"Failed to get courses: {e}")
 
     return response.data
 
-@router.get("/courses/{course_id}/notes")
-async def get_notes(course_id: str, supabase: AsyncClient = Depends(get_supabase), user_id = Depends(get_current_user_id)):
-    try:
-        notes_list = await (supabase.table("notes")
-        .select("id, title, file_url, created_at")
-        .eq("user_id", user_id)
-        .eq("course_id", course_id)
-        .execute())
-    except Exception as e:
-        raise HTTPException(status_code=502, detail= f"Failed to get notes: {e}")
 
+@router.get("/courses/{course_id}/notes")
+async def get_notes(
+    course_id: str,
+    supabase: AsyncClient = Depends(get_supabase),
+    user_id: str = Depends(get_current_user_id)
+):
+    try:
+        notes_list = await (
+            supabase.table("notes")
+            .select("id, title, file_url, created_at")
+            .eq("user_id", user_id)
+            .eq("course_id", course_id)
+            .execute()
+        )
+    except Exception as e:
+        logger.exception("Failed to get notes")
+        raise HTTPException(status_code=502, detail=f"Failed to get notes: {e}")
 
     return notes_list.data
 
+
 @router.get("/notes/{note_id}/history")
-async def note_chat_history(note_id: str, user_id: str = Depends(get_current_user_id), supabase: AsyncClient = Depends(get_supabase)):
+async def note_chat_history(
+    note_id: str,
+    user_id: str = Depends(get_current_user_id),
+    supabase: AsyncClient = Depends(get_supabase)
+):
     try:
         response = await (
             supabase.table("note_conversations")
@@ -564,7 +560,7 @@ async def note_chat_history(note_id: str, user_id: str = Depends(get_current_use
             .execute()
         )
     except Exception as e:
-        logging.exception("Failed to get history")
+        logger.exception("Failed to get history")
         raise HTTPException(status_code=502, detail=f"Failed to get history: {e}")
 
     return response.data
@@ -572,6 +568,39 @@ async def note_chat_history(note_id: str, user_id: str = Depends(get_current_use
 
 class QuizRequest(BaseModel):
     selected_sections: list[str]
+
+
+@router.get("/quiz/{note_id}")
+async def get_section_details(
+    note_id: str,
+    user_id: str = Depends(get_current_user_id),
+    supabase: AsyncClient = Depends(get_supabase)
+):
+    """Return the note's sections (id + title) for the quiz section picker."""
+    try:
+        res = await (
+            supabase.table("note_lesson_plans")
+            .select("content")
+            .eq("note_id", note_id)
+            .eq("user_id", user_id)
+            .maybe_single()
+            .execute()
+        )
+    except Exception as e:
+        logger.exception("Failed to fetch section details", extra={"note_id": note_id})
+        raise HTTPException(status_code=502, detail=f"Couldn't obtain section details: {e}")
+
+    if not res or not res.data:
+        raise HTTPException(status_code=404, detail="Lesson plan not found.")
+
+    try:
+        plan = json.loads(res.data["content"])
+        sections = plan["sections"]
+    except (json.JSONDecodeError, KeyError):
+        raise HTTPException(status_code=500, detail="Lesson data is corrupt")
+
+    return [{"id": s["id"], "title": s["title"]} for s in sections]
+
 
 @router.post("/notes/{note_id}/quiz")
 @limiter.limit("10/minute")
@@ -659,33 +688,18 @@ async def generate_quiz(
 
     # ── Generate quiz ─────────────────────────────────────────────────────
     try:
-        response = await client.responses.create(
-            model="gpt-5-mini",
-            instructions=notes_quiz_generator(),
+        response = client.responses.create(
+            prompt={
+                "id": "pmpt_6a1ddebc42288196aa9152344fa11c0404840cd408b9ea02",
+                "version": "1"
+            },
             input=prompt_input,
-            text={
-                "format": {
-                    "type": "json_schema",
-                    "name": "quiz_question",
-                    "strict": True,
-                    "schema": {
-                        "type": "object",
-                        "properties": {
-                            "question": {"type": "string"},
-                            "type": {"type": "string", "enum": ["multiple_choice", "true_false"]},
-                            "options": {"type": "array", "items": {"type": "string"}},
-                            "answer": {"type": "string", "enum": ["A", "B", "C", "D"]},
-                            "difficulty": {"type": "string", "enum": ["easy", "medium", "hard"]},
-                            "explanation": {"type": "string"}
-                        },
-                        "required": ["question", "type", "options", "answer", "difficulty", "explanation"],
-                        "additionalProperties": False
-                    }
-                }
-            }
+            text={"format": {"type": "text"}},
+            reasoning={},
+            max_output_tokens=4000,
+            store=True,
+            include=["web_search_call.action.sources"]
         )
-
-        question = json.loads(response.output_text)
     except Exception as e:
         logger.exception("Failed to generate quiz", extra={"note_id": note_id})
         raise HTTPException(status_code=500, detail=f"Failed to generate quiz: {e}")
@@ -717,31 +731,3 @@ async def generate_quiz(
         "quiz_id": quiz_res.data[0]["id"],
         "questions": questions
     }
-
-
-@router.get("quiz/{note_id}")
-async def get_section_details(request: Request, note_id: str, supabase: AsyncClient = Depends(get_supabase), user_id: str = Depends(get_current_user_id)):
-    try:
-        res = await (supabase.tables("note_lesson_plans")
-        .select("content")
-        .eq("note_id", note_id)
-        .eq("user_id", user_id)
-        .maybe_single()
-        .execute())
-        
-        res_data = json.loads(res.data["sections"])
-        if res.data is None:
-            raise HTTPException(status_code= 404, detail="Lesson plan not found.")
-
-    except (json.JSONDecodeError, KeyError):
-        raise HTTPException(status_code= 500, detail="Lesson data is corrupt")
-
-    except HTTPException:
-        raise
-
-    except Exception as e:
-        raise HTTPException(status_code=502, detail= f"Couldn't obtain section details: {e}")
-
-   
-    data_return = [{"id": s["id"], "title": s["title"]} for s in res_data]
-    return data_return
