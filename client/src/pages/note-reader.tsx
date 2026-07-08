@@ -6,6 +6,21 @@ import AppSidebar from "@/components/sidebar/AppSidebar";
 import PdfViewer from "@/components/notes/PdfViewer";
 import { ArrowLeft, ExternalLink, MessageSquare, X } from "lucide-react";
 
+const STORAGE_BUCKET = "notes-pdfs";
+
+// Extract the object path (e.g. "<userId>/file.pdf") from a stored public URL
+// like ".../storage/v1/object/public/notes-pdfs/<userId>/file.pdf".
+function storagePathFromUrl(url: string): string | null {
+    const marker = `/${STORAGE_BUCKET}/`;
+    const i = url.indexOf(marker);
+    if (i < 0) return null;
+    try {
+        return decodeURIComponent(url.slice(i + marker.length));
+    } catch {
+        return url.slice(i + marker.length);
+    }
+}
+
 export default function NoteReader() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
     const [, navigate] = useLocation();
@@ -33,7 +48,25 @@ export default function NoteReader() {
 
             if (noteError) throw noteError;
             setNoteTitle(data.title);
-            setFileUrl(data.file_url ?? null);
+
+            // The stored file_url is a /object/public/ link, which fails for a
+            // private bucket. Mint a short-lived signed URL with the logged-in
+            // client instead (keeps notes private). Fall back to the stored URL
+            // if signing isn't available (e.g. the bucket is public).
+            const publicUrl: string | null = data.file_url ?? null;
+            let resolved = publicUrl;
+            const path = publicUrl ? storagePathFromUrl(publicUrl) : null;
+            if (path) {
+                const { data: signed, error: signErr } = await supabase.storage
+                    .from("notes-pdfs")
+                    .createSignedUrl(path, 60 * 60);
+                if (signErr) {
+                    console.warn("Could not create signed URL, using stored URL:", signErr);
+                } else if (signed?.signedUrl) {
+                    resolved = signed.signedUrl;
+                }
+            }
+            setFileUrl(resolved);
         } catch (err) {
             console.error("Failed to load note:", err);
             setError("Could not load this note");
