@@ -264,12 +264,12 @@ export default function NoteChat() {
 
     const handleSend = (content: string) => doSend(content, true);
 
-    const handleGenerateQuiz = async () => {
-        if (!session || sections.length === 0 || generatingQuiz) return;
+    const handleGenerateQuiz = async (sectionIds: string[]) => {
+        if (!session || sectionIds.length === 0 || generatingQuiz) return;
 
         setGeneratingQuiz(true);
         try {
-            const response = await generateNoteQuiz(noteId, selectedSections, accessToken);
+            const response = await generateNoteQuiz(noteId, sectionIds, accessToken);
             setQuizQuestions(response.questions);
             setActiveTab("quiz");
         } catch (err) {
@@ -439,9 +439,12 @@ export default function NoteChat() {
                     <NoteQuizView
                         questions={quizQuestions}
                         title={noteTitle}
+                        noteId={noteId}
+                        accessToken={accessToken}
                         onClose={() => setActiveTab("chat")}
-                        onRegenerate={handleGenerateQuiz}
-                        regenerating={generatingQuiz}
+                        onGenerate={handleGenerateQuiz}
+                        onClearQuiz={() => setQuizQuestions([])}
+                        generating={generatingQuiz}
                     />
                 </div>
 

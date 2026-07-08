@@ -46,31 +46,10 @@ export default function NotesDashboard() {
     const loadNotes = async () => {
         if (!session) return;
 
-        console.log("🔄 Loading notes for user:", session.user.id);
-        console.log("🔑 Full session info:", {
-            userId: session.user.id,
-            email: session.user.email
-        });
         setLoading(true);
         setError(null);
         try {
-            // First, let's fetch ALL notes to check what's in the table!
-            const { data: allNotes, error: allNotesError } = await supabase
-                .from("notes")
-                .select("*")
-                .order("created_at", { ascending: false });
-
-            console.log("📋 ALL notes in the table:", allNotes);
-            console.log("📊 Total notes in table:", allNotes?.length);
-            if (allNotes && allNotes.length > 0) {
-                console.log("📝 First note's user_id:", allNotes[0].user_id);
-            }
-
-            if (allNotesError) {
-                console.error("❌ Supabase error loading ALL notes:", allNotesError);
-            }
-
-            // Now fetch notes for the current user
+            // Fetch this user's notes.
             const { data, error: supabaseError } = await supabase
                 .from("notes")
                 .select("*")
@@ -78,12 +57,10 @@ export default function NotesDashboard() {
                 .order("created_at", { ascending: false });
 
             if (supabaseError) {
-                console.error("❌ Supabase error loading notes:", supabaseError);
+                console.error("Supabase error loading notes:", supabaseError);
                 throw supabaseError;
             }
 
-            console.log("✅ Notes loaded from Supabase:", data);
-            console.log("📊 Number of notes:", data?.length);
             const loadedNotes = data || [];
             setNotes(loadedNotes);
 
