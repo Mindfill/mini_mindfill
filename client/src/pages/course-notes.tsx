@@ -7,7 +7,11 @@ import AppSidebar from "@/components/sidebar/AppSidebar";
 import NoteUploadModal from "@/components/notes/NoteUploadModal";
 import NoteCard from "@/components/notes/NoteCard";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, FileSearch, ArrowLeft } from "lucide-react";
+import { Plus, FileSearch, ArrowLeft, RefreshCw } from "lucide-react";
+
+// Per-course cache (keyed by userId:courseId) so returning to a course reuses
+// the last load instead of re-hitting the DB. Refresh is user-triggered.
+const courseNotesCache: Record<string, { course: Course | null; notes: Note[] }> = {};
 
 export default function CourseNotes() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
@@ -15,11 +19,15 @@ export default function CourseNotes() {
     const params = useParams<{ courseId: string }>();
     const courseId = params.courseId || "";
 
-    const [loading, setLoading] = useState(true);
-    const [hasLoaded, setHasLoaded] = useState(false);
+    const cacheKey = session ? `${session.user.id}:${courseId}` : "";
+    const cached = cacheKey ? courseNotesCache[cacheKey] : undefined;
+
+    const [loading, setLoading] = useState(!cached);
+    const [hasLoaded, setHasLoaded] = useState(!!cached);
+    const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [course, setCourse] = useState<Course | null>(null);
-    const [notes, setNotes] = useState<Note[]>([]);
+    const [course, setCourse] = useState<Course | null>(cached?.course ?? null);
+    const [notes, setNotes] = useState<Note[]>(cached?.notes ?? []);
     const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
     const userName = user?.user_metadata?.full_name || user?.email || "User";
@@ -77,8 +85,11 @@ export default function CourseNotes() {
 
             if (notesRes.error) throw notesRes.error;
 
-            setCourse(coursesData.find((c) => c.id === courseId) || null);
-            setNotes(notesRes.data || []);
+            const loadedCourse = coursesData.find((c) => c.id === courseId) || null;
+            const loadedNotes = notesRes.data || [];
+            setCourse(loadedCourse);
+            setNotes(loadedNotes);
+            if (cacheKey) courseNotesCache[cacheKey] = { course: loadedCourse, notes: loadedNotes };
         } catch (err) {
             console.error("Failed to load course notes:", err);
             setError("Unable to load this course");
@@ -88,12 +99,32 @@ export default function CourseNotes() {
         }
     };
 
+    const handleRefresh = async () => {
+        if (refreshing) return;
+        setRefreshing(true);
+        await loadData();
+        setRefreshing(false);
+    };
+
     useEffect(() => {
         if (!authLoading && !session) {
             navigate("/login");
             return;
         }
-        if (session) loadData();
+        if (!session || !courseId) return;
+
+        // Reuse cached data for this course; otherwise fetch. Refresh forces a reload.
+        const key = `${session.user.id}:${courseId}`;
+        const hit = courseNotesCache[key];
+        if (hit) {
+            setCourse(hit.course);
+            setNotes(hit.notes);
+            setError(null);
+            setLoading(false);
+            setHasLoaded(true);
+        } else {
+            loadData();
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [session, authLoading, navigate, courseId]);
 
@@ -165,12 +196,23 @@ export default function CourseNotes() {
                             <h1 className="text-2xl font-semibold tracking-tight">{heading}</h1>
                             <p className="text-muted-foreground text-sm">{subtitle}</p>
                         </div>
-                        <button
-                            onClick={() => setUploadModalOpen(true)}
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2.5 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 flex-shrink-0"
-                        >
-                            <Plus className="w-4 h-4" /> Upload Note
-                        </button>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                            <button
+                                onClick={handleRefresh}
+                                disabled={refreshing}
+                                className="border border-border hover:bg-muted text-muted-foreground hover:text-foreground p-2.5 rounded-xl transition-all disabled:opacity-50"
+                                aria-label="Refresh"
+                                title="Refresh"
+                            >
+                                <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+                            </button>
+                            <button
+                                onClick={() => setUploadModalOpen(true)}
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2.5 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
+                            >
+                                <Plus className="w-4 h-4" /> Upload Note
+                            </button>
+                        </div>
                     </div>
 
                     {/* Notes grid */}

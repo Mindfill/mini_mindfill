@@ -21,7 +21,7 @@ export default function NoteCourseCard({ code, name, noteCount, progress, onClic
     return (
         <button
             onClick={onClick}
-            className="group text-left p-6 rounded-3xl border border-border bg-card hover:shadow-lg hover:scale-[1.02] hover:border-primary/30 transition-all duration-300 flex flex-col gap-4"
+            className="group w-full min-w-0 text-left p-6 rounded-3xl border border-border bg-card hover:shadow-lg hover:scale-[1.02] hover:border-primary/30 transition-all duration-300 flex flex-col gap-4"
         >
             {/* Icon */}
             <div className="p-3 rounded-2xl bg-primary/10 w-fit">
@@ -29,9 +29,9 @@ export default function NoteCourseCard({ code, name, noteCount, progress, onClic
             </div>
 
             {/* Title */}
-            <div>
-                <h3 className="font-bold text-lg text-foreground leading-tight truncate">{heading}</h3>
-                {subtitle && <p className="text-sm text-muted-foreground mt-0.5 truncate">{subtitle}</p>}
+            <div className="min-w-0 w-full">
+                <h3 className="font-bold text-lg text-foreground leading-tight break-words">{heading}</h3>
+                {subtitle && <p className="text-sm text-muted-foreground mt-0.5 break-words">{subtitle}</p>}
             </div>
 
             {/* Stats + progress (pinned to bottom for even card heights) */}

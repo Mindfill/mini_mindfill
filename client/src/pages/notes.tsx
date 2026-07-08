@@ -10,16 +10,33 @@ import NoteUploadModal from "@/components/notes/NoteUploadModal";
 import NoteCourseCard from "@/components/notes/NoteCourseCard";
 import NoteCard from "@/components/notes/NoteCard";
 import CreateCourseDialog from "@/components/notes/CreateCourseDialog";
+import { RefreshCw } from "lucide-react";
+
+type CourseStats = Record<string, { count: number; progress: number }>;
+
+// Module-level cache so navigating back to /notes reuses the last load instead
+// of re-hitting the DB. Only replaced when the data is (re)fetched — a full
+// browser reload clears it. Refresh is user-triggered.
+let notesCache: {
+    userId: string;
+    notes: Note[];
+    courses: Course[];
+    courseStats: CourseStats;
+} | null = null;
 
 export default function NotesDashboard() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
     const [, navigate] = useLocation();
-    const [loading, setLoading] = useState(true);
-    const [hasLoaded, setHasLoaded] = useState(false);
+
+    const cached = session && notesCache?.userId === session.user.id ? notesCache : null;
+
+    const [loading, setLoading] = useState(!cached);
+    const [hasLoaded, setHasLoaded] = useState(!!cached);
+    const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [notes, setNotes] = useState<Note[]>([]);
-    const [courses, setCourses] = useState<Course[]>([]);
-    const [courseStats, setCourseStats] = useState<Record<string, { count: number; progress: number }>>({});
+    const [notes, setNotes] = useState<Note[]>(cached?.notes ?? []);
+    const [courses, setCourses] = useState<Course[]>(cached?.courses ?? []);
+    const [courseStats, setCourseStats] = useState<CourseStats>(cached?.courseStats ?? {});
     const [uploadModalOpen, setUploadModalOpen] = useState(false);
     const [createCourseOpen, setCreateCourseOpen] = useState(false);
     const { toast } = useToast();
@@ -106,6 +123,7 @@ export default function NotesDashboard() {
 
             setCourses(coursesData);
             setCourseStats(stats);
+            notesCache = { userId: session.user.id, notes: loadedNotes, courses: coursesData, courseStats: stats };
         } catch (err) {
             console.error("❌ Error loading notes:", err);
             setError("Unable to load your notes");
@@ -115,16 +133,26 @@ export default function NotesDashboard() {
         }
     };
 
+    // User-triggered refresh (keeps the current content visible while it runs).
+    const handleRefresh = async () => {
+        if (refreshing) return;
+        setRefreshing(true);
+        await loadNotes();
+        setRefreshing(false);
+    };
+
     useEffect(() => {
         if (!authLoading && !session) {
             navigate("/login");
             return;
         }
 
-        if (session) {
+        // Only fetch on first load / when there's no cached data for this user.
+        // Back-navigation reuses the cache; use Refresh to force a re-fetch.
+        if (session && !hasLoaded) {
             loadNotes();
         }
-    }, [session, authLoading, navigate]);
+    }, [session, authLoading, navigate, hasLoaded]);
 
     const assignNoteToCourse = async (noteId: string, courseId: string) => {
         if (!session) return;
@@ -226,6 +254,15 @@ export default function NotesDashboard() {
                             <p className="text-muted-foreground text-sm">Upload PDFs and learn interactively</p>
                         </div>
                         <div className="flex items-center gap-3 flex-shrink-0">
+                            <button
+                                onClick={handleRefresh}
+                                disabled={refreshing}
+                                className="border border-border hover:bg-muted text-muted-foreground hover:text-foreground p-2.5 rounded-xl transition-all disabled:opacity-50"
+                                aria-label="Refresh"
+                                title="Refresh"
+                            >
+                                <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+                            </button>
                             <button
                                 onClick={() => setCreateCourseOpen(true)}
                                 className="border border-border hover:bg-muted text-foreground px-4 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2"
