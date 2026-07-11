@@ -18,8 +18,8 @@ interface NoteQuizViewProps {
     noteId: string;
     accessToken: string;
     onClose: () => void;
-    /** Generate a quiz for the chosen section ids. */
-    onGenerate: (sectionIds: string[]) => void;
+    /** Generate a quiz for the chosen section TITLES (backend matches on title). */
+    onGenerate: (sectionTitles: string[]) => void;
     /** Clear the current quiz to return to the section picker. */
     onClearQuiz: () => void;
     generating?: boolean;
@@ -87,6 +87,14 @@ export default function NoteQuizView({
     const allSelected = sectionOptions.length > 0 && selectedSectionIds.length === sectionOptions.length;
     const toggleAll = () => {
         setSelectedSectionIds(allSelected ? [] : sectionOptions.map((s) => s.id));
+    };
+
+    // The generation endpoint expects section TITLES, not ids.
+    const handleGenerate = () => {
+        const titles = sectionOptions
+            .filter((s) => selectedSectionIds.includes(s.id))
+            .map((s) => s.title);
+        if (titles.length > 0) onGenerate(titles);
     };
 
     const handleNewQuiz = () => {
@@ -209,7 +217,7 @@ export default function NoteQuizView({
                         </div>
 
                         <button
-                            onClick={() => onGenerate(selectedSectionIds)}
+                            onClick={handleGenerate}
                             disabled={generating || selectedSectionIds.length === 0}
                             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-4 rounded-xl font-bold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                         >

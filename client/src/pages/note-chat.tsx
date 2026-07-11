@@ -7,6 +7,7 @@ import {
     sendNoteChatMessage,
     onboardNote,
     generateNoteQuiz,
+    fetchQuizSections,
     type NoteChatMessage,
     type NoteChatRequest,
     type NoteLessonPlanResponse,
@@ -115,24 +116,14 @@ export default function NoteChat() {
             setNoteTitle(noteData.title);
             setNoteUrl(noteData.file_url ?? null);
 
-            // Load the lesson-plan sections (if onboarding already happened).
-            // The /onboard endpoint only returns structured sections on first
-            // generation, so read them straight from the table on return visits.
+            // Load the section list (id + title) from the quiz sections
+            // endpoint. Returns 404 until the note has been onboarded, in which
+            // case sections are set later by handleOnboard.
             try {
-                const { data: planData } = await supabase
-                    .from("note_lesson_plans")
-                    .select("content")
-                    .eq("note_id", noteId)
-                    .maybeSingle();
-
-                if (planData?.content) {
-                    const parsed = JSON.parse(planData.content);
-                    if (Array.isArray(parsed?.sections)) {
-                        setSections(parsed.sections as PlanSection[]);
-                    }
-                }
-            } catch (planErr) {
-                console.warn("Could not load lesson plan sections:", planErr);
+                const quizSections = await fetchQuizSections(noteId, accessToken);
+                setSections(quizSections);
+            } catch (secErr) {
+                console.warn("Could not load quiz sections:", secErr);
             }
 
             // Check if lesson plan exists by trying to fetch history
@@ -161,7 +152,9 @@ export default function NoteChat() {
             const plan = await onboardNote(noteId, accessToken);
             setLessonPlan(plan);
             if (plan.lesson_plan?.sections) {
-                setSections(plan.lesson_plan.sections as PlanSection[]);
+                setSections(
+                    plan.lesson_plan.sections.map((s) => ({ id: String(s.id), title: s.title })) as PlanSection[]
+                );
             }
             // Display the onboarding message as first message
             setMessages([
@@ -264,12 +257,12 @@ export default function NoteChat() {
 
     const handleSend = (content: string) => doSend(content, true);
 
-    const handleGenerateQuiz = async (sectionIds: string[]) => {
-        if (!session || sectionIds.length === 0 || generatingQuiz) return;
+    const handleGenerateQuiz = async (sectionTitles: string[]) => {
+        if (!session || sectionTitles.length === 0 || generatingQuiz) return;
 
         setGeneratingQuiz(true);
         try {
-            const response = await generateNoteQuiz(noteId, sectionIds, accessToken);
+            const response = await generateNoteQuiz(noteId, sectionTitles, accessToken);
             setQuizQuestions(response.questions);
             setActiveTab("quiz");
         } catch (err) {
