@@ -46,7 +46,7 @@ export default function SectionSelector({
     };
 
     return (
-        <div className="border-b border-border bg-background/40 backdrop-blur-xl px-4 py-3">
+        <div className="border-b border-border/50 bg-background px-4 py-2.5">
             <div className="max-w-3xl mx-auto flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden">
                 <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase text-muted-foreground flex-shrink-0 pr-1">
                     <Layers className="w-3.5 h-3.5" /> Focus
