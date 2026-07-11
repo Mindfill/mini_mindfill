@@ -230,7 +230,12 @@ export async function fetchQuizSections(
         throw new Error(`Failed to fetch quiz sections: ${res.status} — ${text}`);
     }
 
-    return res.json();
+    const data = await res.json();
+    // Section ids come back as integers; normalize to strings for the picker.
+    return (Array.isArray(data) ? data : []).map((s: { id: unknown; title: string }) => ({
+        id: String(s.id),
+        title: s.title,
+    }));
 }
 
 /**
