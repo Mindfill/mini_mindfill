@@ -196,9 +196,10 @@ export interface QuizQuestion {
     id?: string;
     question: string;
     type?: string;
-    options: QuizOption[];
-    /** The `id` of the correct option. */
-    correct_answer: string;
+    /** Option texts (e.g. ["4", "5", "6"]). */
+    options: string[];
+    /** The correct option's text (matches one of `options`). */
+    answer: string;
     explanation?: string;
     difficulty?: string;
 }
