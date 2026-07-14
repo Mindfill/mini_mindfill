@@ -32,7 +32,7 @@ const normalize = (s: string) => (s ?? "").trim();
 /**
  * Interactive multiple-choice quiz. The section picker fetches sections from
  * GET /quiz/{note_id}; the chosen section ids are sent to POST
- * /notes/{note_id}/quiz. Correctness is evaluated locally against `correct_answer`.
+ * /notes/{note_id}/quiz. Correctness is evaluated locally against `answer`.
  */
 export default function NoteQuizView({
     questions,
@@ -107,13 +107,9 @@ export default function NoteQuizView({
     const total = questions.length;
     const current = questions[currentIndex];
 
-    // `answer` and `correct_answer` are option ids.
-    const isCorrect = (q: QuizQuestion, answerId: string | null) =>
-        answerId != null && normalize(answerId) === normalize(q.correct_answer);
-
-    // Resolve an option id to its display text (falls back to the id itself).
-    const optionText = (q: QuizQuestion, id: string | null) =>
-        (id != null && q.options.find((o) => normalize(o.id) === normalize(id))?.text) || (id ?? "Unanswered");
+    // Options and the answer are plain strings; a selection is the option text.
+    const isCorrect = (q: QuizQuestion, choice: string | null) =>
+        choice != null && normalize(choice) === normalize(q.answer);
 
     const score = useMemo(
         () => answers.reduce((acc, a, i) => acc + (isCorrect(questions[i], a) ? 1 : 0), 0),
@@ -136,7 +132,7 @@ export default function NoteQuizView({
                 question: q.question,
                 type: q.type ?? "multiple_choice",
                 user_answer: ans,
-                correct_answer: q.correct_answer,
+                correct_answer: q.answer,
                 is_correct: isCorrect(q, ans),
                 difficulty: q.difficulty ?? "medium",
             };
@@ -365,14 +361,14 @@ export default function NoteQuizView({
                                         <span className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
                                             Your Answer
                                         </span>
-                                        <MarkdownLatex content={optionText(q, ans)} className={`text-sm font-medium ${correct ? "text-emerald-500" : "text-red-500"}`} />
+                                        <MarkdownLatex content={ans ?? "Unanswered"} className={`text-sm font-medium ${correct ? "text-emerald-500" : "text-red-500"}`} />
                                     </div>
                                     {!correct && (
                                         <div className="flex flex-col">
                                             <span className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
                                                 Correct Answer
                                             </span>
-                                            <MarkdownLatex content={optionText(q, q.correct_answer)} className="text-sm font-medium text-foreground/90" />
+                                            <MarkdownLatex content={q.answer} className="text-sm font-medium text-foreground/90" />
                                         </div>
                                     )}
                                     {q.explanation && (
@@ -428,8 +424,8 @@ export default function NoteQuizView({
                 </div>
                 <div className="space-y-3">
                     {current.options.map((opt, i) => {
-                        const isSelected = selected === opt.id;
-                        const isCorrectOpt = normalize(opt.id) === normalize(current.correct_answer);
+                        const isSelected = selected === opt;
+                        const isCorrectOpt = normalize(opt) === normalize(current.answer);
                         let btnClass = "border-border hover:bg-muted text-foreground/90";
 
                         if (submitted) {
@@ -446,16 +442,16 @@ export default function NoteQuizView({
 
                         return (
                             <button
-                                key={opt.id ?? i}
+                                key={i}
                                 disabled={submitted}
-                                onClick={() => setSelected(opt.id)}
+                                onClick={() => setSelected(opt)}
                                 className={`w-full text-left p-4 rounded-xl border transition-all duration-200 flex items-start ${btnClass}`}
                             >
                                 <span className="mr-3 text-muted-foreground font-mono text-sm mt-0.5">
                                     {String.fromCharCode(65 + i)}
                                 </span>
                                 <div className="flex-1">
-                                    <MarkdownLatex content={opt.text} className="text-inherit" />
+                                    <MarkdownLatex content={opt} className="text-inherit" />
                                 </div>
                             </button>
                         );
@@ -482,7 +478,7 @@ export default function NoteQuizView({
                         {!answeredCorrect && (
                             <div className="text-sm text-foreground/90 mb-3 flex gap-1">
                                 <span className="text-muted-foreground flex-shrink-0">Correct answer:</span>
-                                <MarkdownLatex content={optionText(current, current.correct_answer)} className="font-medium" />
+                                <MarkdownLatex content={current.answer} className="font-medium" />
                             </div>
                         )}
                         {current.explanation && (
