@@ -17,7 +17,7 @@ import AppSidebar from "@/components/sidebar/AppSidebar";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatInput from "@/components/chat/ChatInput";
 import TypingIndicator from "@/components/chat/TypingIndicator";
-import { X, ArrowLeft, BookOpen, FileText, RotateCcw, RefreshCw } from "lucide-react";
+import { X, ArrowLeft, BookOpen, FileText, RotateCcw, RefreshCw, CheckCircle } from "lucide-react";
 import mindfillIcon from "@/assets/mindfill.png";
 import NoteQuizView from "@/components/notes/NoteQuizView";
 import SectionSelector, { type PlanSection } from "@/components/notes/SectionSelector";
@@ -82,11 +82,14 @@ export default function NoteChat() {
     const [loadError, setLoadError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [retryContent, setRetryContent] = useState<string | null>(null);
+    const [phaseTwo, setPhaseTwo] = useState(false);
+    const [lessonCompleted, setLessonCompleted] = useState(false);
     const [activeTab, setActiveTab] = useState<"chat" | "quiz">("chat");
     const [lessonPlan, setLessonPlan] = useState<NoteLessonPlanResponse | null>(null);
     const [sections, setSections] = useState<PlanSection[]>(cached?.sections ?? []);
     const [selectedSections, setSelectedSections] = useState<string[]>([]);
     const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
+    const [quizSessionId, setQuizSessionId] = useState<string | null>(null);
     const [generatingQuiz, setGeneratingQuiz] = useState(false);
 
     const userName = user?.user_metadata?.full_name || user?.email || "User";
@@ -246,6 +249,10 @@ export default function NoteChat() {
             const response = await sendNoteChatMessage(noteId, request, accessToken);
 
             setMessages((prev) => [...prev, { role: "assistant", content: response.content }]);
+
+            // Streamed response flags drive UI state.
+            setPhaseTwo(Boolean(response.phase_two));
+            if (response.completed) setLessonCompleted(true);
         } catch (err) {
             console.error("Failed to send message:", err);
             setError("Failed to get a response.");
@@ -257,13 +264,14 @@ export default function NoteChat() {
 
     const handleSend = (content: string) => doSend(content, true);
 
-    const handleGenerateQuiz = async (sectionTitles: string[]) => {
-        if (!session || sectionTitles.length === 0 || generatingQuiz) return;
+    const handleGenerateQuiz = async (sectionIds: number[]) => {
+        if (!session || sectionIds.length === 0 || generatingQuiz) return;
 
         setGeneratingQuiz(true);
         try {
-            const response = await generateNoteQuiz(noteId, sectionTitles, accessToken);
+            const response = await generateNoteQuiz(noteId, sectionIds, accessToken);
             setQuizQuestions(response.questions);
+            setQuizSessionId(response.quiz_session_id ?? null);
             setActiveTab("quiz");
         } catch (err) {
             console.error("Failed to generate quiz:", err);
@@ -388,6 +396,15 @@ export default function NoteChat() {
                         <h1 className="text-sm font-bold text-foreground tracking-tight truncate min-w-0">
                             {noteTitle}
                         </h1>
+                        {lessonCompleted ? (
+                            <span className="flex-shrink-0 hidden sm:flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5">
+                                <CheckCircle className="w-3 h-3" /> Complete
+                            </span>
+                        ) : phaseTwo ? (
+                            <span className="flex-shrink-0 hidden sm:inline text-[10px] font-bold tracking-widest uppercase text-primary bg-primary/10 border border-primary/20 rounded-full px-2 py-0.5">
+                                Phase 2
+                            </span>
+                        ) : null}
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
@@ -434,9 +451,10 @@ export default function NoteChat() {
                         title={noteTitle}
                         noteId={noteId}
                         accessToken={accessToken}
+                        quizSessionId={quizSessionId}
                         onClose={() => setActiveTab("chat")}
                         onGenerate={handleGenerateQuiz}
-                        onClearQuiz={() => setQuizQuestions([])}
+                        onClearQuiz={() => { setQuizQuestions([]); setQuizSessionId(null); }}
                         generating={generatingQuiz}
                     />
                 </div>

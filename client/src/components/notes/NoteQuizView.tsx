@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { fetchQuizSections, type QuizQuestion, type QuizSectionOption } from "@/lib/api";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { fetchQuizSections, submitQuizResults, type QuizAttempt, type QuizQuestion, type QuizSectionOption } from "@/lib/api";
 import MarkdownLatex from "@/components/ui/markdown-latex";
 import {
     CheckCircle,
@@ -17,9 +17,11 @@ interface NoteQuizViewProps {
     title: string;
     noteId: string;
     accessToken: string;
+    /** From generate_quiz; sent back on submission (null until a quiz loads). */
+    quizSessionId: string | null;
     onClose: () => void;
-    /** Generate a quiz for the chosen section TITLES (backend matches on title). */
-    onGenerate: (sectionTitles: string[]) => void;
+    /** Generate a quiz for the chosen section ids (integers). */
+    onGenerate: (sectionIds: number[]) => void;
     /** Clear the current quiz to return to the section picker. */
     onClearQuiz: () => void;
     generating?: boolean;
@@ -37,6 +39,7 @@ export default function NoteQuizView({
     title,
     noteId,
     accessToken,
+    quizSessionId,
     onClose,
     onGenerate,
     onClearQuiz,
@@ -89,12 +92,10 @@ export default function NoteQuizView({
         setSelectedSectionIds(allSelected ? [] : sectionOptions.map((s) => s.id));
     };
 
-    // The generation endpoint expects section TITLES, not ids.
+    // The generation endpoint expects section ids as integers.
     const handleGenerate = () => {
-        const titles = sectionOptions
-            .filter((s) => selectedSectionIds.includes(s.id))
-            .map((s) => s.title);
-        if (titles.length > 0) onGenerate(titles);
+        if (selectedSectionIds.length === 0) return;
+        onGenerate(selectedSectionIds.map((id) => Number(id)));
     };
 
     const handleNewQuiz = () => {
@@ -118,6 +119,33 @@ export default function NoteQuizView({
         () => answers.reduce((acc, a, i) => acc + (isCorrect(questions[i], a) ? 1 : 0), 0),
         [answers, questions]
     );
+
+    // Submit results once, when the quiz finishes (best-effort analytics).
+    const submittedResultsRef = useRef(false);
+    // A new quiz session means a fresh submission is allowed.
+    useEffect(() => {
+        submittedResultsRef.current = false;
+    }, [quizSessionId]);
+    useEffect(() => {
+        if (!finished || submittedResultsRef.current || !quizSessionId) return;
+        submittedResultsRef.current = true;
+
+        const attempts: QuizAttempt[] = questions.map((q, i) => {
+            const ans = answers[i] ?? null;
+            return {
+                question: q.question,
+                type: q.type ?? "multiple_choice",
+                user_answer: ans,
+                correct_answer: q.correct_answer,
+                is_correct: isCorrect(q, ans),
+                difficulty: q.difficulty ?? "medium",
+            };
+        });
+
+        submitQuizResults(noteId, { quiz_session_id: quizSessionId, score, total, attempts }, accessToken).catch(
+            (err) => console.error("Failed to submit quiz results:", err)
+        );
+    }, [finished, quizSessionId, noteId, accessToken, questions, answers, score, total]);
 
     const reset = () => {
         setCurrentIndex(0);
@@ -146,6 +174,22 @@ export default function NoteQuizView({
             setSubmitted(false);
         }
     };
+
+    // ── Generating screen (quiz generation takes ~20s) ────────────────────
+    if (generating) {
+        return (
+            <div className="max-w-2xl mx-auto py-20 px-6 flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
+                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                </div>
+                <h2 className="text-xl font-bold text-foreground mb-2">Building your quiz…</h2>
+                <p className="text-muted-foreground max-w-sm leading-relaxed">
+                    This usually takes about <span className="font-semibold text-foreground">20 seconds</span>.
+                    Hang tight while TECHCESS writes your questions.
+                </p>
+            </div>
+        );
+    }
 
     // ── Section picker (shown when there's no quiz yet) ───────────────────
     if (showPicker) {

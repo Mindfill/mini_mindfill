@@ -195,15 +195,37 @@ export interface QuizOption {
 export interface QuizQuestion {
     id?: string;
     question: string;
+    type?: string;
     options: QuizOption[];
     /** The `id` of the correct option. */
     correct_answer: string;
     explanation?: string;
+    difficulty?: string;
 }
 
 export interface QuizResponse {
-    quiz_id: string;
+    quiz_id?: string;
+    /** Returned by generate_quiz; sent back on submission. */
+    quiz_session_id?: string;
     questions: QuizQuestion[];
+}
+
+export interface QuizAttempt {
+    question: string;
+    type: string;
+    user_answer: string | null;
+    correct_answer: string;
+    is_correct: boolean;
+    difficulty: string;
+    /** Optional per-question section tags for analytics. */
+    selected_sections?: number[];
+}
+
+export interface QuizSubmission {
+    quiz_session_id: string;
+    score: number;
+    total: number;
+    attempts: QuizAttempt[];
 }
 
 export interface QuizSectionOption {
@@ -314,6 +336,9 @@ export async function sendNoteChatMessage(
     request: NoteChatRequest,
     accessToken: string
 ): Promise<NoteChatResponse> {
+    // The chat endpoint streams Server-Sent Events: each `data: <chunk>` is a
+    // slice of the JSON body; `data: [DONE]` ends the stream (`data: [ERROR] …`
+    // on failure). We accumulate the chunks and parse the full JSON at [DONE].
     const res = await fetch(`${BACKEND_URL}/notes/${noteId}/chat`, {
         method: "POST",
         headers: {
@@ -323,12 +348,52 @@ export async function sendNoteChatMessage(
         body: JSON.stringify(request),
     });
 
-    if (!res.ok) {
-        const text = (await res.text()) || res.statusText;
+    if (!res.ok || !res.body) {
+        const text = (!res.ok && (await res.text())) || res.statusText;
         throw new Error(`Failed to send message: ${res.status} — ${text}`);
     }
 
-    return res.json();
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let accumulated = "";
+    let done = false;
+
+    const handleEvent = (rawEvent: string) => {
+        if (!rawEvent.startsWith("data:")) return;
+        // Everything after "data:" (with one optional leading space) is the chunk,
+        // preserving any internal characters.
+        let data = rawEvent.slice(5);
+        if (data.startsWith(" ")) data = data.slice(1);
+
+        if (data === "[DONE]") {
+            done = true;
+        } else if (data.startsWith("[ERROR]")) {
+            throw new Error(data.slice(7).trim() || "Streaming failed");
+        } else {
+            accumulated += data;
+        }
+    };
+
+    while (!done) {
+        const { value, done: streamDone } = await reader.read();
+        if (streamDone) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let sep: number;
+        while ((sep = buffer.indexOf("\n\n")) !== -1) {
+            const rawEvent = buffer.slice(0, sep);
+            buffer = buffer.slice(sep + 2);
+            handleEvent(rawEvent);
+            if (done) break;
+        }
+    }
+
+    try {
+        return JSON.parse(accumulated) as NoteChatResponse;
+    } catch {
+        throw new Error("Streamed response was malformed.");
+    }
 }
 
 /**
@@ -458,7 +523,7 @@ export async function updateProfile(update: ProfileUpdate, accessToken: string):
  */
 export async function generateNoteQuiz(
     noteId: string,
-    selectedSections: string[],
+    selectedSections: number[],
     accessToken: string
 ): Promise<QuizResponse> {
     const res = await fetch(`${BACKEND_URL}/notes/${noteId}/quiz`, {
@@ -476,4 +541,28 @@ export async function generateNoteQuiz(
     }
 
     return res.json();
+}
+
+/**
+ * Submit quiz results for storage / analytics.
+ * POST /notes/{note_id}/quiz/submit
+ */
+export async function submitQuizResults(
+    noteId: string,
+    submission: QuizSubmission,
+    accessToken: string
+): Promise<void> {
+    const res = await fetch(`${BACKEND_URL}/notes/${noteId}/quiz/submit`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(submission),
+    });
+
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to submit quiz: ${res.status} — ${text}`);
+    }
 }
