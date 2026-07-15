@@ -40,6 +40,43 @@ export async function fetchLessonHistory(
  * Submit a message to a lesson chat.
  * POST /lessons/{lessonSlug}/submit
  */
+/**
+ * Read a Server-Sent Events stream where each `data: <chunk>` is a slice of the
+ * payload, terminated by `data: [DONE]` (or `data: [ERROR] …`). Returns the
+ * accumulated text; the caller decides how to interpret it.
+ */
+async function readAccumulatedSSE(res: Response): Promise<string> {
+    if (!res.body) throw new Error("No response body to stream");
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let accumulated = "";
+    let done = false;
+
+    const handleEvent = (rawEvent: string) => {
+        if (!rawEvent.startsWith("data:")) return;
+        let data = rawEvent.slice(5);
+        if (data.startsWith(" ")) data = data.slice(1);
+        if (data === "[DONE]") done = true;
+        else if (data.startsWith("[ERROR]")) throw new Error(data.slice(7).trim() || "Streaming failed");
+        else accumulated += data;
+    };
+
+    while (!done) {
+        const { value, done: streamDone } = await reader.read();
+        if (streamDone) break;
+        buffer += decoder.decode(value, { stream: true });
+        let sep: number;
+        while ((sep = buffer.indexOf("\n\n")) !== -1) {
+            const rawEvent = buffer.slice(0, sep);
+            buffer = buffer.slice(sep + 2);
+            handleEvent(rawEvent);
+            if (done) break;
+        }
+    }
+    return accumulated;
+}
+
 export async function submitLessonMessage(
     lessonSlug: string,
     content: string,
@@ -54,12 +91,25 @@ export async function submitLessonMessage(
         body: JSON.stringify({ content }),
     });
 
-    if (!res.ok) {
-        const text = (await res.text()) || res.statusText;
+    if (!res.ok || !res.body) {
+        const text = (!res.ok && (await res.text())) || res.statusText;
         throw new Error(`Failed to submit message: ${res.status} — ${text}`);
     }
 
-    return res.json();
+    // Streams SSE like the notes chat. The payload may be JSON ({ content, … })
+    // or plain text — handle both.
+    const accumulated = await readAccumulatedSSE(res);
+    let text = accumulated;
+    try {
+        const parsed = JSON.parse(accumulated);
+        if (parsed && typeof parsed === "object" && typeof parsed.content === "string") {
+            text = parsed.content;
+        }
+    } catch {
+        // plain-text stream — use as-is
+    }
+
+    return { role: "assistant", content: text };
 }
 
 export interface DashboardResponse {
@@ -354,42 +404,7 @@ export async function sendNoteChatMessage(
         throw new Error(`Failed to send message: ${res.status} — ${text}`);
     }
 
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    let accumulated = "";
-    let done = false;
-
-    const handleEvent = (rawEvent: string) => {
-        if (!rawEvent.startsWith("data:")) return;
-        // Everything after "data:" (with one optional leading space) is the chunk,
-        // preserving any internal characters.
-        let data = rawEvent.slice(5);
-        if (data.startsWith(" ")) data = data.slice(1);
-
-        if (data === "[DONE]") {
-            done = true;
-        } else if (data.startsWith("[ERROR]")) {
-            throw new Error(data.slice(7).trim() || "Streaming failed");
-        } else {
-            accumulated += data;
-        }
-    };
-
-    while (!done) {
-        const { value, done: streamDone } = await reader.read();
-        if (streamDone) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        let sep: number;
-        while ((sep = buffer.indexOf("\n\n")) !== -1) {
-            const rawEvent = buffer.slice(0, sep);
-            buffer = buffer.slice(sep + 2);
-            handleEvent(rawEvent);
-            if (done) break;
-        }
-    }
-
+    const accumulated = await readAccumulatedSSE(res);
     try {
         return JSON.parse(accumulated) as NoteChatResponse;
     } catch {
@@ -539,6 +554,71 @@ export async function generateNoteQuiz(
     if (!res.ok) {
         const text = (await res.text()) || res.statusText;
         throw new Error(`Failed to generate quiz: ${res.status} — ${text}`);
+    }
+
+    return res.json();
+}
+
+// ── FLASHCARDS API ──────────────────────────────────────────────────────────
+
+export interface Flashcard {
+    id?: string;
+    question: string;
+    answer: string;
+}
+
+export interface FlashcardsResponse {
+    flashcards: Flashcard[];
+    source?: "cache" | "generated";
+}
+
+/**
+ * Get (or create) flashcards for the selected sections.
+ * POST /notes/{note_id}/flashcards
+ */
+export async function fetchFlashcards(
+    noteId: string,
+    selectedSections: string[],
+    accessToken: string
+): Promise<FlashcardsResponse> {
+    const res = await fetch(`${BACKEND_URL}/notes/${noteId}/flashcards`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ selected_sections: selectedSections }),
+    });
+
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to load flashcards: ${res.status} — ${text}`);
+    }
+
+    return res.json();
+}
+
+/**
+ * Force-generate a fresh set of flashcards for the selected sections.
+ * POST /notes/{note_id}/flashcards/generate
+ */
+export async function generateFlashcards(
+    noteId: string,
+    selectedSections: string[],
+    accessToken: string
+): Promise<FlashcardsResponse> {
+    const res = await fetch(`${BACKEND_URL}/notes/${noteId}/flashcards/generate`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ selected_sections: selectedSections }),
+    });
+
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to generate flashcards: ${res.status} — ${text}`);
     }
 
     return res.json();

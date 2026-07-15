@@ -30,8 +30,8 @@ export default function NoteCourseCard({ code, name, noteCount, progress, onClic
 
             {/* Title */}
             <div className="min-w-0 w-full">
-                <h3 className="font-bold text-lg text-foreground leading-tight break-words">{heading}</h3>
-                {subtitle && <p className="text-sm text-muted-foreground mt-0.5 break-words">{subtitle}</p>}
+                <h3 className="font-bold text-lg text-foreground leading-tight break-words [overflow-wrap:anywhere]">{heading}</h3>
+                {subtitle && <p className="text-sm text-muted-foreground mt-0.5 break-words [overflow-wrap:anywhere]">{subtitle}</p>}
             </div>
 
             {/* Stats + progress (pinned to bottom for even card heights) */}
