@@ -578,7 +578,7 @@ export interface FlashcardsResponse {
  */
 export async function fetchFlashcards(
     noteId: string,
-    selectedSections: string[],
+    selectedSections: number[],
     accessToken: string
 ): Promise<FlashcardsResponse> {
     const res = await fetch(`${BACKEND_URL}/notes/${noteId}/flashcards`, {
@@ -604,7 +604,7 @@ export async function fetchFlashcards(
  */
 export async function generateFlashcards(
     noteId: string,
-    selectedSections: string[],
+    selectedSections: number[],
     accessToken: string
 ): Promise<FlashcardsResponse> {
     const res = await fetch(`${BACKEND_URL}/notes/${noteId}/flashcards/generate`, {
