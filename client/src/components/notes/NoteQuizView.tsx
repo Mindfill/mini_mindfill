@@ -107,9 +107,30 @@ export default function NoteQuizView({
     const total = questions.length;
     const current = questions[currentIndex];
 
-    // Options and the answer are plain strings; a selection is the option text.
+    // Resolve `answer` to the matching option text. Handles the answer being the
+    // exact option text (true/false + most MCQ), a bare letter ("A"/"B"), or a
+    // labelled form ("A) 5", "A. 5", "A: 5"). Falls back to the raw answer.
+    const correctOption = (q: QuizQuestion): string => {
+        const ans = normalize(q.answer);
+
+        const exact = q.options.find((o) => normalize(o) === ans);
+        if (exact !== undefined) return exact;
+
+        if (/^[A-Za-z]$/.test(ans)) {
+            const idx = ans.toUpperCase().charCodeAt(0) - 65;
+            if (idx >= 0 && idx < q.options.length) return q.options[idx];
+        }
+
+        const stripped = ans.replace(/^[A-Za-z][).:]\s*/, "").trim();
+        const labelled = q.options.find((o) => normalize(o) === stripped);
+        if (labelled !== undefined) return labelled;
+
+        return q.answer;
+    };
+
+    // Options and the selection are option text; grade against the resolved option.
     const isCorrect = (q: QuizQuestion, choice: string | null) =>
-        choice != null && normalize(choice) === normalize(q.answer);
+        choice != null && normalize(choice) === normalize(correctOption(q));
 
     const score = useMemo(
         () => answers.reduce((acc, a, i) => acc + (isCorrect(questions[i], a) ? 1 : 0), 0),
@@ -132,7 +153,7 @@ export default function NoteQuizView({
                 question: q.question,
                 type: q.type ?? "multiple_choice",
                 user_answer: ans,
-                correct_answer: q.answer,
+                correct_answer: correctOption(q),
                 is_correct: isCorrect(q, ans),
                 difficulty: q.difficulty ?? "medium",
             };
@@ -368,7 +389,7 @@ export default function NoteQuizView({
                                             <span className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
                                                 Correct Answer
                                             </span>
-                                            <MarkdownLatex content={q.answer} className="text-sm font-medium text-foreground/90" />
+                                            <MarkdownLatex content={correctOption(q)} className="text-sm font-medium text-foreground/90" />
                                         </div>
                                     )}
                                     {q.explanation && (
@@ -425,7 +446,7 @@ export default function NoteQuizView({
                 <div className="space-y-3">
                     {current.options.map((opt, i) => {
                         const isSelected = selected === opt;
-                        const isCorrectOpt = normalize(opt) === normalize(current.answer);
+                        const isCorrectOpt = normalize(opt) === normalize(correctOption(current));
                         let btnClass = "border-border hover:bg-muted text-foreground/90";
 
                         if (submitted) {
@@ -478,7 +499,7 @@ export default function NoteQuizView({
                         {!answeredCorrect && (
                             <div className="text-sm text-foreground/90 mb-3 flex gap-1">
                                 <span className="text-muted-foreground flex-shrink-0">Correct answer:</span>
-                                <MarkdownLatex content={current.answer} className="font-medium" />
+                                <MarkdownLatex content={correctOption(current)} className="font-medium" />
                             </div>
                         )}
                         {current.explanation && (

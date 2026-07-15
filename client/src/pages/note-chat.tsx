@@ -20,6 +20,7 @@ import TypingIndicator from "@/components/chat/TypingIndicator";
 import { X, ArrowLeft, BookOpen, FileText, RotateCcw, RefreshCw, CheckCircle } from "lucide-react";
 import mindfillIcon from "@/assets/mindfill.png";
 import NoteQuizView from "@/components/notes/NoteQuizView";
+import FlashcardsView from "@/components/notes/FlashcardsView";
 import SectionSelector, { type PlanSection } from "@/components/notes/SectionSelector";
 import { useToast } from "@/hooks/use-toast";
 
@@ -84,7 +85,7 @@ export default function NoteChat() {
     const [retryContent, setRetryContent] = useState<string | null>(null);
     const [phaseTwo, setPhaseTwo] = useState(false);
     const [lessonCompleted, setLessonCompleted] = useState(false);
-    const [activeTab, setActiveTab] = useState<"chat" | "quiz">("chat");
+    const [activeTab, setActiveTab] = useState<"chat" | "quiz" | "flashcards">("chat");
     const [lessonPlan, setLessonPlan] = useState<NoteLessonPlanResponse | null>(null);
     const [sections, setSections] = useState<PlanSection[]>(cached?.sections ?? []);
     const [selectedSections, setSelectedSections] = useState<string[]>([]);
@@ -430,19 +431,32 @@ export default function NoteChat() {
                         <div className="flex items-center bg-muted rounded-full p-1 border border-border">
                             <button
                                 onClick={() => setActiveTab("chat")}
-                                className={`px-4 md:px-6 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "chat" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
+                                className={`px-3 md:px-5 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "chat" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
                             >
                                 Chat
                             </button>
                             <button
                                 onClick={() => setActiveTab("quiz")}
-                                className={`px-4 md:px-6 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "quiz" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
+                                className={`px-3 md:px-5 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "quiz" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
                             >
                                 {generatingQuiz ? "…" : "Quiz"}
+                            </button>
+                            <button
+                                onClick={() => setActiveTab("flashcards")}
+                                className={`px-3 md:px-5 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "flashcards" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
+                            >
+                                Cards
                             </button>
                         </div>
                     </div>
                 </header>
+
+                {/* Flashcards tab */}
+                <div className="flex-1 overflow-y-auto" style={{ display: activeTab === "flashcards" ? "block" : "none" }}>
+                    {activeTab === "flashcards" && (
+                        <FlashcardsView noteId={noteId} accessToken={accessToken} />
+                    )}
+                </div>
 
                 {/* Quiz tab */}
                 <div className="flex-1 overflow-y-auto" style={{ display: activeTab === "quiz" ? "block" : "none" }}>
