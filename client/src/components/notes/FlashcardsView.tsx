@@ -72,14 +72,15 @@ export default function FlashcardsView({ noteId, accessToken }: FlashcardsViewPr
     const toggleAll = () => setSelectedSectionIds(allSelected ? [] : sectionOptions.map((s) => s.id));
 
     const start = async (regenerate = false) => {
-        const titles = sectionOptions.filter((s) => selectedSectionIds.includes(s.id)).map((s) => s.title);
-        if (titles.length === 0 || loading) return;
+        // The flashcards endpoint expects integer section ids (not titles).
+        const ids = selectedSectionIds.map(Number).filter((n) => !Number.isNaN(n));
+        if (ids.length === 0 || loading) return;
         setLoading(true);
         setError(null);
         try {
             const res = regenerate
-                ? await generateFlashcards(noteId, titles, accessToken)
-                : await fetchFlashcards(noteId, titles, accessToken);
+                ? await generateFlashcards(noteId, ids, accessToken)
+                : await fetchFlashcards(noteId, ids, accessToken);
             setCards(res.flashcards || []);
             setIndex(0);
             setFlipped(false);
