@@ -35,7 +35,7 @@ export default function Footer() {
             <h4 className="text-[10px] md:text-xs font-bold tracking-widest uppercase text-white/20">Social</h4>
             <div className="flex items-center gap-4">
               <a
-                href="https://www.instagram.com/mindfill_official?igsh=YmZiaThlNTl4azZp"
+                href="https://www.instagram.com/_.techcessofficial/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-lg border border-white/10 flex items-center justify-center text-white/30 hover:text-white hover:border-white transition-all duration-300"
