@@ -45,7 +45,10 @@ export async function fetchLessonHistory(
  * payload, terminated by `data: [DONE]` (or `data: [ERROR] …`). Returns the
  * accumulated text; the caller decides how to interpret it.
  */
-async function readAccumulatedSSE(res: Response): Promise<string> {
+async function readAccumulatedSSE(
+    res: Response,
+    onProgress?: (pct: number) => void
+): Promise<string> {
     if (!res.body) throw new Error("No response body to stream");
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
@@ -57,9 +60,21 @@ async function readAccumulatedSSE(res: Response): Promise<string> {
         if (!rawEvent.startsWith("data:")) return;
         let data = rawEvent.slice(5);
         if (data.startsWith(" ")) data = data.slice(1);
-        if (data === "[DONE]") done = true;
-        else if (data.startsWith("[ERROR]")) throw new Error(data.slice(7).trim() || "Streaming failed");
-        else accumulated += data;
+
+        // Control events must be checked before appending to content.
+        if (data === "[DONE]") {
+            done = true;
+            return;
+        }
+        if (data.startsWith("[ERROR]")) {
+            throw new Error(data.slice(7).trim() || "Streaming failed");
+        }
+        if (data.startsWith("[PROGRESS]")) {
+            const pct = parseFloat(data.slice(10).trim());
+            if (!Number.isNaN(pct)) onProgress?.(pct);
+            return;
+        }
+        accumulated += data;
     };
 
     while (!done) {
@@ -385,7 +400,8 @@ export async function onboardNote(
 export async function sendNoteChatMessage(
     noteId: string,
     request: NoteChatRequest,
-    accessToken: string
+    accessToken: string,
+    onProgress?: (pct: number) => void
 ): Promise<NoteChatResponse> {
     // The chat endpoint streams Server-Sent Events: each `data: <chunk>` is a
     // slice of the JSON body; `data: [DONE]` ends the stream (`data: [ERROR] …`
@@ -404,7 +420,7 @@ export async function sendNoteChatMessage(
         throw new Error(`Failed to send message: ${res.status} — ${text}`);
     }
 
-    const accumulated = await readAccumulatedSSE(res);
+    const accumulated = await readAccumulatedSSE(res, onProgress);
     try {
         return JSON.parse(accumulated) as NoteChatResponse;
     } catch {
