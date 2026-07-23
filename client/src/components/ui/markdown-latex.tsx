@@ -16,9 +16,13 @@ interface MarkdownLatexProps {
  * Also includes premium code syntax highlighting.
  */
 export default function MarkdownLatex({ content, className = "", inline = false }: MarkdownLatexProps) {
+    // Normalize LaTeX delimiters. Display math (\[ … \]) gets blank lines around
+    // it so remark-math treats it as a block and KaTeX renders it on its own
+    // line; inline math (\( … \)) stays inline. This also guards against the
+    // model emitting the wrong delimiters.
     const processedContent = (content ?? "")
-        .replace(/\\\[/g, () => "$$")
-        .replace(/\\\]/g, () => "$$")
+        .replace(/\\\[/g, () => "\n\n$$")
+        .replace(/\\\]/g, () => "$$\n\n")
         .replace(/\\\(/g, () => "$")
         .replace(/\\\)/g, () => "$");
 

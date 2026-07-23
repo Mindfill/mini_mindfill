@@ -85,6 +85,7 @@ export default function NoteChat() {
     const [retryContent, setRetryContent] = useState<string | null>(null);
     const [phaseTwo, setPhaseTwo] = useState(false);
     const [lessonCompleted, setLessonCompleted] = useState(false);
+    const [lessonProgress, setLessonProgress] = useState(0);
     const [activeTab, setActiveTab] = useState<"chat" | "quiz" | "flashcards">("chat");
     const [lessonPlan, setLessonPlan] = useState<NoteLessonPlanResponse | null>(null);
     const [sections, setSections] = useState<PlanSection[]>(cached?.sections ?? []);
@@ -247,16 +248,24 @@ export default function NoteChat() {
                 content,
                 selected_sections: selectedSections.length > 0 ? selectedSections : undefined
             };
-            const response = await sendNoteChatMessage(noteId, request, accessToken);
+            const response = await sendNoteChatMessage(
+                noteId,
+                request,
+                accessToken,
+                (pct) => setLessonProgress(Math.max(0, Math.min(100, pct)))
+            );
 
             setMessages((prev) => [...prev, { role: "assistant", content: response.content }]);
 
             // Streamed response flags drive UI state.
             setPhaseTwo(Boolean(response.phase_two));
-            if (response.completed) setLessonCompleted(true);
-        } catch (err) {
+            if (response.completed) {
+                setLessonCompleted(true);
+                setLessonProgress(100);
+            }
+        } catch (err: any) {
             console.error("Failed to send message:", err);
-            setError("Failed to get a response.");
+            setError(err?.message ? `Something went wrong: ${err.message}` : "Something went wrong. Please try again.");
             setRetryContent(content);
         } finally {
             setSending(false);
@@ -450,6 +459,16 @@ export default function NoteChat() {
                         </div>
                     </div>
                 </header>
+
+                {/* Lesson progress (updates live from [PROGRESS] stream events) */}
+                {lessonProgress > 0 && (
+                    <div className="h-1 w-full bg-muted flex-shrink-0" title={`${Math.round(lessonProgress)}% complete`}>
+                        <div
+                            className="h-full bg-primary transition-all duration-500 ease-out"
+                            style={{ width: `${Math.max(0, Math.min(100, lessonProgress))}%` }}
+                        />
+                    </div>
+                )}
 
                 {/* Flashcards tab */}
                 <div className="flex-1 overflow-y-auto" style={{ display: activeTab === "flashcards" ? "block" : "none" }}>

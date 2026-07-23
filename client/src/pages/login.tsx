@@ -1,9 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { FcGoogle } from "react-icons/fc";
-import { supabase } from "@/lib/supabase";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect } from "react";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 
 export default function Login() {
     const { session, isLoading } = useAuth();
@@ -14,14 +12,6 @@ export default function Login() {
             navigate("/dashboard");
         }
     }, [session, isLoading, navigate]);
-
-    const handleGoogleSignIn = async () => {
-        const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
-        await supabase.auth.signInWithOAuth({
-            provider: "google",
-            options: { redirectTo: `${siteUrl}/dashboard` },
-        });
-    };
 
     return (
         <div className="min-h-[100dvh] text-white flex flex-col bg-black">
@@ -63,18 +53,9 @@ export default function Login() {
                             <span className="text-white/20">the Exception.</span>
                         </h1>
 
-                        <Button
-                            size="lg"
-                            onClick={handleGoogleSignIn}
-                            className="w-full bg-white text-black hover:bg-white/90 px-6 sm:px-8 py-5 sm:py-6 text-sm sm:text-base font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-3"
-                            style={{
-                                boxShadow: "0 0 30px rgba(255, 255, 255, 0.1)",
-                            }}
-                            data-testid="button-sign-in-google"
-                        >
-                            <FcGoogle className="w-5 h-5" />
-                            Sign In with Google
-                        </Button>
+                        <div className="flex justify-center">
+                            <GoogleSignInButton />
+                        </div>
                     </div>
                 </div>
             </main>
