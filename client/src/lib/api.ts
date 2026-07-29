@@ -682,6 +682,38 @@ export interface FlashcardsResponse {
     session_id?: string;
 }
 
+export interface FlashcardSubmission {
+    session_id: string;
+    total: number;
+    /** How many cards the user flipped through. */
+    reviewed: number;
+}
+
+/**
+ * Submit a completed flashcard session (analytics/progress).
+ * POST /notes/{note_id}/flashcards/submit
+ * NOTE: contract mirrors the quiz submit — adjust if the backend PR differs.
+ */
+export async function submitFlashcardResults(
+    noteId: string,
+    submission: FlashcardSubmission,
+    accessToken: string
+): Promise<void> {
+    const res = await fetch(`${BACKEND_URL}/notes/${noteId}/flashcards/submit`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(submission),
+    });
+
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to submit flashcards: ${res.status} — ${text}`);
+    }
+}
+
 /**
  * Get (or create) flashcards for the selected sections.
  * POST /notes/{note_id}/flashcards
