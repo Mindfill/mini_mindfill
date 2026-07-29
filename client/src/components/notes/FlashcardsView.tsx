@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     fetchQuizSections,
     fetchFlashcards,
     generateFlashcards,
+    submitFlashcardResults,
     type Flashcard,
     type QuizSectionOption,
 } from "@/lib/api";
@@ -100,6 +101,24 @@ export default function FlashcardsView({ noteId, accessToken }: FlashcardsViewPr
         setFlipped(false);
         setIndex((i) => Math.min(Math.max(i + delta, 0), cards.length - 1));
     };
+
+    // Submit the session once, when the deck is completed (best-effort). Skipped
+    // until the backend returns a session_id. Re-arms on a new session.
+    const submittedRef = useRef(false);
+    useEffect(() => {
+        submittedRef.current = false;
+    }, [sessionId]);
+    useEffect(() => {
+        if (!sessionId || submittedRef.current || cards.length === 0) return;
+        if (index >= cards.length - 1) {
+            submittedRef.current = true;
+            submitFlashcardResults(
+                noteId,
+                { session_id: sessionId, total: cards.length, reviewed: cards.length },
+                accessToken
+            ).catch((err) => console.error("Failed to submit flashcard session:", err));
+        }
+    }, [index, cards.length, sessionId, noteId, accessToken]);
 
     // ── Loading (fetch / generate) ────────────────────────────────────────
     if (loading) {

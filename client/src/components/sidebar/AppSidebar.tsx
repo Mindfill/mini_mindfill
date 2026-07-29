@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { DropReviewDialog } from "./DropReviewDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { DyslexiaToggle } from "@/components/DyslexiaToggle";
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import mindfillLogo from "@/assets/mindfill.png";
@@ -135,6 +136,7 @@ export default function AppSidebar({ userName, activeItem, onSignOut }: AppSideb
                         <span className={`text-sm truncate font-medium ${activeItem === "profile" ? "text-primary" : "text-foreground/90"}`}>{userName}</span>
                     </button>
                     <ThemeToggle />
+                    <DyslexiaToggle />
                     <Button
                         variant="outline"
                         size="sm"

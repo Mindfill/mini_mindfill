@@ -152,6 +152,14 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 
+  /* Dyslexia-friendly font: overrides the --font-sans variable so all text using
+     font-sans switches to OpenDyslexic. KaTeX (its own fonts) and code (--font-mono)
+     are unaffected. */
+  html.dyslexic {
+    --font-sans: "OpenDyslexic", "Space Grotesk", Inter, sans-serif;
+    --font-serif: "OpenDyslexic", Georgia, serif;
+  }
+
   /* Smooth fade-in animation */
   @keyframes fadeIn {
     from {
