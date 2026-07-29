@@ -29,6 +29,9 @@ interface FlashcardsViewProps {
  */
 export default function FlashcardsView({ noteId, accessToken }: FlashcardsViewProps) {
     const [cards, setCards] = useState<Flashcard[]>([]);
+    // Captured from the generate/get response; sent back with any future
+    // flashcard-session submission (endpoint TBD).
+    const [sessionId, setSessionId] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -82,6 +85,7 @@ export default function FlashcardsView({ noteId, accessToken }: FlashcardsViewPr
                 ? await generateFlashcards(noteId, ids, accessToken)
                 : await fetchFlashcards(noteId, ids, accessToken);
             setCards(res.flashcards || []);
+            setSessionId(res.session_id ?? null);
             setIndex(0);
             setFlipped(false);
         } catch (err) {

@@ -1,12 +1,16 @@
-import MarkdownLatex from "@/components/ui/markdown-latex";
+import ChatContent from "@/components/chat/ChatContent";
 import mindfillIcon from "@/assets/mindfill.png";
 
 interface ChatBubbleProps {
     role: "user" | "assistant" | "developer";
     content: string;
+    /** Session for polling this message's [VIZ:N] videos (assistant messages). */
+    sessionId?: string;
+    /** History messages lazy-load their videos on scroll. */
+    isHistory?: boolean;
 }
 
-export default function ChatBubble({ role, content }: ChatBubbleProps) {
+export default function ChatBubble({ role, content, sessionId, isHistory }: ChatBubbleProps) {
     const isUser = role === "user";
 
     return (
@@ -36,7 +40,7 @@ export default function ChatBubble({ role, content }: ChatBubbleProps) {
                         }
                     `}
                 >
-                    <MarkdownLatex content={content} />
+                    <ChatContent content={content} sessionId={sessionId} isHistory={isHistory} />
                 </div>
             </div>
         </div>

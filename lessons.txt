@@ -1,0 +1,316 @@
+import asyncio
+import os
+import json
+import logging
+from uuid import uuid4
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import StreamingResponse
+from openai import AsyncOpenAI
+from supabase import AsyncClient
+
+from app.auth.verify import get_current_user_id
+from app.core.deps import get_supabase
+from app.core.rate_limit import limiter
+from app.schemas.chat import User
+from app.utils import lesson_chat, log_event
+
+
+router = APIRouter()
+client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+logger = logging.getLogger(__name__)
+
+
+@router.post("/lessons/{lesson_slug}/submit")
+@limiter.limit("20/minute")
+async def user_submit(
+    request: Request,
+    input: User,
+    lesson_slug: str,
+    user_id: str = Depends(get_current_user_id),
+    supabase: AsyncClient = Depends(get_supabase)
+):
+    # Batch 1: history + lesson_id (independent)
+    try:
+        lesson_res = await (
+            supabase.table("lessons")
+                .select("id")
+                .eq("slug", lesson_slug)
+                .maybe_single()
+                .execute()
+        )
+    except Exception as e:
+        logger.exception("Failed lesson fetch", extra={"user_id": user_id})
+        raise HTTPException(status_code=500, detail=f"Failed lesson fetch: {e}")
+
+    if not lesson_res or not lesson_res.data:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+
+    lesson_id = lesson_res.data["id"]
+    logger.debug("lesson_lookup", extra={"lesson_slug": lesson_slug, "lesson_id": lesson_id})
+
+    try:
+        history_res = await (
+            supabase.table("conversations")
+                .select("role, content")
+                .eq("lesson_id", lesson_id)
+                .eq("user_id", user_id)
+                .order("created_at")
+                .execute()
+        )
+    except Exception as e:
+        logger.exception("Failed conversation fetch", extra={"user_id": user_id, "lesson_id": lesson_id})
+        raise HTTPException(status_code=500, detail=f"Failed conversation fetch: {e}")
+
+    logger.debug("conversation_history", extra={"user_id": user_id, "count": len(history_res.data or [])})
+
+    # Batch 2: session + blueprint + progress (all need lesson_id)
+    try:
+        session_res, blueprint_res, progress_res = await asyncio.gather(
+            supabase.table("chat_sessions")
+                .select("id")
+                .eq("user_id", user_id)
+                .eq("lesson_id", lesson_id)
+                .maybe_single()
+                .execute(),
+
+            supabase.table("lesson_blueprints")
+                .select("learning_objectives, misconceptions")
+                .eq("lesson_id", lesson_id)
+                .limit(1)
+                .execute(),
+
+            supabase.table("lesson_progress")
+                .select("current_phase, exchange_count")
+                .eq("user_id", user_id)
+                .eq("lesson_id", lesson_id)
+                .execute()
+        )
+    except Exception as e:
+        logger.exception("Failed batch 2 fetch", extra={"lesson_id": lesson_id})
+        raise HTTPException(status_code=500, detail=f"Failed secondary fetch: {e}")
+
+    # Session
+    if session_res and session_res.data:
+        session_id = session_res.data["id"]
+    else:
+        session_id = str(uuid4())
+        await supabase.table("chat_sessions").insert(
+            {"id": session_id, "user_id": user_id, "lesson_id": lesson_id}
+        ).execute()
+
+    # Blueprint
+    if not blueprint_res.data:
+        raise HTTPException(status_code=404, detail="Lesson blueprint not found")
+
+    lesson_row = blueprint_res.data[0]
+    learning_objectives = lesson_row["learning_objectives"]
+    misconceptions = lesson_row["misconceptions"]
+
+    if isinstance(learning_objectives, str):
+        learning_objectives = json.loads(learning_objectives)
+    if isinstance(misconceptions, str):
+        misconceptions = json.loads(misconceptions)
+
+    # Lesson Progress
+    current_phase = "LAYER_1"
+    exchange_count = 0
+
+    if not progress_res.data:
+        await supabase.table("lesson_progress").insert({
+            "user_id": user_id,
+            "lesson_id": lesson_id,
+            "status": "in_progress",
+            "current_phase": "LAYER_1",
+            "exchange_count": 0
+        }).execute()
+        await log_event(supabase, user_id, session_id, None, "lesson_started", {
+            "layer": "LAYER_1",
+            "lesson_id": lesson_id
+        })
+    else:
+        current_phase = progress_res.data[0]["current_phase"]
+        exchange_count = progress_res.data[0]["exchange_count"]
+
+    # Build messages
+    user_input = list(history_res.data or [])
+
+    lesson_message = json.dumps(
+        {
+            "learning_objectives": learning_objectives,
+            "misconceptions": misconceptions,
+            "current_phase": current_phase
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+
+    user_input.insert(0, {"role": "developer", "content": lesson_message})
+    user_input.append({"role": input.role, "content": input.content})
+    async def generate_response():
+        accumulated_text = ""
+
+        stream = await client.responses.create(
+            model="gpt-4.1-mini",
+            instructions=lesson_chat(),
+            input=user_input,
+            max_output_tokens=550,
+            store=True,
+            include=["web_search_call.action.sources"],
+            stream=True,
+            text={
+                "format": {
+                    "type": "json_schema",
+                    "name": "chat_response",
+                    "strict": True,
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "content": {"type": "string"},
+                            "layer": {
+                                "type": "string",
+                                "enum": ["LAYER_1", "LAYER_2", "DEFINITION"]
+                            },
+                            "phase_two": {"type": "boolean"},
+                            "completed": {"type": "boolean"}
+                        },
+                        "required": ["content", "layer", "phase_two", "completed"],
+                        "additionalProperties": False
+                    }
+                }
+            }
+        )
+
+        async for event in stream:
+            if event.type == "response.output_text.delta":
+                accumulated_text += event.delta
+                yield f"data: {event.delta}\n\n"
+
+        yield "data: [DONE]\n\n"
+
+        try:
+            response_dict = json.loads(accumulated_text)
+        except json.JSONDecodeError as e:
+            logger.exception("Failed to parse response as JSON", extra={"lesson_id": lesson_id})
+            yield f"data: [ERROR] Failed to parse AI response\n\n"
+            return
+
+        phase_two = response_dict.get("phase_two", False)
+        lesson_completed = response_dict.get("completed", False)
+
+        update_data = {
+            "exchange_count": exchange_count + 1,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+
+        if phase_two and current_phase == "LAYER_1":
+            update_data["current_phase"] = "LAYER_2"
+
+        if lesson_completed:
+            update_data["status"] = "completed"
+            update_data["completed_at"] = datetime.now(timezone.utc).isoformat()
+            await log_event(supabase, user_id, session_id, None, "lesson_completed", {
+                "lesson_id": lesson_id,
+                "exchange_count": exchange_count + 1
+            })
+
+        try:
+            await asyncio.gather(
+                supabase.table("conversations").insert([
+                    {
+                        "user_id": user_id,
+                        "role": input.role,
+                        "content": input.content,
+                        "lesson_id": lesson_id,
+                        "session_id": session_id,
+                    },
+                    {
+                        "user_id": user_id,
+                        "role": "assistant",
+                        "content": response_dict["content"],
+                        "lesson_id": lesson_id,
+                        "session_id": session_id,
+                    },
+                ]).execute(),
+
+                supabase.table("lesson_progress")
+                    .update(update_data)
+                    .eq("user_id", user_id)
+                    .eq("lesson_id", lesson_id)
+                    .execute()
+            )
+        except Exception as e:
+            logger.exception("Failed to write conversation/progress", extra={"lesson_id": lesson_id})
+            yield f"data: [ERROR] Failed to save response\n\n"
+            return
+
+    return StreamingResponse(
+        generate_response(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no"
+        }
+    )
+
+
+@router.get("/lessons/{lesson_slug}/history")
+@limiter.limit("60/minute")
+async def lesson_history(
+    request: Request,
+    lesson_slug: str,
+    user_id: str = Depends(get_current_user_id),
+    supabase: AsyncClient = Depends(get_supabase)
+):
+    # Batch 1: lesson_id
+    try:
+        lesson_res = ( await supabase.table("lessons")
+            .select("id")
+            .eq("slug", lesson_slug)
+            .maybe_single()
+            .execute()
+        )
+        if not lesson_res or not lesson_res.data:
+            raise HTTPException(status_code=404, detail="Lesson not found")
+        lesson_id = lesson_res.data["id"]
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Failed to fetch lesson id", extra={"lesson_slug": lesson_slug})
+        raise HTTPException(status_code=500, detail=f"Failed to fetch lesson id: {e}")
+
+    # Batch 2: session + history concurrently
+    try:
+        session_res, history_res = await asyncio.gather(
+            supabase.table("chat_sessions")
+                .select("id")
+                .eq("user_id", user_id)
+                .eq("lesson_id", lesson_id)
+                .maybe_single()
+                .execute(),
+
+            supabase.table("conversations")
+                .select("role, content")
+                .eq("user_id", user_id)
+                .eq("lesson_id", lesson_id)
+                .order("created_at")
+                .execute()
+        )
+    except Exception as e:
+        logger.exception("Failed to fetch session/history", extra={"user_id": user_id})
+        raise HTTPException(status_code=500, detail=f"Failed to fetch history: {e}")
+
+    if not session_res or not session_res.data:
+        session_id = str(uuid4())
+        await supabase.table("chat_sessions").insert(
+            {"id": session_id, "user_id": user_id, "lesson_id": lesson_id}
+        ).execute()
+    else:
+        session_id = session_res.data["id"]
+
+    return list(history_res.data or [])
+
+@router.get("/me")
+async def me(user_id: str = Depends(get_current_user_id)):
+    return {"user_id": user_id}
