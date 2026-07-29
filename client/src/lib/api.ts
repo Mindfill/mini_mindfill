@@ -45,10 +45,56 @@ export async function fetchLessonHistory(
  * payload, terminated by `data: [DONE]` (or `data: [ERROR] …`). Returns the
  * accumulated text; the caller decides how to interpret it.
  */
-async function readAccumulatedSSE(
-    res: Response,
-    onProgress?: (pct: number) => void
-): Promise<string> {
+export interface StreamHandlers {
+    /** Live section-progress percentage (0–100). */
+    onProgress?: (pct: number) => void;
+    /** The `content` field value extracted progressively as the JSON streams. */
+    onContent?: (content: string) => void;
+}
+
+/**
+ * Extract the (possibly still-streaming) `content` string value from a partial
+ * JSON string. Content is the first/longest field, so it's readable well before
+ * the whole object closes. Handles JSON escapes and an unterminated tail.
+ */
+export function extractStreamingContent(acc: string): string | null {
+    const m = acc.match(/"content"\s*:\s*"/);
+    if (!m || m.index === undefined) return null;
+    const start = m.index + m[0].length;
+    let out = "";
+    for (let i = start; i < acc.length; i++) {
+        const ch = acc[i];
+        if (ch === "\\") {
+            const next = acc[i + 1];
+            if (next === undefined) break; // incomplete escape at the streaming edge
+            switch (next) {
+                case "n": out += "\n"; break;
+                case "t": out += "\t"; break;
+                case "r": out += "\r"; break;
+                case '"': out += '"'; break;
+                case "\\": out += "\\"; break;
+                case "/": out += "/"; break;
+                case "u": {
+                    const hex = acc.slice(i + 2, i + 6);
+                    if (hex.length === 4 && /^[0-9a-fA-F]{4}$/.test(hex)) {
+                        out += String.fromCharCode(parseInt(hex, 16));
+                        i += 4;
+                    }
+                    break;
+                }
+                default: out += next;
+            }
+            i++; // skip the escaped char
+        } else if (ch === '"') {
+            break; // closing quote of the content field
+        } else {
+            out += ch;
+        }
+    }
+    return out;
+}
+
+async function readAccumulatedSSE(res: Response, handlers?: StreamHandlers): Promise<string> {
     if (!res.body) throw new Error("No response body to stream");
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
@@ -71,10 +117,14 @@ async function readAccumulatedSSE(
         }
         if (data.startsWith("[PROGRESS]")) {
             const pct = parseFloat(data.slice(10).trim());
-            if (!Number.isNaN(pct)) onProgress?.(pct);
+            if (!Number.isNaN(pct)) handlers?.onProgress?.(pct);
             return;
         }
         accumulated += data;
+        if (handlers?.onContent) {
+            const c = extractStreamingContent(accumulated);
+            if (c !== null) handlers.onContent(c);
+        }
     };
 
     while (!done) {
@@ -95,8 +145,9 @@ async function readAccumulatedSSE(
 export async function submitLessonMessage(
     lessonSlug: string,
     content: string,
-    accessToken: string
-): Promise<ChatMessage> {
+    accessToken: string,
+    handlers?: StreamHandlers
+): Promise<NoteChatResponse> {
     const res = await fetch(`${BACKEND_URL}/lessons/${lessonSlug}/submit`, {
         method: "POST",
         headers: {
@@ -111,20 +162,18 @@ export async function submitLessonMessage(
         throw new Error(`Failed to submit message: ${res.status} — ${text}`);
     }
 
-    // Streams SSE like the notes chat. The payload may be JSON ({ content, … })
-    // or plain text — handle both.
-    const accumulated = await readAccumulatedSSE(res);
-    let text = accumulated;
+    // Streams SSE like the notes chat. Parse the full JSON (content, session_id,
+    // visualizations, …); fall back to plain text if it isn't JSON.
+    const accumulated = await readAccumulatedSSE(res, handlers);
     try {
         const parsed = JSON.parse(accumulated);
         if (parsed && typeof parsed === "object" && typeof parsed.content === "string") {
-            text = parsed.content;
+            return parsed as NoteChatResponse;
         }
     } catch {
-        // plain-text stream — use as-is
+        // plain-text stream
     }
-
-    return { role: "assistant", content: text };
+    return { content: accumulated };
 }
 
 export interface DashboardResponse {
@@ -234,9 +283,18 @@ export interface NoteLessonPlanResponse {
     };
 }
 
+/** A visualization referenced by a [VIZ:N] token in a message's content. */
+export interface Visualization {
+    viz_index: number;
+    concept_description?: string;
+    scene_type?: string;
+}
+
 export interface NoteChatMessage {
     role: "user" | "assistant" | "developer";
     content: string;
+    /** Session the message belongs to (needed to poll its [VIZ:N] videos). */
+    session_id?: string;
 }
 
 export interface NoteChatRequest {
@@ -250,6 +308,40 @@ export interface NoteChatResponse {
     layer?: string;
     phase_two?: boolean;
     completed?: boolean;
+    session_id?: string;
+    visualizations?: Visualization[];
+}
+
+/** One entry from GET /visualizations/status. */
+export interface VizStatus {
+    viz_index: number;
+    render_status: "pending" | "stub" | "success" | "failed";
+    video_url: string | null;
+}
+
+/**
+ * Poll the render status of a session's visualizations.
+ * GET /visualizations/status?session_id={id}[&index={n}]
+ */
+export async function fetchVisualizationsStatus(
+    sessionId: string,
+    accessToken: string,
+    index?: number
+): Promise<VizStatus[]> {
+    const qs = new URLSearchParams({ session_id: sessionId });
+    if (index !== undefined) qs.set("index", String(index));
+
+    const res = await fetch(`${BACKEND_URL}/visualizations/status?${qs.toString()}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to fetch visualization status: ${res.status} — ${text}`);
+    }
+
+    const data = await res.json();
+    return Array.isArray(data?.visualizations) ? data.visualizations : [];
 }
 
 export interface QuizOption {
@@ -273,6 +365,7 @@ export interface QuizResponse {
     quiz_id?: string;
     /** Returned by generate_quiz; sent back on submission. */
     quiz_session_id?: string;
+    session_id?: string;
     questions: QuizQuestion[];
 }
 
@@ -401,11 +494,11 @@ export async function sendNoteChatMessage(
     noteId: string,
     request: NoteChatRequest,
     accessToken: string,
-    onProgress?: (pct: number) => void
+    handlers?: StreamHandlers
 ): Promise<NoteChatResponse> {
-    // The chat endpoint streams Server-Sent Events: each `data: <chunk>` is a
-    // slice of the JSON body; `data: [DONE]` ends the stream (`data: [ERROR] …`
-    // on failure). We accumulate the chunks and parse the full JSON at [DONE].
+    // Streams SSE: each `data: <chunk>` is a slice of the JSON body; `[DONE]`
+    // ends it. Content is extracted progressively (handlers.onContent); the full
+    // JSON (session_id, visualizations, flags) is parsed once at [DONE].
     const res = await fetch(`${BACKEND_URL}/notes/${noteId}/chat`, {
         method: "POST",
         headers: {
@@ -420,7 +513,7 @@ export async function sendNoteChatMessage(
         throw new Error(`Failed to send message: ${res.status} — ${text}`);
     }
 
-    const accumulated = await readAccumulatedSSE(res, onProgress);
+    const accumulated = await readAccumulatedSSE(res, handlers);
     try {
         return JSON.parse(accumulated) as NoteChatResponse;
     } catch {
@@ -586,6 +679,7 @@ export interface Flashcard {
 export interface FlashcardsResponse {
     flashcards: Flashcard[];
     source?: "cache" | "generated";
+    session_id?: string;
 }
 
 /**

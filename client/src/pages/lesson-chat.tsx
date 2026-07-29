@@ -25,6 +25,9 @@ export default function LessonChat() {
     const [loading, setLoading] = useState(true);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [sending, setSending] = useState(false);
+    const [streamingContent, setStreamingContent] = useState<string | null>(null);
+    const [chatSessionId, setChatSessionId] = useState<string | null>(null);
+    const [historyCount, setHistoryCount] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<"chat" | "quiz">("chat");
 
@@ -48,7 +51,7 @@ export default function LessonChat() {
             messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
         }, 0);
         return () => clearTimeout(timer);
-    }, [messages, sending]);
+    }, [messages, sending, streamingContent]);
 
     useEffect(() => {
         if (!authLoading && !session) {
@@ -68,6 +71,7 @@ export default function LessonChat() {
                 try {
                     const history = await fetchLessonHistory(lessonSlug, session.access_token);
                     setMessages(history);
+                    setHistoryCount(history.length); // lazy-load their [VIZ:N] videos
                 } catch (err) {
                     console.error("Failed to fetch history:", err);
                     setError("Could not connect to the knowledge server. Please ensure the backend is running.");
@@ -94,15 +98,23 @@ export default function LessonChat() {
         setMessages((prev: ChatMessage[]) => [...prev, userMsg]);
         setSending(true);
         setError(null);
+        setStreamingContent(""); // live assistant bubble builds up as content streams
 
         try {
-            const assistantMsg = await submitLessonMessage(lessonSlug, content, accessToken);
-            setMessages((prev: ChatMessage[]) => [...prev, assistantMsg]);
-        } catch (err) {
+            const response = await submitLessonMessage(lessonSlug, content, accessToken, {
+                onContent: (partial) => setStreamingContent(partial),
+            });
+            setMessages((prev: ChatMessage[]) => [
+                ...prev,
+                { role: "assistant", content: response.content, session_id: response.session_id },
+            ]);
+            if (response.session_id) setChatSessionId(response.session_id);
+        } catch (err: any) {
             console.error("Failed to send message:", err);
-            setError("Failed to get response. Please try again.");
+            setError(err?.message ? `Something went wrong: ${err.message}` : "Failed to get response. Please try again.");
         } finally {
             setSending(false);
+            setStreamingContent(null);
         }
     };
 
@@ -224,10 +236,21 @@ export default function LessonChat() {
                             )}
 
                             {messages.map((msg: ChatMessage, idx: number) => (
-                                <ChatBubble key={idx} role={msg.role} content={msg.content} />
+                                <ChatBubble
+                                    key={idx}
+                                    role={msg.role}
+                                    content={msg.content}
+                                    sessionId={msg.session_id ?? chatSessionId ?? undefined}
+                                    isHistory={idx < historyCount}
+                                />
                             ))}
 
-                            {sending && <TypingIndicator />}
+                            {/* Live assistant bubble, building up as content streams */}
+                            {streamingContent ? (
+                                <ChatBubble role="assistant" content={streamingContent} />
+                            ) : null}
+
+                            {sending && !streamingContent && <TypingIndicator />}
 
                             {error && (
                                 <div className="flex justify-center">

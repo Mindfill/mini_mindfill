@@ -80,6 +80,9 @@ export default function NoteChat() {
     const [onboarding, setOnboarding] = useState(false);
     const [messages, setMessages] = useState<NoteChatMessage[]>(cached?.messages ?? []);
     const [sending, setSending] = useState(false);
+    const [streamingContent, setStreamingContent] = useState<string | null>(null);
+    const [chatSessionId, setChatSessionId] = useState<string | null>(null);
+    const [historyCount, setHistoryCount] = useState(0);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [retryContent, setRetryContent] = useState<string | null>(null);
@@ -135,6 +138,7 @@ export default function NoteChat() {
             try {
                 const history = await fetchNoteHistory(noteId, accessToken);
                 setMessages(history);
+                setHistoryCount(history.length); // these lazy-load their [VIZ:N] videos
             } catch {
                 // If history fails, maybe we need to onboard first
                 // Don't set error yet, we'll handle onboarding
@@ -186,7 +190,7 @@ export default function NoteChat() {
             messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
         }, 0);
         return () => clearTimeout(timer);
-    }, [messages, sending]);
+    }, [messages, sending, streamingContent]);
 
     useEffect(() => {
         if (!authLoading && !session) {
@@ -200,7 +204,9 @@ export default function NoteChat() {
             fetchedForToken.current = key;
 
             // Reuse cached note data; otherwise fetch. Refresh forces a reload.
-            if (noteChatCache[noteId]) {
+            const cachedNote = noteChatCache[noteId];
+            if (cachedNote) {
+                setHistoryCount(cachedNote.messages.length); // cached messages lazy-load videos
                 setHasLoaded(true);
                 setLoading(false);
             } else {
@@ -241,6 +247,7 @@ export default function NoteChat() {
         setSending(true);
         setError(null);
         setRetryContent(null);
+        setStreamingContent(""); // live assistant bubble builds up as content streams
 
         try {
             const request: NoteChatRequest = {
@@ -248,14 +255,17 @@ export default function NoteChat() {
                 content,
                 selected_sections: selectedSections.length > 0 ? selectedSections : undefined
             };
-            const response = await sendNoteChatMessage(
-                noteId,
-                request,
-                accessToken,
-                (pct) => setLessonProgress(Math.max(0, Math.min(100, pct)))
-            );
+            const response = await sendNoteChatMessage(noteId, request, accessToken, {
+                onProgress: (pct) => setLessonProgress(Math.max(0, Math.min(100, pct))),
+                onContent: (partial) => setStreamingContent(partial),
+            });
 
-            setMessages((prev) => [...prev, { role: "assistant", content: response.content }]);
+            // Commit the finished assistant message (with its session for [VIZ:N] polling).
+            setMessages((prev) => [
+                ...prev,
+                { role: "assistant", content: response.content, session_id: response.session_id },
+            ]);
+            if (response.session_id) setChatSessionId(response.session_id);
 
             // Streamed response flags drive UI state.
             setPhaseTwo(Boolean(response.phase_two));
@@ -269,6 +279,7 @@ export default function NoteChat() {
             setRetryContent(content);
         } finally {
             setSending(false);
+            setStreamingContent(null);
         }
     };
 
@@ -281,7 +292,7 @@ export default function NoteChat() {
         try {
             const response = await generateNoteQuiz(noteId, sectionIds, accessToken);
             setQuizQuestions(response.questions);
-            setQuizSessionId(response.quiz_session_id ?? null);
+            setQuizSessionId(response.session_id ?? response.quiz_session_id ?? null);
             setActiveTab("quiz");
         } catch (err) {
             console.error("Failed to generate quiz:", err);
@@ -517,10 +528,21 @@ export default function NoteChat() {
                             )}
 
                             {messages.map((msg: NoteChatMessage, idx: number) => (
-                                <ChatBubble key={idx} role={msg.role} content={msg.content} />
+                                <ChatBubble
+                                    key={idx}
+                                    role={msg.role}
+                                    content={msg.content}
+                                    sessionId={msg.session_id ?? chatSessionId ?? undefined}
+                                    isHistory={idx < historyCount}
+                                />
                             ))}
 
-                            {sending && <TypingIndicator />}
+                            {/* Live assistant bubble, building up as content streams */}
+                            {streamingContent ? (
+                                <ChatBubble role="assistant" content={streamingContent} />
+                            ) : null}
+
+                            {sending && !streamingContent && <TypingIndicator />}
 
                             {error && !sending && (
                                 <div className="flex justify-center">
