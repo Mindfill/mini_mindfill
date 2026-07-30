@@ -1,4 +1,5 @@
 import { SiX, SiInstagram } from "react-icons/si";
+import { Link } from "wouter";
 import mindfillLogo from "@/assets/mindfill.png";
 
 export default function Footer() {
@@ -51,8 +52,8 @@ export default function Footer() {
             © 2026 TECHCESS. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
-            <a href="#" className="text-[10px] font-bold tracking-widest uppercase text-white/20 hover:text-white transition-colors">Privacy</a>
-            <a href="#" className="text-[10px] font-bold tracking-widest uppercase text-white/20 hover:text-white transition-colors">Terms</a>
+            <Link href="/privacy" className="text-[10px] font-bold tracking-widest uppercase text-white/20 hover:text-white transition-colors">Privacy</Link>
+            <Link href="/terms" className="text-[10px] font-bold tracking-widest uppercase text-white/20 hover:text-white transition-colors">Terms</Link>
           </div>
         </div>
       </div>
