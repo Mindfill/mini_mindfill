@@ -16,6 +16,8 @@ import CourseNotes from "@/pages/course-notes";
 import NoteChat from "@/pages/note-chat";
 import NoteReader from "@/pages/note-reader";
 import Profile from "@/pages/profile";
+import Privacy from "@/pages/privacy";
+import Terms from "@/pages/terms";
 
 function Router() {
   return (
@@ -30,6 +32,8 @@ function Router() {
       <Route path="/notes/:noteId/read" component={NoteReader} />
       <Route path="/notes/:noteId" component={NoteChat} />
       <Route path="/profile" component={Profile} />
+      <Route path="/privacy" component={Privacy} />
+      <Route path="/terms" component={Terms} />
       <Route path="/waitlist" component={Waitlist} />
       <Route component={NotFound} />
     </Switch>
