@@ -587,6 +587,24 @@ export async function createCourse(
     return res.json();
 }
 
+/**
+ * Delete a course. Its notes are un-categorized (course_id → null) server-side.
+ * DELETE /courses/{course_id}
+ */
+export async function deleteCourse(courseId: string, accessToken: string): Promise<void> {
+    const res = await fetch(`${BACKEND_URL}/courses/${courseId}`, {
+        method: "DELETE",
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to delete course: ${res.status} — ${text}`);
+    }
+}
+
 // ── PROFILE API ─────────────────────────────────────────────────────────────
 
 export interface Profile {

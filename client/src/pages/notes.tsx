@@ -24,6 +24,11 @@ let notesCache: {
     courseStats: CourseStats;
 } | null = null;
 
+/** Clear the cached notes/courses so the next /notes visit refetches. */
+export function invalidateNotesCache() {
+    notesCache = null;
+}
+
 export default function NotesDashboard() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
     const [, navigate] = useLocation();
