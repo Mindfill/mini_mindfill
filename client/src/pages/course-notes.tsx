@@ -2,12 +2,17 @@ import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
-import { Note, Course, fetchCourses } from "@/lib/api";
+import { Note, Course, fetchCourses, deleteCourse } from "@/lib/api";
+import { invalidateNotesCache } from "@/pages/notes";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import NoteUploadModal from "@/components/notes/NoteUploadModal";
 import NoteCard from "@/components/notes/NoteCard";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, FileSearch, ArrowLeft, RefreshCw } from "lucide-react";
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Plus, FileSearch, ArrowLeft, RefreshCw, Trash2 } from "lucide-react";
 
 // Per-course cache (keyed by userId:courseId) so returning to a course reuses
 // the last load instead of re-hitting the DB. Refresh is user-triggered.
@@ -29,9 +34,27 @@ export default function CourseNotes() {
     const [course, setCourse] = useState<Course | null>(cached?.course ?? null);
     const [notes, setNotes] = useState<Note[]>(cached?.notes ?? []);
     const [uploadModalOpen, setUploadModalOpen] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     const userName = user?.user_metadata?.full_name || user?.email || "User";
     const { toast } = useToast();
+
+    const handleDeleteCourse = async () => {
+        if (!session || deleting) return;
+        setDeleting(true);
+        try {
+            await deleteCourse(courseId, session.access_token);
+            // Its notes are now uncategorized — clear caches so /notes reflects it.
+            if (cacheKey) delete courseNotesCache[cacheKey];
+            invalidateNotesCache();
+            toast({ title: "Course deleted", description: "Its notes moved to uncategorized." });
+            navigate("/notes");
+        } catch (err) {
+            console.error("Failed to delete course:", err);
+            toast({ variant: "destructive", title: "Couldn't delete course", description: "Please try again." });
+            setDeleting(false);
+        }
+    };
 
     const removeNoteFromCourse = async (noteId: string) => {
         if (!session) return;
@@ -206,6 +229,38 @@ export default function CourseNotes() {
                             >
                                 <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
                             </button>
+
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <button
+                                        disabled={deleting}
+                                        className="border border-border hover:bg-red-500/10 text-muted-foreground hover:text-red-400 hover:border-red-400/40 p-2.5 rounded-xl transition-all disabled:opacity-50"
+                                        aria-label="Delete course"
+                                        title="Delete course"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete this course?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            “{heading}” will be removed. Its notes aren't deleted — they move back to
+                                            your uncategorized notes.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={handleDeleteCourse}
+                                            className="bg-red-500 hover:bg-red-600 text-white"
+                                        >
+                                            Delete course
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+
                             <button
                                 onClick={() => setUploadModalOpen(true)}
                                 className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2.5 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2"

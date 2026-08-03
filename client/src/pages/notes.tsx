@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import { supabase } from "@/lib/supabase";
-import { Note, Course, fetchCourses } from "@/lib/api";
+import { Note, Course, fetchCourses, deleteCourse } from "@/lib/api";
 import { Plus, FileSearch, FolderPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import NoteUploadModal from "@/components/notes/NoteUploadModal";
@@ -23,6 +23,11 @@ let notesCache: {
     courses: Course[];
     courseStats: CourseStats;
 } | null = null;
+
+/** Clear the cached notes/courses so the next /notes visit refetches. */
+export function invalidateNotesCache() {
+    notesCache = null;
+}
 
 export default function NotesDashboard() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
@@ -165,6 +170,18 @@ export default function NotesDashboard() {
         }
     };
 
+    const handleDeleteCourse = async (courseId: string) => {
+        if (!session) return;
+        try {
+            await deleteCourse(courseId, session.access_token);
+            toast({ title: "Course deleted", description: "Its notes moved to uncategorized." });
+            loadNotes(); // refetch — course drops off, its notes reappear as uncategorized
+        } catch (err) {
+            console.error("Failed to delete course:", err);
+            toast({ variant: "destructive", title: "Couldn't delete course", description: "Please try again." });
+        }
+    };
+
     const handleSignOut = async () => {
         await supabaseSignOut();
         navigate("/login");
@@ -289,6 +306,7 @@ export default function NotesDashboard() {
                                                 noteCount={courseStats[c.id!]?.count || 0}
                                                 progress={courseStats[c.id!]?.progress || 0}
                                                 onClick={() => navigate(`/notes/course/${c.id}`)}
+                                                onDelete={() => handleDeleteCourse(c.id!)}
                                             />
                                         ))}
                                     </div>
