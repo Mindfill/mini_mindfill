@@ -79,7 +79,7 @@ export default function Profile() {
             toast({
                 variant: "destructive",
                 title: "Couldn't save profile",
-                description: err.message || "Please try again.",
+                description: "Please try again.",
             });
         } finally {
             setSaving(false);

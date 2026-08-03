@@ -160,7 +160,7 @@ export default function NotesDashboard() {
             toast({
                 variant: "destructive",
                 title: "Couldn't move note",
-                description: err.message || "Please try again.",
+                description: "Please try again.",
             });
         }
     };

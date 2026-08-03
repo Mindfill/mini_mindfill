@@ -100,7 +100,7 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
                 }
             }
         } catch (err: any) {
-            setError(err.message || "Failed to load questions. Please try again.");
+            setError("We couldn't load the questions. Please try again.");
         } finally {
             setLoading(false);
         }
