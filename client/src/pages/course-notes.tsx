@@ -62,7 +62,7 @@ export default function CourseNotes() {
             toast({
                 variant: "destructive",
                 title: "Couldn't remove note",
-                description: err.message || "Please try again.",
+                description: "Please try again.",
             });
         }
     };

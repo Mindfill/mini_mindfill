@@ -58,7 +58,7 @@ export default function CreateCourseDialog({ isOpen, onClose, onCreated }: Creat
             onCreated(course);
         } catch (err: any) {
             console.error("Failed to create course:", err);
-            setError(err.message || "Failed to create course");
+            setError("We couldn't create the course. Please try again.");
         } finally {
             setCreating(false);
         }

@@ -111,7 +111,7 @@ export default function LessonChat() {
             if (response.session_id) setChatSessionId(response.session_id);
         } catch (err: any) {
             console.error("Failed to send message:", err);
-            setError(err?.message ? `Something went wrong: ${err.message}` : "Failed to get response. Please try again.");
+            setError("Something went wrong getting a response. Please try again.");
         } finally {
             setSending(false);
             setStreamingContent(null);

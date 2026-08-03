@@ -275,7 +275,7 @@ export default function NoteChat() {
             }
         } catch (err: any) {
             console.error("Failed to send message:", err);
-            setError(err?.message ? `Something went wrong: ${err.message}` : "Something went wrong. Please try again.");
+            setError("Something went wrong getting a response. Please try again.");
             setRetryContent(content);
         } finally {
             setSending(false);

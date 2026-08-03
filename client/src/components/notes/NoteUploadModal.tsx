@@ -79,7 +79,7 @@ export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess, defa
             setNewCourseDescription("");
         } catch (err: any) {
             console.error("Failed to create course:", err);
-            setError(err.message || "Failed to create course");
+            setError("We couldn't create the course. Please try again.");
         } finally {
             setCreatingCourse(false);
         }
@@ -151,7 +151,7 @@ export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess, defa
             }, 1500);
         } catch (err: any) {
             console.error("❌ Error uploading note:", err);
-            setError(err.message || "Failed to upload note");
+            setError("We couldn't upload your note. Make sure it's a PDF under 20MB and 80 pages, then try again.");
             setStep("upload");
         } finally {
             setLoading(false);
