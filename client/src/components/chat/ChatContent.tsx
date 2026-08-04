@@ -1,8 +1,33 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { fetchVisualizationsStatus, type VizStatus } from "@/lib/api";
+import { fetchVisualizationsStatus, extractStreamingContent, type VizStatus } from "@/lib/api";
 import MarkdownLatex from "@/components/ui/markdown-latex";
 import { Loader2 } from "lucide-react";
+
+/**
+ * Safety net: if a message's content is actually the raw JSON envelope
+ * ({"content":"…","layer":…}) — e.g. a stream that didn't parse cleanly, or a
+ * fallback that stored the raw string — unwrap the content field so we never
+ * show raw JSON and the [VIZ:N] tokens inside it still get parsed.
+ */
+function normalizeContent(raw: string): string {
+    const t = raw.trimStart();
+    if (!t.startsWith("{")) return raw;
+    try {
+        const obj = JSON.parse(raw);
+        if (obj && typeof obj === "object" && typeof (obj as { content?: unknown }).content === "string") {
+            return (obj as { content: string }).content;
+        }
+        return raw;
+    } catch {
+        // (possibly truncated) envelope — pull the content field out
+        if (t.includes('"content"')) {
+            const extracted = extractStreamingContent(raw);
+            if (extracted) return extracted;
+        }
+        return raw;
+    }
+}
 
 interface ChatContentProps {
     content: string;
@@ -42,7 +67,7 @@ export default function ChatContent({ content, sessionId, isHistory = false, cla
     const { session } = useAuth();
     const accessToken = session?.access_token || "";
 
-    const segments = useMemo(() => parseSegments(content), [content]);
+    const segments = useMemo(() => parseSegments(normalizeContent(content)), [content]);
     const vizIndexes = useMemo(
         () => segments.flatMap((s) => (s.type === "viz" ? [s.index] : [])),
         [segments]

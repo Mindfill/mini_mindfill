@@ -32,6 +32,8 @@ type NoteChatCacheEntry = {
     noteUrl: string | null;
     sections: PlanSection[];
     messages: NoteChatMessage[];
+    /** Note session id — lets cached history lazy-load [VIZ:N] videos after refresh. */
+    chatSessionId?: string | null;
 };
 
 const NOTE_CHAT_CACHE_KEY = "techcess:note-chat-cache";
@@ -81,7 +83,7 @@ export default function NoteChat() {
     const [messages, setMessages] = useState<NoteChatMessage[]>(cached?.messages ?? []);
     const [sending, setSending] = useState(false);
     const [streamingContent, setStreamingContent] = useState<string | null>(null);
-    const [chatSessionId, setChatSessionId] = useState<string | null>(null);
+    const [chatSessionId, setChatSessionId] = useState<string | null>(cached?.chatSessionId ?? null);
     const [historyCount, setHistoryCount] = useState(0);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -132,6 +134,21 @@ export default function NoteChat() {
                 setSections(quizSections);
             } catch (secErr) {
                 console.warn("Could not load quiz sections:", secErr);
+            }
+
+            // Load this note's session id so history messages can lazy-load
+            // their [VIZ:N] videos after a refresh (history rows carry no
+            // session_id). Best-effort — needs a SELECT policy on note_sessions.
+            try {
+                const { data: sess } = await supabase
+                    .from("note_sessions")
+                    .select("id")
+                    .eq("note_id", noteId)
+                    .eq("user_id", session.user.id)
+                    .maybeSingle();
+                if (sess?.id) setChatSessionId(sess.id);
+            } catch (sessErr) {
+                console.warn("Could not load note session id:", sessErr);
             }
 
             // Check if lesson plan exists by trying to fetch history
@@ -207,6 +224,7 @@ export default function NoteChat() {
             const cachedNote = noteChatCache[noteId];
             if (cachedNote) {
                 setHistoryCount(cachedNote.messages.length); // cached messages lazy-load videos
+                if (cachedNote.chatSessionId) setChatSessionId(cachedNote.chatSessionId);
                 setHasLoaded(true);
                 setLoading(false);
             } else {
@@ -218,10 +236,10 @@ export default function NoteChat() {
     // Keep the cache in sync so back-navigation restores the latest conversation.
     useEffect(() => {
         if (hasLoaded && noteId) {
-            noteChatCache[noteId] = { noteTitle, noteUrl, sections, messages };
+            noteChatCache[noteId] = { noteTitle, noteUrl, sections, messages, chatSessionId };
             persistNoteChatCache();
         }
-    }, [hasLoaded, noteId, noteTitle, noteUrl, sections, messages]);
+    }, [hasLoaded, noteId, noteTitle, noteUrl, sections, messages, chatSessionId]);
 
     const handleRefresh = async () => {
         if (refreshing) return;
