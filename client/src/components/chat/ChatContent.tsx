@@ -2,7 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { fetchVisualizationsStatus, extractStreamingContent, type VizStatus } from "@/lib/api";
 import MarkdownLatex from "@/components/ui/markdown-latex";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw, VideoOff } from "lucide-react";
+
+const POLL_MS = 5000; // matches the backend retry interval
+const MAX_RETRIES = 2;
 
 /**
  * Safety net: if a message's content is actually the raw JSON envelope
@@ -20,7 +23,6 @@ function normalizeContent(raw: string): string {
         }
         return raw;
     } catch {
-        // (possibly truncated) envelope — pull the content field out
         if (t.includes('"content"')) {
             const extracted = extractStreamingContent(raw);
             if (extracted) return extracted;
@@ -31,9 +33,9 @@ function normalizeContent(raw: string): string {
 
 interface ChatContentProps {
     content: string;
-    /** Session the message belongs to — needed to poll its [VIZ:N] videos. */
+    /** Session the message belongs to — needed to pull its [VIZ:N] videos. */
     sessionId?: string;
-    /** History messages lazy-load videos on scroll instead of polling. */
+    /** Kept for API compatibility; the viz container polls the same way regardless. */
     isHistory?: boolean;
     className?: string;
 }
@@ -56,137 +58,119 @@ function parseSegments(content: string): Segment[] {
     return segs;
 }
 
-const isSettled = (s?: VizStatus) => s?.render_status === "success" || s?.render_status === "failed";
+const isReady = (s?: VizStatus) =>
+    (s?.render_status === "complete" || s?.render_status === "success") && !!s?.video_url;
+const isPermanentFail = (s?: VizStatus) =>
+    s?.render_status === "failed" && (s.retry_count ?? 0) >= MAX_RETRIES;
+const isTerminal = (s?: VizStatus) => isReady(s) || isPermanentFail(s);
 
 /**
- * Renders a chat message: teaching text with any inline [VIZ:N] tokens replaced
- * by a rendering skeleton that becomes a video once the Manim worker finishes.
- * Live messages poll /visualizations/status; history messages lazy-load on view.
+ * Renders a chat message: teaching text with inline [VIZ:N] tokens replaced by a
+ * persistent, always-present visual container. The container actively polls
+ * /visualizations/status (every 5s while in view) and reflects the render state:
+ * loading → retrying → video, or a permanent-failure state.
  */
-export default function ChatContent({ content, sessionId, isHistory = false, className }: ChatContentProps) {
-    const { session } = useAuth();
-    const accessToken = session?.access_token || "";
-
+export default function ChatContent({ content, sessionId, className }: ChatContentProps) {
     const segments = useMemo(() => parseSegments(normalizeContent(content)), [content]);
-    const vizIndexes = useMemo(
-        () => segments.flatMap((s) => (s.type === "viz" ? [s.index] : [])),
-        [segments]
-    );
-
-    const [statuses, setStatuses] = useState<Record<number, VizStatus>>({});
-    const [timedOut, setTimedOut] = useState(false);
-
-    // Live: poll every 2s until all viz are settled or 30s elapse.
-    useEffect(() => {
-        if (isHistory || !sessionId || !accessToken || vizIndexes.length === 0) return;
-        let cancelled = false;
-        let timer: ReturnType<typeof setTimeout>;
-        const start = Date.now();
-
-        const poll = async () => {
-            if (cancelled) return;
-            try {
-                const list = await fetchVisualizationsStatus(sessionId, accessToken);
-                if (cancelled) return;
-                const map: Record<number, VizStatus> = {};
-                list.forEach((v) => (map[v.viz_index] = v));
-                setStatuses((prev) => ({ ...prev, ...map }));
-                if (vizIndexes.every((i) => isSettled(map[i]))) return; // all done
-            } catch {
-                // keep trying until the timeout
-            }
-            if (cancelled) return;
-            if (Date.now() - start > 30000) {
-                setTimedOut(true);
-                return;
-            }
-            timer = setTimeout(poll, 2000);
-        };
-        poll();
-        return () => {
-            cancelled = true;
-            clearTimeout(timer);
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isHistory, sessionId, accessToken, vizIndexes.join(",")]);
 
     return (
         <div className={className}>
-            {segments.map((seg, i) => {
-                if (seg.type === "text") {
-                    return seg.text.trim() ? <MarkdownLatex key={i} content={seg.text} /> : null;
-                }
-                return isHistory ? (
-                    <HistoryViz key={i} index={seg.index} sessionId={sessionId} accessToken={accessToken} />
+            {segments.map((seg, i) =>
+                seg.type === "text" ? (
+                    seg.text.trim() ? <MarkdownLatex key={i} content={seg.text} /> : null
                 ) : (
-                    <LiveViz key={i} status={statuses[seg.index]} timedOut={timedOut} />
-                );
-            })}
+                    <VizSlot key={i} index={seg.index} sessionId={sessionId} />
+                )
+            )}
         </div>
     );
 }
 
-function LiveViz({ status, timedOut }: { status?: VizStatus; timedOut: boolean }) {
-    if (status?.render_status === "success" && status.video_url) return <VizVideo url={status.video_url} />;
-    if (status?.render_status === "failed") return null;
-    if (timedOut) return null; // gave up — silently drop the skeleton
-    return <VizSkeleton />;
-}
-
-function HistoryViz({ index, sessionId, accessToken }: { index: number; sessionId?: string; accessToken: string }) {
+function VizSlot({ index, sessionId }: { index: number; sessionId?: string }) {
+    const { session } = useAuth();
+    const accessToken = session?.access_token || "";
     const ref = useRef<HTMLDivElement>(null);
-    const [url, setUrl] = useState<string | null>(null);
-    const [checked, setChecked] = useState(false);
+    const [status, setStatus] = useState<VizStatus | undefined>(undefined);
+    const [inView, setInView] = useState(false);
 
+    const statusRef = useRef<VizStatus | undefined>(undefined);
     useEffect(() => {
-        if (!sessionId || !accessToken) {
-            setChecked(true);
-            return;
-        }
+        statusRef.current = status;
+    }, [status]);
+
+    // Lazy: only load/poll when the container is (near) in view.
+    useEffect(() => {
         const el = ref.current;
         if (!el) return;
-
         const io = new IntersectionObserver(
-            (entries) => {
-                if (!entries.some((e) => e.isIntersecting)) return;
-                io.disconnect();
-                fetchVisualizationsStatus(sessionId, accessToken, index)
-                    .then((list) => {
-                        const found = list.find((v) => v.viz_index === index) ?? list[0];
-                        if (found?.render_status === "success" && found.video_url) setUrl(found.video_url);
-                    })
-                    .catch(() => {})
-                    .finally(() => setChecked(true));
-            },
-            { rootMargin: "200px 0px" }
+            (entries) => setInView(entries.some((e) => e.isIntersecting)),
+            { rootMargin: "300px 0px" }
         );
         io.observe(el);
         return () => io.disconnect();
-    }, [sessionId, accessToken, index]);
+    }, []);
 
-    if (url) return <VizVideo url={url} />;
-    if (checked) return null; // observed, no video available
+    // Actively pull status from the DB every 5s while in view, until terminal.
+    useEffect(() => {
+        if (!sessionId || !accessToken || !inView || isTerminal(statusRef.current)) return;
+        let cancelled = false;
+        let timer: ReturnType<typeof setTimeout>;
+
+        const tick = async () => {
+            try {
+                const list = await fetchVisualizationsStatus(sessionId, accessToken, index);
+                if (cancelled) return;
+                const found = list.find((v) => v.viz_index === index) ?? list[0];
+                if (found) {
+                    setStatus(found);
+                    if (isTerminal(found)) return; // stop polling
+                }
+            } catch {
+                // keep polling through transient errors
+            }
+            if (!cancelled) timer = setTimeout(tick, POLL_MS);
+        };
+        tick();
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [sessionId, accessToken, inView, index]);
+
+    // Container is ALWAYS rendered (persistent), showing the current state.
     return (
-        <div ref={ref}>
-            <VizSkeleton />
+        <div ref={ref} className="my-4">
+            {isReady(status) ? (
+                <VizVideo url={status!.video_url!} />
+            ) : isPermanentFail(status) ? (
+                <VizFrame icon={<VideoOff className="w-5 h-5" />} label="This visual couldn't be generated" />
+            ) : status?.render_status === "failed" ? (
+                <VizFrame icon={<RefreshCw className="w-5 h-5 animate-spin" />} label="Retrying visual…" pulse />
+            ) : (
+                <VizFrame icon={<Loader2 className="w-5 h-5 animate-spin" />} label="Rendering visual…" pulse />
+            )}
         </div>
     );
 }
 
 function VizVideo({ url }: { url: string }) {
     return (
-        <div className="my-4 rounded-2xl overflow-hidden border border-border bg-black">
-            <video src={url} controls playsInline className="w-full h-auto block" />
+        <div className="rounded-2xl overflow-hidden border border-border bg-black aspect-video w-full">
+            <video src={url} controls playsInline preload="metadata" className="w-full h-full object-contain" />
         </div>
     );
 }
 
-function VizSkeleton() {
+function VizFrame({ icon, label, pulse }: { icon: React.ReactNode; label: string; pulse?: boolean }) {
     return (
-        <div className="my-4 rounded-2xl border border-border bg-muted/40 aspect-video w-full flex items-center justify-center animate-pulse">
-            <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span className="text-[10px] font-bold tracking-widest uppercase">Rendering visual…</span>
+        <div
+            className={`rounded-2xl border border-border bg-muted/40 aspect-video w-full flex items-center justify-center ${
+                pulse ? "animate-pulse" : ""
+            }`}
+        >
+            <div className="flex flex-col items-center gap-2 text-muted-foreground text-center px-4">
+                {icon}
+                <span className="text-[10px] font-bold tracking-widest uppercase">{label}</span>
             </div>
         </div>
     );
