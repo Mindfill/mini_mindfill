@@ -315,8 +315,10 @@ export interface NoteChatResponse {
 /** One entry from GET /visualizations/status. */
 export interface VizStatus {
     viz_index: number;
-    render_status: "pending" | "stub" | "success" | "failed";
+    render_status: "pending" | "rendering" | "stub" | "complete" | "success" | "failed";
     video_url: string | null;
+    /** How many times the render has been retried (drives retrying vs permanent-fail). */
+    retry_count?: number;
 }
 
 /**
