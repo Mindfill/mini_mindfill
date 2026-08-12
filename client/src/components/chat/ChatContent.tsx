@@ -154,9 +154,19 @@ function VizSlot({ index, sessionId }: { index: number; sessionId?: string }) {
 }
 
 function VizVideo({ url }: { url: string }) {
+    // Auto-play + loop, muted so browsers allow it; no controls (the play button
+    // covering the animation is poor UX for short teaching clips).
     return (
         <div className="rounded-2xl overflow-hidden border border-border bg-black aspect-video w-full">
-            <video src={url} controls playsInline preload="metadata" className="w-full h-full object-contain" />
+            <video
+                src={url}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="metadata"
+                className="w-full h-full object-contain"
+            />
         </div>
     );
 }

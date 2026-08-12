@@ -52,7 +52,9 @@
   --chart-4: 200 30% 75%;
   --chart-5: 200 30% 85%;
 
-  --font-sans: "Space Grotesk", Inter, sans-serif;
+  /* Platform default (dashboard, chat, quiz, …). The landing page opts back
+     into its display font via .font-landing. */
+  --font-sans: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
   --radius: .75rem;
@@ -150,6 +152,11 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+  }
+
+  /* Landing page keeps its original display font; the rest of the platform is Inter. */
+  .font-landing {
+    --font-sans: "Space Grotesk", Inter, sans-serif;
   }
 
   /* Dyslexia-friendly font: overrides the --font-sans variable so all text using
