@@ -13,7 +13,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen text-white flex flex-col bg-black">
+    <div className="font-landing min-h-screen text-white flex flex-col bg-black">
       <Navbar />
       <HeroSection />
       <VideoSection />

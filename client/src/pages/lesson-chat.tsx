@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useLocation, useParams } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { fetchLessonHistory, submitLessonMessage, type ChatMessage } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatInput from "@/components/chat/ChatInput";
@@ -69,6 +70,28 @@ export default function LessonChat() {
                 setLoading(true);
                 setError(null);
                 try {
+                    // Look up this lesson's chat session so history messages can pull
+                    // their [VIZ:N] videos (history rows carry no session_id).
+                    // Best-effort — needs SELECT policies on lessons + chat_sessions.
+                    try {
+                        const { data: lesson } = await supabase
+                            .from("lessons")
+                            .select("id")
+                            .eq("slug", lessonSlug)
+                            .maybeSingle();
+                        if (lesson?.id) {
+                            const { data: sess } = await supabase
+                                .from("chat_sessions")
+                                .select("id")
+                                .eq("lesson_id", lesson.id)
+                                .eq("user_id", session.user.id)
+                                .maybeSingle();
+                            if (sess?.id) setChatSessionId(sess.id);
+                        }
+                    } catch (sessErr) {
+                        console.warn("Could not load lesson session id:", sessErr);
+                    }
+
                     const history = await fetchLessonHistory(lessonSlug, session.access_token);
                     setMessages(history);
                     setHistoryCount(history.length); // lazy-load their [VIZ:N] videos
