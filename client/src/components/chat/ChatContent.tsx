@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { fetchVisualizationsStatus, extractStreamingContent, type VizStatus } from "@/lib/api";
 import MarkdownLatex from "@/components/ui/markdown-latex";
-import { Loader2, RefreshCw, VideoOff } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 
 const POLL_MS = 5000; // matches the backend retry interval
 const MAX_RETRIES = 2;
@@ -137,13 +137,14 @@ function VizSlot({ index, sessionId }: { index: number; sessionId?: string }) {
         };
     }, [sessionId, accessToken, inView, index]);
 
-    // Container is ALWAYS rendered (persistent), showing the current state.
+    // Permanent failure (backend gave up after 2 retries) — render no container.
+    if (isPermanentFail(status)) return null;
+
+    // Container persists while the visual is loading/retrying or ready.
     return (
         <div ref={ref} className="my-4">
             {isReady(status) ? (
                 <VizVideo url={status!.video_url!} />
-            ) : isPermanentFail(status) ? (
-                <VizFrame icon={<VideoOff className="w-5 h-5" />} label="This visual couldn't be generated" />
             ) : status?.render_status === "failed" ? (
                 <VizFrame icon={<RefreshCw className="w-5 h-5 animate-spin" />} label="Retrying visual…" pulse />
             ) : (
