@@ -432,6 +432,9 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
 
     const renderActiveScreen = () => {
         const q = questions[currentIndex];
+        // Guard against an out-of-bounds index or questions not being loaded yet
+        // (e.g. mid state-transition on the last question) — avoids crashing on q.*.
+        if (!q) return null;
         const isFlashcard = mode === "flashcard" || (mode === "timed" && q.type === "flashcard");
         const isMcq = mode === "mcq" || (mode === "timed" && q.type !== "flashcard");
 
