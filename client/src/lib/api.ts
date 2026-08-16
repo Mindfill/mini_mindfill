@@ -5,6 +5,14 @@
 
 const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "https://mindfill-api.onrender.com").trim().replace(/[`'"]/g, "");
 
+/** Thrown when an API call returns HTTP 402 — the user is out of credits. */
+export class OutOfCreditsError extends Error {
+    constructor(message = "You've run out of credits.") {
+        super(message);
+        this.name = "OutOfCreditsError";
+    }
+}
+
 export interface ChatMessage {
     role: "user" | "assistant";
     content: string;
@@ -157,6 +165,7 @@ export async function submitLessonMessage(
         body: JSON.stringify({ content }),
     });
 
+    if (res.status === 402) throw new OutOfCreditsError();
     if (!res.ok || !res.body) {
         const text = (!res.ok && (await res.text())) || res.statusText;
         throw new Error(`Failed to submit message: ${res.status} — ${text}`);
@@ -510,6 +519,7 @@ export async function sendNoteChatMessage(
         body: JSON.stringify(request),
     });
 
+    if (res.status === 402) throw new OutOfCreditsError();
     if (!res.ok || !res.body) {
         const text = (!res.ok && (await res.text())) || res.statusText;
         throw new Error(`Failed to send message: ${res.status} — ${text}`);
@@ -680,6 +690,7 @@ export async function generateNoteQuiz(
         body: JSON.stringify({ selected_sections: selectedSections }),
     });
 
+    if (res.status === 402) throw new OutOfCreditsError();
     if (!res.ok) {
         const text = (await res.text()) || res.statusText;
         throw new Error(`Failed to generate quiz: ${res.status} — ${text}`);
@@ -752,6 +763,7 @@ export async function fetchFlashcards(
         body: JSON.stringify({ selected_sections: selectedSections }),
     });
 
+    if (res.status === 402) throw new OutOfCreditsError();
     if (!res.ok) {
         const text = (await res.text()) || res.statusText;
         throw new Error(`Failed to load flashcards: ${res.status} — ${text}`);
@@ -778,6 +790,7 @@ export async function generateFlashcards(
         body: JSON.stringify({ selected_sections: selectedSections }),
     });
 
+    if (res.status === 402) throw new OutOfCreditsError();
     if (!res.ok) {
         const text = (await res.text()) || res.statusText;
         throw new Error(`Failed to generate flashcards: ${res.status} — ${text}`);

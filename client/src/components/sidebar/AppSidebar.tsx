@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { DropReviewDialog } from "./DropReviewDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { DyslexiaToggle } from "@/components/DyslexiaToggle";
+import { CreditsDisplay } from "@/components/CreditsDisplay";
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import mindfillLogo from "@/assets/mindfill.png";
@@ -125,6 +126,7 @@ export default function AppSidebar({ userName, activeItem, onSignOut }: AppSideb
 
                 {/* User section */}
                 <div className="p-4 border-t border-border flex flex-col gap-2 min-w-[256px]">
+                    <CreditsDisplay />
                     <button
                         onClick={() => { navigate("/profile"); if (window.innerWidth < 768) setSidebarOpen(false); }}
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl w-full text-left transition-colors ${activeItem === "profile" ? "bg-primary/10" : "hover:bg-card"}`}

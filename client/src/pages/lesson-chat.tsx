@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation, useParams } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { fetchLessonHistory, submitLessonMessage, type ChatMessage } from "@/lib/api";
+import { fetchLessonHistory, submitLessonMessage, OutOfCreditsError, type ChatMessage } from "@/lib/api";
+import { useCredits } from "@/hooks/use-credits";
 import { supabase } from "@/lib/supabase";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import ChatBubble from "@/components/chat/ChatBubble";
@@ -34,6 +35,7 @@ export default function LessonChat() {
 
     const userName = user?.user_metadata?.full_name || user?.email || "User";
     const accessToken = session?.access_token || "";
+    const { hasCredits } = useCredits();
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -134,7 +136,11 @@ export default function LessonChat() {
             if (response.session_id) setChatSessionId(response.session_id);
         } catch (err: any) {
             console.error("Failed to send message:", err);
-            setError("Something went wrong getting a response. Please try again.");
+            setError(
+                err instanceof OutOfCreditsError
+                    ? "You've run out of credits."
+                    : "Something went wrong getting a response. Please try again."
+            );
         } finally {
             setSending(false);
             setStreamingContent(null);
@@ -287,7 +293,14 @@ export default function LessonChat() {
                         </div>
                     </div>
 
-                    <ChatInput onSend={handleSend} disabled={sending} />
+                    {!hasCredits && (
+                        <div className="px-4 pb-2">
+                            <p className="max-w-3xl mx-auto text-center text-sm text-red-400/90 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
+                                You've run out of credits.
+                            </p>
+                        </div>
+                    )}
+                    <ChatInput onSend={handleSend} disabled={sending || !hasCredits} />
                 </div>
             </div>
         </div>
