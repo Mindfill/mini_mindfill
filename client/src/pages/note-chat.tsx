@@ -8,11 +8,13 @@ import {
     onboardNote,
     generateNoteQuiz,
     fetchQuizSections,
+    OutOfCreditsError,
     type NoteChatMessage,
     type NoteChatRequest,
     type NoteLessonPlanResponse,
     type QuizQuestion
 } from "@/lib/api";
+import { useCredits } from "@/hooks/use-credits";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatInput from "@/components/chat/ChatInput";
@@ -102,6 +104,7 @@ export default function NoteChat() {
     const userName = user?.user_metadata?.full_name || user?.email || "User";
     const accessToken = session?.access_token || "";
     const { toast } = useToast();
+    const { hasCredits } = useCredits();
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -293,8 +296,12 @@ export default function NoteChat() {
             }
         } catch (err: any) {
             console.error("Failed to send message:", err);
-            setError("Something went wrong getting a response. Please try again.");
-            setRetryContent(content);
+            if (err instanceof OutOfCreditsError) {
+                setError("You've run out of credits.");
+            } else {
+                setError("Something went wrong getting a response. Please try again.");
+                setRetryContent(content);
+            }
         } finally {
             setSending(false);
             setStreamingContent(null);
@@ -314,11 +321,11 @@ export default function NoteChat() {
             setActiveTab("quiz");
         } catch (err) {
             console.error("Failed to generate quiz:", err);
-            toast({
-                variant: "destructive",
-                title: "Couldn't generate quiz",
-                description: "Please try again.",
-            });
+            toast(
+                err instanceof OutOfCreditsError
+                    ? { variant: "destructive", title: "Out of credits", description: "You've run out of credits." }
+                    : { variant: "destructive", title: "Couldn't generate quiz", description: "Please try again." }
+            );
         } finally {
             setGeneratingQuiz(false);
         }
@@ -582,7 +589,14 @@ export default function NoteChat() {
                         </div>
                     </div>
 
-                    <ChatInput onSend={handleSend} disabled={sending} />
+                    {!hasCredits && (
+                        <div className="px-4 pb-2">
+                            <p className="max-w-3xl mx-auto text-center text-sm text-red-400/90 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
+                                You've run out of credits.
+                            </p>
+                        </div>
+                    )}
+                    <ChatInput onSend={handleSend} disabled={sending || !hasCredits} />
                 </div>
             </div>
         </div>

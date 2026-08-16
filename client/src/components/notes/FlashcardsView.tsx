@@ -4,6 +4,7 @@ import {
     fetchFlashcards,
     generateFlashcards,
     submitFlashcardResults,
+    OutOfCreditsError,
     type Flashcard,
     type QuizSectionOption,
 } from "@/lib/api";
@@ -91,7 +92,11 @@ export default function FlashcardsView({ noteId, accessToken }: FlashcardsViewPr
             setFlipped(false);
         } catch (err) {
             console.error("Failed to load flashcards:", err);
-            setError("Couldn't load flashcards. Please try again.");
+            setError(
+                err instanceof OutOfCreditsError
+                    ? "You've run out of credits."
+                    : "Couldn't load flashcards. Please try again."
+            );
         } finally {
             setLoading(false);
         }

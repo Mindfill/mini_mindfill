@@ -41,16 +41,19 @@ function Router() {
 }
 
 import { AuthProvider } from "@/hooks/use-auth";
+import { CreditsProvider } from "@/hooks/use-credits";
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
         <AuthProvider>
+          <CreditsProvider>
           <TooltipProvider>
             <Toaster />
             <Router />
           </TooltipProvider>
+          </CreditsProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
