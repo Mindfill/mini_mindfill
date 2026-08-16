@@ -87,7 +87,8 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
                 res = await fetchQuestions(lessonId, mode, layer.toLowerCase(), difficulty.toLowerCase());
             }
 
-            if (!res || res.length === 0) {
+            console.log("[QuizSection] fetched:", { mode, isArray: Array.isArray(res), count: Array.isArray(res) ? res.length : "n/a", sample: Array.isArray(res) ? res[0] : res });
+            if (!res || !Array.isArray(res) || res.length === 0) {
                 setError("No questions available for this combination yet. Try a different layer or difficulty.");
             } else {
                 setQuestions(res);
@@ -432,9 +433,18 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
 
     const renderActiveScreen = () => {
         const q = questions[currentIndex];
-        // Guard against an out-of-bounds index or questions not being loaded yet
-        // (e.g. mid state-transition on the last question) — avoids crashing on q.*.
-        if (!q) return null;
+        // Guard against an out-of-bounds index or questions not being loaded yet.
+        if (!q) {
+            console.warn("[QuizSection] no question at index", { currentIndex, count: questions.length, mode, sample: questions[0] });
+            return (
+                <div className="max-w-2xl mx-auto py-16 px-6 text-center">
+                    <p className="text-muted-foreground mb-6">No question to show.</p>
+                    <button onClick={() => setScreen(1)} className="px-6 py-2 rounded-xl bg-primary text-primary-foreground font-medium">
+                        Back to modes
+                    </button>
+                </div>
+            );
+        }
         const isFlashcard = mode === "flashcard" || (mode === "timed" && q.type === "flashcard");
         const isMcq = mode === "mcq" || (mode === "timed" && q.type !== "flashcard");
 
