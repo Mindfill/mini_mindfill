@@ -27,12 +27,17 @@ export async function fetchTimedBatch(lessonId: string, layer: string, difficult
 }
 
 export async function submitAttempt(questionId: string, lessonId: string, correct: boolean, studentAnswer: string) {
+    const body = { question_id: questionId, lesson_id: lessonId, correct, student_answer: studentAnswer };
     const res = await fetch(`${BACKEND_URL}/quiz/attempt`, {
         method: "POST",
         headers: await getHeaders(),
-        body: JSON.stringify({ question_id: questionId, lesson_id: lessonId, correct, student_answer: studentAnswer }),
+        body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error("Failed to submit attempt");
+    if (!res.ok) {
+        const detail = await res.text().catch(() => "");
+        console.error("[quizApi] submitAttempt failed", res.status, "sent:", body, "response:", detail);
+        throw new Error("Failed to submit attempt");
+    }
     return res.json();
 }
 
