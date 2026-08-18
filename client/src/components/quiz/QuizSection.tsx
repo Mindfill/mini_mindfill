@@ -707,6 +707,8 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
         );
     };
 
+    console.log("[QuizSection] render:", { screen, mode, loading, error, questionCount: questions.length, currentIndex, lessonId });
+
     return (
         <div className="w-full min-h-[calc(100vh-80px)] bg-background text-foreground relative">
             <style dangerouslySetInnerHTML={{
