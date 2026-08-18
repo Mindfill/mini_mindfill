@@ -102,13 +102,6 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
             }
 
             const list = asQuestionArray(res);
-            console.log("[QuizSection] fetched:", {
-                mode,
-                isArray: Array.isArray(res),
-                extracted: list.length,
-                keys: res && typeof res === "object" && !Array.isArray(res) ? Object.keys(res) : null,
-                sample: list[0],
-            });
             if (list.length === 0) {
                 setError("No questions available for this combination yet. Try a different layer or difficulty.");
             } else {
@@ -456,7 +449,6 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
         const q = questions[currentIndex];
         // Guard against an out-of-bounds index or questions not being loaded yet.
         if (!q) {
-            console.warn("[QuizSection] no question at index", { currentIndex, count: questions.length, mode, sample: questions[0] });
             return (
                 <div className="max-w-2xl mx-auto py-16 px-6 text-center">
                     <p className="text-muted-foreground mb-6">No question to show.</p>
@@ -727,8 +719,6 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
             </div>
         );
     };
-
-    console.log("[QuizSection] render:", { screen, mode, loading, error, questionCount: questions.length, currentIndex, lessonId });
 
     return (
         <div className="w-full min-h-[calc(100vh-80px)] bg-background text-foreground relative">
