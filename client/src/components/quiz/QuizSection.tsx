@@ -9,6 +9,20 @@ interface QuizSectionProps {
     onClose: () => void;
 }
 
+/** The questions endpoint may return a bare array or an object wrapping one
+ *  (e.g. { questions: [...] }). Normalize to an array either way. */
+function asQuestionArray(res: any): any[] {
+    if (Array.isArray(res)) return res;
+    if (res && typeof res === "object") {
+        for (const k of ["questions", "data", "items", "results", "batch"]) {
+            if (Array.isArray(res[k])) return res[k];
+        }
+        const firstArray = Object.values(res).find((v) => Array.isArray(v));
+        if (firstArray) return firstArray as any[];
+    }
+    return [];
+}
+
 export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSectionProps) {
     const [screen, setScreen] = useState<1 | 2 | 3 | 4>(1);
     const [mode, setMode] = useState<"mcq" | "flashcard" | "timed">("mcq");
@@ -87,11 +101,18 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
                 res = await fetchQuestions(lessonId, mode, layer.toLowerCase(), difficulty.toLowerCase());
             }
 
-            console.log("[QuizSection] fetched:", { mode, isArray: Array.isArray(res), count: Array.isArray(res) ? res.length : "n/a", sample: Array.isArray(res) ? res[0] : res });
-            if (!res || !Array.isArray(res) || res.length === 0) {
+            const list = asQuestionArray(res);
+            console.log("[QuizSection] fetched:", {
+                mode,
+                isArray: Array.isArray(res),
+                extracted: list.length,
+                keys: res && typeof res === "object" && !Array.isArray(res) ? Object.keys(res) : null,
+                sample: list[0],
+            });
+            if (list.length === 0) {
                 setError("No questions available for this combination yet. Try a different layer or difficulty.");
             } else {
-                setQuestions(res);
+                setQuestions(list);
                 setCurrentIndex(0);
                 setScreen(3);
                 setAnswers([]);
