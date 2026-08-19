@@ -15,6 +15,7 @@ import {
     type QuizQuestion
 } from "@/lib/api";
 import { useCredits } from "@/hooks/use-credits";
+import { useSubscription } from "@/hooks/use-subscription";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatInput from "@/components/chat/ChatInput";
@@ -105,6 +106,7 @@ export default function NoteChat() {
     const accessToken = session?.access_token || "";
     const { toast } = useToast();
     const { hasCredits } = useCredits();
+    const { isPaid, promptUpgrade } = useSubscription();
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -297,7 +299,7 @@ export default function NoteChat() {
         } catch (err: any) {
             console.error("Failed to send message:", err);
             if (err instanceof OutOfCreditsError) {
-                setError("You've run out of credits.");
+                promptUpgrade();
             } else {
                 setError("Something went wrong getting a response. Please try again.");
                 setRetryContent(content);
@@ -321,11 +323,11 @@ export default function NoteChat() {
             setActiveTab("quiz");
         } catch (err) {
             console.error("Failed to generate quiz:", err);
-            toast(
-                err instanceof OutOfCreditsError
-                    ? { variant: "destructive", title: "Out of credits", description: "You've run out of credits." }
-                    : { variant: "destructive", title: "Couldn't generate quiz", description: "Please try again." }
-            );
+            if (err instanceof OutOfCreditsError) {
+                promptUpgrade();
+            } else {
+                toast({ variant: "destructive", title: "Couldn't generate quiz", description: "Please try again." });
+            }
         } finally {
             setGeneratingQuiz(false);
         }
@@ -589,14 +591,17 @@ export default function NoteChat() {
                         </div>
                     </div>
 
-                    {!hasCredits && (
+                    {!hasCredits && !isPaid && (
                         <div className="px-4 pb-2">
-                            <p className="max-w-3xl mx-auto text-center text-sm text-red-400/90 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
-                                You've run out of credits.
-                            </p>
+                            <button
+                                onClick={promptUpgrade}
+                                className="max-w-3xl w-full mx-auto block text-center text-sm text-red-400/90 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2 hover:bg-red-500/20 transition-colors"
+                            >
+                                You've run out of credits. Upgrade to Pro →
+                            </button>
                         </div>
                     )}
-                    <ChatInput onSend={handleSend} disabled={sending || !hasCredits} />
+                    <ChatInput onSend={handleSend} disabled={sending || (!hasCredits && !isPaid)} />
                 </div>
             </div>
         </div>

@@ -624,6 +624,10 @@ export interface Profile {
     full_name: string | null;
     /** ISO date string (YYYY-MM-DD) */
     date_of_birth: string | null;
+    /** "free" | "active" | … (billing state). Absent on older backends. */
+    subscription_status?: string | null;
+    /** ISO datetime the current paid period ends. Null/absent for free users. */
+    current_period_end?: string | null;
 }
 
 export interface ProfileUpdate {
@@ -670,6 +674,56 @@ export async function updateProfile(update: ProfileUpdate, accessToken: string):
     }
 
     return res.json();
+}
+
+// ── BILLING API ─────────────────────────────────────────────────────────────
+
+export type PaymentPlan = "pro_monthly" | "pro_yearly";
+
+/**
+ * Start a checkout for the chosen plan.
+ * POST /payments/initiate  →  { payment_url }
+ * The caller redirects the browser to payment_url.
+ */
+export async function initiatePayment(
+    plan: PaymentPlan,
+    accessToken: string
+): Promise<{ payment_url: string }> {
+    const res = await fetch(`${BACKEND_URL}/payments/initiate`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ plan }),
+    });
+
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to initiate payment: ${res.status} — ${text}`);
+    }
+
+    const data = await res.json();
+    if (!data?.payment_url) throw new Error("Payment provider did not return a URL");
+    return data;
+}
+
+/**
+ * Cancel the active subscription.
+ * DELETE /subscriptions/cancel
+ */
+export async function cancelSubscription(accessToken: string): Promise<void> {
+    const res = await fetch(`${BACKEND_URL}/subscriptions/cancel`, {
+        method: "DELETE",
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to cancel subscription: ${res.status} — ${text}`);
+    }
 }
 
 /**
