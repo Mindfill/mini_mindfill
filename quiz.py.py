@@ -85,6 +85,14 @@ def _normalize_learning_objectives(value: Any) -> str:
     return str(value)
 
 
+async def _safe_log_event(supabase: AsyncClient, *args, **kwargs) -> None:
+    """Analytics logging must never fail the request that triggered it."""
+    try:
+        await log_event(supabase, *args, **kwargs)
+    except Exception:
+        logger.exception("Failed to write analytics event")
+
+
 async def _get_lesson_by_slug(supabase: AsyncClient, lesson_slug: str) -> dict[str, Any]:
     try:
         lesson_res = await (
@@ -170,7 +178,7 @@ async def get_lesson_questions(
 
     questions = list(questions_res.data or [])
     event_type = "flashcard_started" if question_type == "flashcard" else "quiz_started"
-    await log_event(supabase, user_id, session_id, None, event_type, {
+    await _safe_log_event(supabase, user_id, session_id, None, event_type, {
         "session_id": session_id,
         "lesson_id": lesson_id,
         "source": "lessons",
@@ -241,7 +249,7 @@ async def get_timed_quiz_batch(
     random.shuffle(questions)
     selected_questions = questions[:15]
 
-    await log_event(supabase, user_id, session_id, None, "quiz_started", {
+    await _safe_log_event(supabase, user_id, session_id, None, "quiz_started", {
         "session_id": session_id,
         "lesson_id": lesson_id,
         "source": "lessons",
@@ -256,11 +264,21 @@ async def get_timed_quiz_batch(
 
 @router.post("/attempt")
 async def submit_attempt(
+    request: Request,
     payload: AttemptRequest,
+    background_tasks: BackgroundTasks,
     user_id: str = Depends(get_current_user_id),
     supabase: AsyncClient = Depends(get_supabase),
 ):
-    lesson = await _resolve_lesson_ref(supabase, payload.lesson_id)
+    # Resolve the lesson safely so a bad ref returns a clean error (with CORS)
+    # rather than an unhandled 500.
+    try:
+        lesson = await _resolve_lesson_ref(supabase, payload.lesson_id)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to resolve lesson for attempt", extra={"lesson_ref": payload.lesson_id, "user_id": user_id})
+        raise HTTPException(status_code=500, detail=f"Failed to resolve lesson: {exc}")
     lesson_id = lesson["id"]
 
     try:
@@ -276,7 +294,6 @@ async def submit_attempt(
         logger.exception("Failed to fetch question for attempt", extra={"question_id": payload.question_id, "user_id": user_id})
         raise HTTPException(status_code=500, detail=f"Failed to fetch question: {exc}")
 
-    background_tasks.add_task(update_streak, request.app.state.supabase, user_id)
     if not question_res or not question_res.data:
         raise HTTPException(status_code=404, detail="Question not found")
 
@@ -295,8 +312,11 @@ async def submit_attempt(
         logger.exception("Failed to save attempt", extra={"question_id": payload.question_id, "user_id": user_id})
         raise HTTPException(status_code=500, detail=f"Failed to save attempt: {exc}")
 
+    # Streak update runs after the response — use the app-level (long-lived) client.
+    background_tasks.add_task(update_streak, request.app.state.supabase, user_id)
+
     session_id = payload.session_id or str(uuid4())
-    await log_event(supabase, user_id, session_id, None, "quiz_attempted", {
+    await _safe_log_event(supabase, user_id, session_id, None, "quiz_attempted", {
         "session_id": session_id,
         "question_id": payload.question_id,
         "lesson_id": lesson_id,
@@ -312,6 +332,7 @@ async def submit_attempt(
 
 @router.post("/attempt/batch")
 async def submit_batch_attempts(
+    request: Request,
     payload: BatchAttemptRequest,
     background_tasks: BackgroundTasks,
     user_id: str = Depends(get_current_user_id),
@@ -321,17 +342,23 @@ async def submit_batch_attempts(
     timestamp = datetime.now(timezone.utc).isoformat()
     rows = []
 
-    for attempt in payload.attempts:
-        lesson = await _resolve_lesson_ref(supabase, attempt.lesson_id)
-        rows.append(
-            {
-                "user_id": user_id,
-                "question_id": attempt.question_id,
-                "lesson_id": lesson["id"],
-                "correct": attempt.correct,
-                "attempted_at": timestamp,
-            }
-        )
+    try:
+        for attempt in payload.attempts:
+            lesson = await _resolve_lesson_ref(supabase, attempt.lesson_id)
+            rows.append(
+                {
+                    "user_id": user_id,
+                    "question_id": attempt.question_id,
+                    "lesson_id": lesson["id"],
+                    "correct": attempt.correct,
+                    "attempted_at": timestamp,
+                }
+            )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to resolve lessons for batch attempts", extra={"user_id": user_id})
+        raise HTTPException(status_code=500, detail=f"Failed to resolve lessons: {exc}")
 
     if rows:
         try:
@@ -345,7 +372,7 @@ async def submit_batch_attempts(
     accuracy = round(correct / saved, 2) if saved else 0
 
     background_tasks.add_task(update_streak, request.app.state.supabase, user_id)
-    await log_event(supabase, user_id, session_id, None, "quiz_completed", {
+    await _safe_log_event(supabase, user_id, session_id, None, "quiz_completed", {
         "session_id": session_id,
         "saved": saved,
         "correct": correct,
@@ -476,7 +503,7 @@ async def explain_quiz_answer(
         cached_tokens = getattr(input_tokens_details, "cached_tokens", 0) or 0
         usd_cost = ((input_tokens - cached_tokens) * GPT41_MINI_INPUT) + (cached_tokens * GPT41_MINI_CACHED_INPUT) + (output_tokens * GPT41_MINI_OUTPUT)
         asyncio.create_task(log_usage(supabase, user_id, "lesson_quiz_explain", "gpt-5.4-mini", input_tokens, output_tokens, usd_cost, cached_tokens=cached_tokens, lesson_id=lesson_id))
-        if request.state.subscription_status == "free":
+        if getattr(request.state, "subscription_status", None) == "free":
             asyncio.create_task(supabase.rpc("deduct_credits", {"p_user_id": user_id, "p_amount": usd_cost / CREDIT_USD_VALUE}).execute())
     except Exception as exc:
         logger.exception("Failed to generate quiz explanation", extra={"lesson_id": lesson_id})
