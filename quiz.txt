@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import random
@@ -6,14 +7,16 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 from supabase import AsyncClient
 
 from app.auth.verify import get_current_user_id
 from app.core.deps import get_supabase
-from app.utils import log_event
+from app.utils.rewards import update_streak
+from app.manim_utils import log_event
+from app.utils.usage import *
 
 
 router = APIRouter()
@@ -30,10 +33,12 @@ class AttemptRequest(BaseModel):
     lesson_id: str
     correct: bool
     student_answer: str
+    session_id: str | None = None
 
 
 class BatchAttemptRequest(BaseModel):
     attempts: list[AttemptRequest] = Field(default_factory=list)
+    session_id: str | None = None
 
 
 class QuizExplainRequest(BaseModel):
@@ -141,6 +146,7 @@ async def get_lesson_questions(
     user_id: str = Depends(get_current_user_id),
     supabase: AsyncClient = Depends(get_supabase),
 ):
+    session_id = str(uuid4())
     question_type = _normalize_type(type)
     normalized_layer = _normalize_layer(layer)
     normalized_difficulty = _normalize_difficulty(difficulty)
@@ -163,8 +169,18 @@ async def get_lesson_questions(
         raise HTTPException(status_code=500, detail=f"Failed to fetch questions: {exc}")
 
     questions = list(questions_res.data or [])
+    event_type = "flashcard_started" if question_type == "flashcard" else "quiz_started"
+    await log_event(supabase, user_id, session_id, None, event_type, {
+        "session_id": session_id,
+        "lesson_id": lesson_id,
+        "source": "lessons",
+        "type": question_type,
+        "layer": normalized_layer,
+        "difficulty": normalized_difficulty,
+        "question_count": len(questions),
+    })
     if not questions:
-        return []
+        return {"session_id": session_id, "questions": []}
 
     question_ids = [row["id"] for row in questions]
 
@@ -186,10 +202,10 @@ async def get_lesson_questions(
     remaining = [row for row in questions if row["id"] not in completed_ids]
     if remaining:
         random.shuffle(remaining)
-        return remaining
+        return {"session_id": session_id, "questions": remaining}
 
     random.shuffle(questions)
-    return questions
+    return {"session_id": session_id, "questions": questions}
 
 
 @router.get("/{lesson_slug}/timed")
@@ -200,6 +216,7 @@ async def get_timed_quiz_batch(
     user_id: str = Depends(get_current_user_id),
     supabase: AsyncClient = Depends(get_supabase),
 ):
+    session_id = str(uuid4())
     normalized_layer = _normalize_layer(layer)
     normalized_difficulty = _normalize_difficulty(difficulty)
     lesson = await _get_lesson_by_slug(supabase, lesson_slug)
@@ -222,7 +239,19 @@ async def get_timed_quiz_batch(
 
     questions = list(questions_res.data or [])
     random.shuffle(questions)
-    return questions[:15]
+    selected_questions = questions[:15]
+
+    await log_event(supabase, user_id, session_id, None, "quiz_started", {
+        "session_id": session_id,
+        "lesson_id": lesson_id,
+        "source": "lessons",
+        "type": "timed",
+        "layer": normalized_layer,
+        "difficulty": normalized_difficulty,
+        "question_count": len(selected_questions),
+    })
+
+    return {"session_id": session_id, "questions": selected_questions}
 
 
 @router.post("/attempt")
@@ -247,6 +276,7 @@ async def submit_attempt(
         logger.exception("Failed to fetch question for attempt", extra={"question_id": payload.question_id, "user_id": user_id})
         raise HTTPException(status_code=500, detail=f"Failed to fetch question: {exc}")
 
+    background_tasks.add_task(update_streak, request.app.state.supabase, user_id)
     if not question_res or not question_res.data:
         raise HTTPException(status_code=404, detail="Question not found")
 
@@ -265,7 +295,9 @@ async def submit_attempt(
         logger.exception("Failed to save attempt", extra={"question_id": payload.question_id, "user_id": user_id})
         raise HTTPException(status_code=500, detail=f"Failed to save attempt: {exc}")
 
-    await log_event(supabase, user_id, str(uuid4()), None, "quiz_attempted", {
+    session_id = payload.session_id or str(uuid4())
+    await log_event(supabase, user_id, session_id, None, "quiz_attempted", {
+        "session_id": session_id,
         "question_id": payload.question_id,
         "lesson_id": lesson_id,
         "correct": payload.correct,
@@ -281,10 +313,11 @@ async def submit_attempt(
 @router.post("/attempt/batch")
 async def submit_batch_attempts(
     payload: BatchAttemptRequest,
+    background_tasks: BackgroundTasks,
     user_id: str = Depends(get_current_user_id),
     supabase: AsyncClient = Depends(get_supabase),
 ):
-    session_id = str(uuid4())
+    session_id = payload.session_id or str(uuid4())
     timestamp = datetime.now(timezone.utc).isoformat()
     rows = []
 
@@ -311,7 +344,9 @@ async def submit_batch_attempts(
     correct = sum(1 for attempt in payload.attempts if attempt.correct)
     accuracy = round(correct / saved, 2) if saved else 0
 
+    background_tasks.add_task(update_streak, request.app.state.supabase, user_id)
     await log_event(supabase, user_id, session_id, None, "quiz_completed", {
+        "session_id": session_id,
         "saved": saved,
         "correct": correct,
         "accuracy": accuracy,
@@ -427,12 +462,20 @@ async def explain_quiz_answer(
 
     try:
         response = await client.responses.create(
-            model="gpt-4o-mini",
+            model="gpt-4.1-mini",
             instructions=system_message,
             input=messages,
             max_output_tokens=500,
             temperature=0.4,
         )
+        usage = getattr(response, "usage", None)
+        input_tokens = getattr(usage, "input_tokens", 0) or 0
+        output_tokens = getattr(usage, "output_tokens", 0) or 0
+        input_tokens_details = getattr(usage, "input_tokens_details", None)
+        cached_tokens = getattr(input_tokens_details, "cached_tokens", 0) or 0
+        usd_cost = ((input_tokens - cached_tokens) * GPT41_MINI_INPUT) + (cached_tokens * GPT41_MINI_CACHED_INPUT) + (output_tokens * GPT41_MINI_OUTPUT)
+        asyncio.create_task(log_usage(supabase, user_id, "lesson_quiz_explain", "gpt-5.4-mini", input_tokens, output_tokens, usd_cost, cached_tokens=cached_tokens, lesson_id=lesson_id))
+        asyncio.create_task(supabase.rpc("deduct_credits", {"p_user_id": user_id, "p_amount": usd_cost / CREDIT_USD_VALUE}).execute())
     except Exception as exc:
         logger.exception("Failed to generate quiz explanation", extra={"lesson_id": lesson_id})
         raise HTTPException(status_code=500, detail=f"Failed to generate explanation: {exc}")
