@@ -8,6 +8,7 @@ import {
     type Flashcard,
     type QuizSectionOption,
 } from "@/lib/api";
+import { useSubscription } from "@/hooks/use-subscription";
 import MarkdownLatex from "@/components/ui/markdown-latex";
 import {
     Loader2,
@@ -30,6 +31,7 @@ interface FlashcardsViewProps {
  * from POST /notes/{note_id}/flashcards, then flip through them.
  */
 export default function FlashcardsView({ noteId, accessToken }: FlashcardsViewProps) {
+    const { promptUpgrade } = useSubscription();
     const [cards, setCards] = useState<Flashcard[]>([]);
     // Captured from the generate/get response; sent back with any future
     // flashcard-session submission (endpoint TBD).
@@ -92,11 +94,11 @@ export default function FlashcardsView({ noteId, accessToken }: FlashcardsViewPr
             setFlipped(false);
         } catch (err) {
             console.error("Failed to load flashcards:", err);
-            setError(
-                err instanceof OutOfCreditsError
-                    ? "You've run out of credits."
-                    : "Couldn't load flashcards. Please try again."
-            );
+            if (err instanceof OutOfCreditsError) {
+                promptUpgrade();
+            } else {
+                setError("Couldn't load flashcards. Please try again.");
+            }
         } finally {
             setLoading(false);
         }

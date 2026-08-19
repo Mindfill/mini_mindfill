@@ -1,4 +1,5 @@
 import { useCredits } from "@/hooks/use-credits";
+import { useSubscription } from "@/hooks/use-subscription";
 import { Coins } from "lucide-react";
 
 const MAX_CREDITS = 10; // progress-bar scale
@@ -6,6 +7,10 @@ const MAX_CREDITS = 10; // progress-bar scale
 /** Persistent credit balance for the sidebar: "Credits X.XX" + a 0–10 bar. */
 export function CreditsDisplay() {
     const { credits, loading } = useCredits();
+    const { isPaid } = useSubscription();
+
+    // Paid users don't spend credits — hide the bar entirely.
+    if (isPaid) return null;
 
     // No row / not loaded yet and nothing in flight — render nothing.
     if (credits === null && !loading) return null;

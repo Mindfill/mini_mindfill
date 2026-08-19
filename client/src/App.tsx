@@ -16,6 +16,7 @@ import CourseNotes from "@/pages/course-notes";
 import NoteChat from "@/pages/note-chat";
 import NoteReader from "@/pages/note-reader";
 import Profile from "@/pages/profile";
+import Upgrade from "@/pages/upgrade";
 import Privacy from "@/pages/privacy";
 import Terms from "@/pages/terms";
 
@@ -32,6 +33,7 @@ function Router() {
       <Route path="/notes/:noteId/read" component={NoteReader} />
       <Route path="/notes/:noteId" component={NoteChat} />
       <Route path="/profile" component={Profile} />
+      <Route path="/upgrade" component={Upgrade} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/terms" component={Terms} />
       <Route path="/waitlist" component={Waitlist} />
@@ -42,18 +44,23 @@ function Router() {
 
 import { AuthProvider } from "@/hooks/use-auth";
 import { CreditsProvider } from "@/hooks/use-credits";
+import { SubscriptionProvider } from "@/hooks/use-subscription";
+import PaywallDialog from "@/components/billing/PaywallDialog";
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
         <AuthProvider>
+          <SubscriptionProvider>
           <CreditsProvider>
           <TooltipProvider>
             <Toaster />
             <Router />
+            <PaywallDialog />
           </TooltipProvider>
           </CreditsProvider>
+          </SubscriptionProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
