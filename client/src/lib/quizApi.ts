@@ -33,11 +33,7 @@ export async function submitAttempt(questionId: string, lessonId: string, correc
         headers: await getHeaders(),
         body: JSON.stringify(body),
     });
-    if (!res.ok) {
-        const detail = await res.text().catch(() => "");
-        console.error("[quizApi] submitAttempt failed", res.status, "sent:", body, "response:", detail);
-        throw new Error("Failed to submit attempt");
-    }
+    if (!res.ok) throw new Error("Failed to submit attempt");
     return res.json();
 }
 
