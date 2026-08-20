@@ -43,6 +43,11 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
+    // Let Google Identity Services keep a handle to its sign-in popup
+    // (otherwise COOP blocks its window.postMessage back to us).
+    headers: {
+      "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
+    },
     fs: {
       strict: true,
       deny: ["**/.*"],

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useCredits } from "@/hooks/use-credits";
 import { useSubscription } from "@/hooks/use-subscription";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import PlanSelector from "@/components/billing/PlanSelector";
@@ -9,7 +10,8 @@ import { Sparkles, Check } from "lucide-react";
 export default function Upgrade() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
     const [, navigate] = useLocation();
-    const { isPaid, currentPeriodEnd } = useSubscription();
+    const { isPaid } = useCredits();
+    const { currentPeriodEnd } = useSubscription();
 
     const userName = user?.user_metadata?.full_name || user?.email || "User";
 

@@ -7,6 +7,23 @@ import { supabase } from "@/lib/supabase";
  * OAuth consent screen no longer redirects through (or shows) the Supabase URL.
  * Requires the GIS script (in index.html) and VITE_GOOGLE_CLIENT_ID.
  */
+
+// GIS `initialize()` is global and warns if called more than once. Guard it so
+// StrictMode's double-mounted effect (and any remount) only initializes once.
+let gisInitialized = false;
+
+async function handleGoogleSignIn(response: { credential: string }) {
+    const { error } = await supabase.auth.signInWithIdToken({
+        provider: "google",
+        token: response.credential,
+    });
+    if (error) {
+        console.error("Sign in error:", error.message);
+    }
+    // On success the auth listener updates the session and the login page
+    // redirects to /dashboard.
+}
+
 export default function GoogleSignInButton() {
     const btnRef = useRef<HTMLDivElement>(null);
 
@@ -19,18 +36,6 @@ export default function GoogleSignInButton() {
 
         let cancelled = false;
 
-        const handleGoogleSignIn = async (response: { credential: string }) => {
-            const { error } = await supabase.auth.signInWithIdToken({
-                provider: "google",
-                token: response.credential,
-            });
-            if (error) {
-                console.error("Sign in error:", error.message);
-            }
-            // On success the auth listener updates the session and the login
-            // page redirects to /dashboard.
-        };
-
         const init = () => {
             if (cancelled) return;
             const g = (window as any).google;
@@ -40,11 +45,16 @@ export default function GoogleSignInButton() {
                 return;
             }
 
-            g.accounts.id.initialize({
-                client_id: clientId,
-                callback: handleGoogleSignIn,
-            });
+            // Initialize the GIS client exactly once for the app's lifetime.
+            if (!gisInitialized) {
+                g.accounts.id.initialize({
+                    client_id: clientId,
+                    callback: handleGoogleSignIn,
+                });
+                gisInitialized = true;
+            }
 
+            // Render (or re-render) the button into this instance's container.
             if (btnRef.current) {
                 btnRef.current.innerHTML = "";
                 g.accounts.id.renderButton(btnRef.current, {
