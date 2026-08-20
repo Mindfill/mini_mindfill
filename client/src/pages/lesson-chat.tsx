@@ -36,8 +36,8 @@ export default function LessonChat() {
 
     const userName = user?.user_metadata?.full_name || user?.email || "User";
     const accessToken = session?.access_token || "";
-    const { hasCredits } = useCredits();
-    const { isPaid, promptUpgrade } = useSubscription();
+    const { hasCredits, isPaid } = useCredits();
+    const { promptUpgrade } = useSubscription();
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);

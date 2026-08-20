@@ -21,16 +21,16 @@ const PLANS: PlanInfo[] = [
     {
         id: "pro_monthly",
         name: "Pro Monthly",
-        price: "₦2,500",
+        price: "₦15,000",
         cadence: "per month",
         subtitle: "Billed monthly. Cancel anytime.",
     },
     {
         id: "pro_yearly",
         name: "Pro Yearly",
-        price: "₦24,000",
+        price: "₦120,000",
         cadence: "per year",
-        badge: "Save 20%",
+        badge: "Save 33%",
         subtitle: "Billed once a year. Best value.",
     },
 ];

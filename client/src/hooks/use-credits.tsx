@@ -8,6 +8,10 @@ interface CreditsContextType {
     loading: boolean;
     /** True unless we know the balance is depleted (null = unknown → allow). */
     hasCredits: boolean;
+    /** user_credits.subscription_status: "paid" | "free" | null (unknown). */
+    subscriptionStatus: string | null;
+    /** Access truth: the user is on a paid plan (subscription_status === "paid"). */
+    isPaid: boolean;
 }
 
 const CreditsContext = createContext<CreditsContextType | undefined>(undefined);
@@ -20,28 +24,33 @@ export function CreditsProvider({ children }: { children: ReactNode }) {
     const { session } = useAuth();
     const userId = session?.user?.id;
     const [credits, setCredits] = useState<number | null>(null);
+    const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (!userId) {
             setCredits(null);
+            setSubscriptionStatus(null);
             return;
         }
         let cancelled = false;
         setLoading(true);
 
-        // 1. Initial balance.
+        // 1. Initial balance + plan.
         supabase
             .from("user_credits")
-            .select("balance")
+            .select("balance, subscription_status")
             .single()
             .then(({ data, error }) => {
                 if (cancelled) return;
-                if (!error && data) setCredits(Number(data.balance));
+                if (!error && data) {
+                    setCredits(Number(data.balance));
+                    setSubscriptionStatus((data.subscription_status as string) ?? null);
+                }
                 setLoading(false);
             });
 
-        // 2. Live updates whenever the backend deducts.
+        // 2. Live updates whenever the backend deducts or a webhook flips the plan.
         const channel = supabase
             .channel(`user_credits:${userId}`)
             .on(
@@ -53,8 +62,9 @@ export function CreditsProvider({ children }: { children: ReactNode }) {
                     filter: `user_id=eq.${userId}`,
                 },
                 (payload) => {
-                    const balance = (payload.new as { balance?: number | string })?.balance;
-                    if (balance !== undefined && balance !== null) setCredits(Number(balance));
+                    const row = payload.new as { balance?: number | string; subscription_status?: string };
+                    if (row?.balance !== undefined && row.balance !== null) setCredits(Number(row.balance));
+                    if (row?.subscription_status !== undefined) setSubscriptionStatus(row.subscription_status ?? null);
                 }
             )
             .subscribe();
@@ -65,10 +75,12 @@ export function CreditsProvider({ children }: { children: ReactNode }) {
         };
     }, [userId]);
 
-    const hasCredits = credits === null || credits > 0;
+    const isPaid = subscriptionStatus === "paid";
+    // Paid users never spend credits, so treat them as always having credits.
+    const hasCredits = isPaid || credits === null || credits > 0;
 
     return (
-        <CreditsContext.Provider value={{ credits, loading, hasCredits }}>
+        <CreditsContext.Provider value={{ credits, loading, hasCredits, subscriptionStatus, isPaid }}>
             {children}
         </CreditsContext.Provider>
     );

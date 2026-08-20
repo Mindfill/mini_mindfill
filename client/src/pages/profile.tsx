@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import { fetchProfile, updateProfile, cancelSubscription } from "@/lib/api";
+import { useCredits } from "@/hooks/use-credits";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,15 +34,13 @@ export default function Profile() {
     const [email, setEmail] = useState<string | null>(null);
     const [fullName, setFullName] = useState("");
     const [dob, setDob] = useState("");
-    const [subStatus, setSubStatus] = useState<string | null>(null);
-    const [periodEnd, setPeriodEnd] = useState<string | null>(null);
     const [cancelling, setCancelling] = useState(false);
 
     const userName = user?.user_metadata?.full_name || user?.email || "User";
     const accessToken = session?.access_token || "";
     const { toast } = useToast();
-    const { refresh: refreshSubscription } = useSubscription();
-    const isPaid = subStatus === "active";
+    const { isPaid } = useCredits();
+    const { status: subStatus, plan, currentPeriodEnd: periodEnd, refresh: refreshSubscription } = useSubscription();
 
     const loadProfile = async () => {
         if (!session) return;
@@ -52,8 +51,6 @@ export default function Profile() {
             setEmail(p.email);
             setFullName(p.full_name || "");
             setDob(p.date_of_birth || "");
-            setSubStatus(p.subscription_status ?? "free");
-            setPeriodEnd(p.current_period_end ?? null);
         } catch (err) {
             console.error("Failed to load profile:", err);
             setError("Could not load your profile");
@@ -114,7 +111,6 @@ export default function Profile() {
                 title: "Subscription cancelled",
                 description: "You'll keep Pro access until the end of your billing period.",
             });
-            await loadProfile();
             refreshSubscription();
         } catch (err) {
             console.error("Failed to cancel subscription:", err);
@@ -131,6 +127,7 @@ export default function Profile() {
     const formattedPeriodEnd = periodEnd
         ? new Date(periodEnd).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })
         : null;
+    const planLabel = plan === "pro_yearly" ? "Pro Yearly" : plan === "pro_monthly" ? "Pro Monthly" : "Pro";
 
     if (authLoading || (loading && !hasLoaded)) {
         return (
@@ -240,13 +237,11 @@ export default function Profile() {
                             </span>
                         </div>
 
-                        {isPaid ? (
+                        {subStatus === "active" ? (
                             <div className="space-y-4">
                                 <p className="text-sm text-foreground/90">
-                                    You're on <span className="font-semibold">Pro</span>.
-                                    {formattedPeriodEnd
-                                        ? ` Your plan renews on ${formattedPeriodEnd}.`
-                                        : ""}
+                                    You're on <span className="font-semibold">{planLabel}</span>.
+                                    {formattedPeriodEnd ? ` Your plan renews on ${formattedPeriodEnd}.` : ""}
                                 </p>
 
                                 <AlertDialog>
@@ -277,6 +272,25 @@ export default function Profile() {
                                         </AlertDialogFooter>
                                     </AlertDialogContent>
                                 </AlertDialog>
+                            </div>
+                        ) : subStatus === "cancelled" ? (
+                            <div className="space-y-4">
+                                <p className="text-sm text-foreground/90">
+                                    Your <span className="font-semibold">{planLabel}</span> plan is cancelled and won't renew.
+                                    {formattedPeriodEnd ? ` You keep Pro access until ${formattedPeriodEnd}.` : ""}
+                                </p>
+                                <Button onClick={() => navigate("/upgrade")} className="gap-2">
+                                    <Sparkles className="w-4 h-4" /> Resubscribe
+                                </Button>
+                            </div>
+                        ) : subStatus === "lapsed" ? (
+                            <div className="space-y-4">
+                                <p className="text-sm text-red-400/90 bg-red-500/10 border border-red-500/20 rounded-xl p-3">
+                                    We couldn't process your last payment. Renew to keep your Pro access.
+                                </p>
+                                <Button onClick={() => navigate("/upgrade")} className="gap-2">
+                                    <Sparkles className="w-4 h-4" /> Renew Pro
+                                </Button>
                             </div>
                         ) : (
                             <div className="space-y-4">

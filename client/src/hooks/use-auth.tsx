@@ -18,31 +18,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         let mounted = true;
-        
-        // 1. Get initial session
-        const getInitialSession = async () => {
-            try {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (mounted) {
-                    setSession(session);
-                    setUser(session?.user ?? null);
-                    setIsLoading(false);
-                }
-            } catch (error) {
-                console.error("Error getting initial session:", error);
-                if (mounted) {
-                    setIsLoading(false);
-                }
-            }
-        };
 
-        getInitialSession();
-
-        // 2. Listen for auth changes.
-        //    Supabase re-emits SIGNED_IN / TOKEN_REFRESHED every time the tab
-        //    regains focus. Only update state when the token actually changes,
-        //    otherwise a new session object reference would churn every consumer
-        //    on each tab switch (which unmounts in-flight UI like the upload modal).
+        // onAuthStateChange fires an INITIAL_SESSION event immediately on
+        // subscribe with the current session, so we don't need a separate
+        // getSession() call — avoiding a second, concurrent acquisition of the
+        // gotrue Web Lock (which, under StrictMode's double-mount, produced the
+        // "lock was not released within 5000ms" warning).
+        //
+        // Supabase also re-emits SIGNED_IN / TOKEN_REFRESHED every time the tab
+        // regains focus. Only update state when the token actually changes,
+        // otherwise a new session object reference would churn every consumer on
+        // each tab switch (which unmounts in-flight UI like the upload modal).
+        //
+        // NOTE: keep this callback synchronous — never await other supabase auth
+        // calls inside it, or it will deadlock on the same lock.
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
             if (!mounted) return;
             setSession((prev) =>

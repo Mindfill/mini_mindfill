@@ -624,10 +624,6 @@ export interface Profile {
     full_name: string | null;
     /** ISO date string (YYYY-MM-DD) */
     date_of_birth: string | null;
-    /** "free" | "active" | … (billing state). Absent on older backends. */
-    subscription_status?: string | null;
-    /** ISO datetime the current paid period ends. Null/absent for free users. */
-    current_period_end?: string | null;
 }
 
 export interface ProfileUpdate {
@@ -706,6 +702,33 @@ export async function initiatePayment(
     const data = await res.json();
     if (!data?.payment_url) throw new Error("Payment provider did not return a URL");
     return data;
+}
+
+export interface Subscription {
+    /** subscriptions.status: "active" | "cancelled" | "lapsed" | "free". */
+    subscription_status: string;
+    plan_type: PaymentPlan | null;
+    /** ISO datetime the current paid period ends, or null. */
+    current_period_end: string | null;
+}
+
+/**
+ * Fetch the caller's subscription record (billing details for the profile UI).
+ * GET /subscriptions
+ */
+export async function fetchSubscription(accessToken: string): Promise<Subscription> {
+    const res = await fetch(`${BACKEND_URL}/subscriptions`, {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to fetch subscription: ${res.status} — ${text}`);
+    }
+
+    return res.json();
 }
 
 /**

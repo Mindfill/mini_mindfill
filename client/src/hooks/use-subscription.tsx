@@ -1,40 +1,40 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { fetchProfile } from "@/lib/api";
+import { fetchSubscription, type PaymentPlan } from "@/lib/api";
 
 interface SubscriptionContextType {
-    /** Raw billing state: "free" | "active" | … (null while unknown). */
+    /** subscriptions.status: "active" | "cancelled" | "lapsed" | "free" (null while unknown). */
     status: string | null;
+    plan: PaymentPlan | null;
     /** ISO datetime the current paid period ends, or null. */
     currentPeriodEnd: string | null;
-    /** True only when we positively know the plan is paid ("active"). */
-    isPaid: boolean;
     loading: boolean;
-    /** Re-fetch billing state (e.g. after a cancel or returning from checkout). */
+    /** Re-fetch the billing record (e.g. after a cancel or returning from checkout). */
     refresh: () => void;
 
     // ── Global paywall prompt ────────────────────────────────────────────
-    /** Whether the upgrade/paywall dialog is open. */
     paywallOpen: boolean;
     /** Open the paywall dialog (call this on a 402 / out-of-credits). */
     promptUpgrade: () => void;
-    /** Close the paywall dialog. */
     closeUpgrade: () => void;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
-const PAID_STATUS = "active";
-
 /**
- * Loads the signed-in user's subscription state from GET /profile and exposes
- * it app-wide, plus the shared paywall-dialog open state.
+ * Loads the signed-in user's subscription billing record from GET /subscriptions
+ * (plan, status, renewal date) and owns the shared paywall-dialog state.
+ *
+ * NOTE: the *access* truth (whether the user is on a paid plan) lives in
+ * `useCredits().isPaid`, sourced live from user_credits.subscription_status.
+ * This hook is for billing *details* shown on the profile/upgrade pages.
  */
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
     const { session } = useAuth();
     const accessToken = session?.access_token;
 
     const [status, setStatus] = useState<string | null>(null);
+    const [plan, setPlan] = useState<PaymentPlan | null>(null);
     const [currentPeriodEnd, setCurrentPeriodEnd] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [paywallOpen, setPaywallOpen] = useState(false);
@@ -47,20 +47,22 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (!accessToken) {
             setStatus(null);
+            setPlan(null);
             setCurrentPeriodEnd(null);
             return;
         }
         let cancelled = false;
         setLoading(true);
-        fetchProfile(accessToken)
-            .then((p) => {
+        fetchSubscription(accessToken)
+            .then((sub) => {
                 if (cancelled) return;
-                setStatus(p.subscription_status ?? "free");
-                setCurrentPeriodEnd(p.current_period_end ?? null);
+                setStatus(sub.subscription_status ?? "free");
+                setPlan(sub.plan_type ?? null);
+                setCurrentPeriodEnd(sub.current_period_end ?? null);
             })
             .catch((err) => {
-                // Non-fatal: leave state unknown rather than blocking the app.
-                console.warn("Could not load subscription status:", err);
+                // Non-fatal: leave details unknown rather than blocking the app.
+                console.warn("Could not load subscription record:", err);
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);
@@ -70,14 +72,12 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         };
     }, [accessToken, nonce]);
 
-    const isPaid = status === PAID_STATUS;
-
     return (
         <SubscriptionContext.Provider
             value={{
                 status,
+                plan,
                 currentPeriodEnd,
-                isPaid,
                 loading,
                 refresh,
                 paywallOpen,
