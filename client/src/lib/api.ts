@@ -704,33 +704,6 @@ export async function initiatePayment(
     return data;
 }
 
-export interface Subscription {
-    /** subscriptions.status: "active" | "cancelled" | "lapsed" | "free". */
-    subscription_status: string;
-    plan_type: PaymentPlan | null;
-    /** ISO datetime the current paid period ends, or null. */
-    current_period_end: string | null;
-}
-
-/**
- * Fetch the caller's subscription record (billing details for the profile UI).
- * GET /subscriptions
- */
-export async function fetchSubscription(accessToken: string): Promise<Subscription> {
-    const res = await fetch(`${BACKEND_URL}/subscriptions`, {
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
-    });
-
-    if (!res.ok) {
-        const text = (await res.text()) || res.statusText;
-        throw new Error(`Failed to fetch subscription: ${res.status} — ${text}`);
-    }
-
-    return res.json();
-}
-
 /**
  * Cancel the active subscription.
  * DELETE /subscriptions/cancel

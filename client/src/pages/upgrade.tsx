@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useCredits } from "@/hooks/use-credits";
-import { useSubscription } from "@/hooks/use-subscription";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import PlanSelector from "@/components/billing/PlanSelector";
 import { Sparkles, Check } from "lucide-react";
@@ -11,7 +10,6 @@ export default function Upgrade() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
     const [, navigate] = useLocation();
     const { isPaid } = useCredits();
-    const { currentPeriodEnd } = useSubscription();
 
     const userName = user?.user_metadata?.full_name || user?.email || "User";
 
@@ -27,10 +25,6 @@ export default function Upgrade() {
         await supabaseSignOut();
         navigate("/login");
     };
-
-    const periodEnd = currentPeriodEnd
-        ? new Date(currentPeriodEnd).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })
-        : null;
 
     return (
         <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
@@ -55,7 +49,7 @@ export default function Upgrade() {
                             </div>
                             <h2 className="text-lg font-bold mb-1">You're on Pro</h2>
                             <p className="text-muted-foreground text-sm mb-6">
-                                {periodEnd ? `Your plan renews on ${periodEnd}.` : "Your Pro plan is active."}
+                                Your Pro plan is active.
                             </p>
                             <button
                                 onClick={() => navigate("/profile")}
