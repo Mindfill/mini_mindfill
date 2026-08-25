@@ -46,6 +46,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { CreditsProvider } from "@/hooks/use-credits";
 import { SubscriptionProvider } from "@/hooks/use-subscription";
 import PaywallDialog from "@/components/billing/PaywallDialog";
+import DebugOverlay from "@/components/DebugOverlay"; // TEMP debug
 
 function App() {
   return (
@@ -58,6 +59,7 @@ function App() {
             <Toaster />
             <Router />
             <PaywallDialog />
+            <DebugOverlay />
           </TooltipProvider>
           </CreditsProvider>
           </SubscriptionProvider>

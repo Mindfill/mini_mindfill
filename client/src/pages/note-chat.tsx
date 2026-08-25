@@ -26,6 +26,7 @@ import NoteQuizView from "@/components/notes/NoteQuizView";
 import FlashcardsView from "@/components/notes/FlashcardsView";
 import SectionSelector, { type PlanSection } from "@/components/notes/SectionSelector";
 import { useToast } from "@/hooks/use-toast";
+import { setPageDebug } from "@/lib/debugBus"; // TEMP debug
 
 // Per-note cache (keyed by noteId) so returning to a note restores its title,
 // PDF link, sections and conversation without re-hitting the DB / API.
@@ -111,6 +112,15 @@ export default function NoteChat() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const fetchedForToken = useRef<string | null>(null);
+
+    // TEMP debug: report resolved session id + [VIZ] token count for this page.
+    useEffect(() => {
+        const vizTokens = messages.reduce(
+            (n, m) => n + (m.content.match(/\[VIZ:\d+\]/g)?.length ?? 0),
+            0
+        );
+        setPageDebug({ page: "note-chat", noteId, chatSessionId, historyCount, messages: messages.length, vizTokens });
+    }, [noteId, chatSessionId, historyCount, messages]);
 
     // Load note details and history
     const loadNoteData = async () => {
