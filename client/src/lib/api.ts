@@ -347,39 +347,12 @@ export async function fetchVisualizationsStatus(
     });
 
     if (!res.ok) {
-        // TEMP debug
-        try {
-            const { pushVizDebug } = await import("./debugBus");
-            pushVizDebug({
-                time: new Date().toLocaleTimeString(),
-                sessionId,
-                index: index ?? -1,
-                httpStatus: res.status,
-                count: 0,
-                firstVideoUrl: null,
-                firstRenderStatus: null,
-            });
-        } catch { /* ignore */ }
         const text = (await res.text()) || res.statusText;
         throw new Error(`Failed to fetch visualization status: ${res.status} — ${text}`);
     }
 
     const data = await res.json();
-    const list: VizStatus[] = Array.isArray(data?.visualizations) ? data.visualizations : [];
-    // TEMP debug
-    try {
-        const { pushVizDebug } = await import("./debugBus");
-        pushVizDebug({
-            time: new Date().toLocaleTimeString(),
-            sessionId,
-            index: index ?? -1,
-            httpStatus: res.status,
-            count: list.length,
-            firstVideoUrl: list[0]?.video_url ?? null,
-            firstRenderStatus: list[0]?.render_status ?? null,
-        });
-    } catch { /* ignore */ }
-    return list;
+    return Array.isArray(data?.visualizations) ? data.visualizations : [];
 }
 
 export interface QuizOption {

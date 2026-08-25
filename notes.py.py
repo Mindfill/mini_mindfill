@@ -55,7 +55,7 @@ def format_lesson_plan(plan: dict) -> str:
         f"**Sections:**\n\n{section_text}\n\n"
     )
 
-async def extract_sections_with_luna(supabase: AsyncClient, file_bytes: bytes) -> list[dict]:
+async def extract_sections_with_luna(supabase: AsyncClient, file_bytes: bytes, user_id: str) -> list[dict]:
     pdf_base64 = base64.standard_b64encode(file_bytes).decode("utf-8")
 
     response = await client.responses.create(
@@ -97,7 +97,8 @@ async def extract_sections_with_luna(supabase: AsyncClient, file_bytes: bytes) -
         + (cache_write_tokens * LUNA_CACHE_WRITE)
         + (output_tokens * LUNA_OUTPUT)
     )
-    asyncio.create_task(log_usage(supabase, user_id, "notes_upload", "gpt-5.6-luna", input_tokens, output_tokens, usd_cost, cached_tokens=cached_tokens, cache_write_tokens=cache_write_tokens, note_id=note_id))
+    # note_id doesn't exist yet — the note row is inserted after extraction succeeds.
+    asyncio.create_task(log_usage(supabase, user_id, "notes_upload", "gpt-5.6-luna", input_tokens, output_tokens, usd_cost, cached_tokens=cached_tokens, cache_write_tokens=cache_write_tokens, note_id=None))
 
     parsed = json.loads(raw)
     return parsed["sections"]
@@ -145,7 +146,7 @@ async def upload_note(
 
     # Extract sections with Luna
     try:
-        sections = await extract_sections_with_luna(file_bytes, supabase=supabase)
+        sections = await extract_sections_with_luna(supabase=supabase, file_bytes=file_bytes, user_id=user_id)
     except json.JSONDecodeError as e:
         await supabase.storage.from_("notes-pdfs").remove([storage_path])
         logger.exception("Luna returned invalid JSON", extra={"user_id": user_id})
@@ -1185,6 +1186,7 @@ async def submit_quiz(
     request: Request,
     input: QuizSubmitRequest,
     note_id: str,
+    background_tasks: BackgroundTasks,
     user_id: str = Depends(get_current_user_id),
     supabase: AsyncClient = Depends(get_supabase)
 ):

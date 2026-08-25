@@ -12,7 +12,6 @@ import TypingIndicator from "@/components/chat/TypingIndicator";
 import { X } from "lucide-react";
 import QuizSection from "@/components/quiz/QuizSection";
 import mindfillIcon from "@/assets/mindfill.png";
-import { setPageDebug } from "@/lib/debugBus"; // TEMP debug
 
 export default function LessonChat() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
@@ -51,15 +50,6 @@ export default function LessonChat() {
     useEffect(() => {
         document.title = `${displayTitle} | TECHCESS`;
     }, [displayTitle]);
-
-    // TEMP debug: report resolved session id + [VIZ] token count for this page.
-    useEffect(() => {
-        const vizTokens = messages.reduce(
-            (n, m) => n + (m.content.match(/\[VIZ:\d+\]/g)?.length ?? 0),
-            0
-        );
-        setPageDebug({ page: "lesson-chat", lessonSlug, chatSessionId, historyCount, messages: messages.length, vizTokens });
-    }, [lessonSlug, chatSessionId, historyCount, messages]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
