@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { uploadNote, fetchCourses, createCourse, Course } from "@/lib/api";
+import UploadProgressFrames from "@/components/notes/UploadProgressFrames";
 import { X, Upload, FileText, CheckCircle2, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -262,17 +263,7 @@ export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess, defa
                             </div>
                         </div>
                     ) : step === "processing" ? (
-                        <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
-                            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                                <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-semibold mb-2">Processing Your Note...</h3>
-                                <p className="text-muted-foreground text-sm">
-                                    Extracting text and preparing your learning experience.
-                                </p>
-                            </div>
-                        </div>
+                        <UploadProgressFrames />
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-5">
                             {/* File Upload */}
