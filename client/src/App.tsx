@@ -19,12 +19,16 @@ import Profile from "@/pages/profile";
 import Upgrade from "@/pages/upgrade";
 import Privacy from "@/pages/privacy";
 import Terms from "@/pages/terms";
+import ResetPassword from "@/pages/reset-password";
+import Onboarding from "@/pages/onboarding";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/login" component={Login} />
+      <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/onboarding" component={Onboarding} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/courses" component={Courses} />
       <Route path="/lessons/:lessonSlug" component={LessonChat} />
@@ -45,6 +49,7 @@ function Router() {
 import { AuthProvider } from "@/hooks/use-auth";
 import { CreditsProvider } from "@/hooks/use-credits";
 import { SubscriptionProvider } from "@/hooks/use-subscription";
+import { UserProfileProvider } from "@/hooks/use-user-profile";
 import PaywallDialog from "@/components/billing/PaywallDialog";
 
 function App() {
@@ -52,6 +57,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
         <AuthProvider>
+          <UserProfileProvider>
           <SubscriptionProvider>
           <CreditsProvider>
           <TooltipProvider>
@@ -61,6 +67,7 @@ function App() {
           </TooltipProvider>
           </CreditsProvider>
           </SubscriptionProvider>
+          </UserProfileProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

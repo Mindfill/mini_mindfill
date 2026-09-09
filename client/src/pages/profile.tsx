@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import AppSidebar from "@/components/sidebar/AppSidebar";
-import { fetchProfile, updateProfile, cancelSubscription } from "@/lib/api";
+import { fetchProfile, updateProfile, cancelSubscription, linkParent } from "@/lib/api";
 import { useCredits } from "@/hooks/use-credits";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, User as UserIcon, Sparkles, CheckCircle2 } from "lucide-react";
+import { Loader2, User as UserIcon, Sparkles, CheckCircle2, UserPlus, Mail } from "lucide-react";
 
 export default function Profile() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
@@ -39,6 +40,11 @@ export default function Profile() {
     const accessToken = session?.access_token || "";
     const { toast } = useToast();
     const { isPaid } = useCredits();
+    const { userType } = useUserProfile();
+
+    const [parentEmail, setParentEmail] = useState("");
+    const [linkingParent, setLinkingParent] = useState(false);
+    const [parentLinkStatus, setParentLinkStatus] = useState<"linked" | "invited" | null>(null);
 
     const loadProfile = async () => {
         if (!session) return;
@@ -118,6 +124,32 @@ export default function Profile() {
             });
         } finally {
             setCancelling(false);
+        }
+    };
+
+    const handleLinkParent = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!session || linkingParent || !parentEmail.trim()) return;
+        setLinkingParent(true);
+        try {
+            const res = await linkParent(parentEmail.trim(), accessToken);
+            setParentLinkStatus(res.status);
+            toast({
+                title: res.status === "linked" ? "Parent linked" : "Invite sent",
+                description:
+                    res.status === "linked"
+                        ? "They can now see your progress from their dashboard."
+                        : "We've emailed them an invite to create a free parent account.",
+            });
+        } catch (err) {
+            console.error("Failed to link parent:", err);
+            toast({
+                variant: "destructive",
+                title: "Couldn't link parent",
+                description: "Please check the email and try again.",
+            });
+        } finally {
+            setLinkingParent(false);
         }
     };
 
@@ -275,6 +307,47 @@ export default function Profile() {
                             </div>
                         )}
                     </section>
+
+                    {/* Parent linking (not applicable to parent accounts themselves) */}
+                    {userType !== "parent" && (
+                        <section className="bg-card border border-border rounded-3xl p-6 md:p-8 space-y-5">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                                    <UserPlus className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-semibold tracking-tight">Add a parent or guardian</h2>
+                                    <p className="text-muted-foreground text-sm">
+                                        They'll be able to see your progress from their own dashboard.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {parentLinkStatus && (
+                                <div className="flex items-center gap-2 text-sm text-green-500 bg-green-500/10 rounded-xl px-4 py-3">
+                                    <Mail className="w-4 h-4 flex-shrink-0" />
+                                    {parentLinkStatus === "linked"
+                                        ? "Linked — they can see your progress now."
+                                        : "Invite sent — pending until they create a parent account."}
+                                </div>
+                            )}
+
+                            <form onSubmit={handleLinkParent} className="flex flex-col sm:flex-row gap-3">
+                                <Input
+                                    type="email"
+                                    value={parentEmail}
+                                    onChange={(e) => setParentEmail(e.target.value)}
+                                    placeholder="parent@example.com"
+                                    disabled={linkingParent}
+                                    className="flex-1"
+                                />
+                                <Button type="submit" disabled={linkingParent || !parentEmail.trim()} className="gap-2 sm:w-auto">
+                                    {linkingParent && <Loader2 className="w-4 h-4 animate-spin" />}
+                                    Link parent
+                                </Button>
+                            </form>
+                        </section>
+                    )}
                 </main>
             </div>
         </div>

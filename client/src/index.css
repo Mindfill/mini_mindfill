@@ -52,6 +52,12 @@
   --chart-4: 200 30% 75%;
   --chart-5: 200 30% 85%;
 
+  /* Secondary accent — keyword highlights, onboarding progress indicators.
+     Same value in both themes; kept vibrant against both light and dark card
+     surfaces. */
+  --amber: 38 92% 50%;
+  --amber-foreground: 26 40% 10%;
+
   /* Platform default (dashboard, chat, quiz, …). The landing page opts back
      into its display font via .font-landing. */
   --font-sans: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;

@@ -672,9 +672,40 @@ export async function updateProfile(update: ProfileUpdate, accessToken: string):
     return res.json();
 }
 
+/**
+ * Link (or invite) a parent by email.
+ * POST /profile/link-parent  →  { status: "linked" | "invited" }
+ */
+export async function linkParent(
+    parentEmail: string,
+    accessToken: string
+): Promise<{ status: "linked" | "invited" }> {
+    const res = await fetch(`${BACKEND_URL}/profile/link-parent`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ parent_email: parentEmail }),
+    });
+
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to link parent: ${res.status} — ${text}`);
+    }
+
+    return res.json();
+}
+
 // ── BILLING API ─────────────────────────────────────────────────────────────
 
-export type PaymentPlan = "pro_monthly" | "pro_yearly";
+export type PaymentPlan =
+    | "pro_monthly"
+    | "pro_yearly"
+    | "secondary_individual_monthly"
+    | "secondary_individual_yearly"
+    | "secondary_family_monthly"
+    | "secondary_family_yearly";
 
 /**
  * Start a checkout for the chosen plan.
@@ -871,4 +902,290 @@ export async function submitQuizResults(
         const text = (await res.text()) || res.statusText;
         throw new Error(`Failed to submit quiz: ${res.status} — ${text}`);
     }
+}
+
+// ── ONBOARDING API ──────────────────────────────────────────────────────────
+
+/** Thrown when a DOB screen submission fails the under-13 gate. */
+export class UnderAgeError extends Error {
+    constructor(message = "You need to be 13 or older to use Techcess.") {
+        super(message);
+        this.name = "UnderAgeError";
+    }
+}
+
+async function parseErrorDetail(res: Response): Promise<string> {
+    try {
+        const body = await res.json();
+        if (typeof body?.detail === "string") return body.detail;
+    } catch {
+        // not JSON — fall through
+    }
+    return res.statusText;
+}
+
+export type UserType = "secondary" | "university" | "parent";
+
+export interface OnboardingStatus {
+    user_type: UserType;
+    onboarding_step: number;
+    onboarding_completed: boolean;
+    terms_accepted: boolean;
+    full_name: string | null;
+}
+
+/**
+ * Fetch the current user's onboarding progress. Also triggers the backend's
+ * post-signup hook (resolving any pending parent-link / subscription invite)
+ * the first time it's called for a user.
+ * GET /onboarding/status
+ */
+export async function fetchOnboardingStatus(accessToken: string): Promise<OnboardingStatus> {
+    const res = await fetch(`${BACKEND_URL}/onboarding/status`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!res.ok) {
+        throw new Error(`Failed to fetch onboarding status: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+
+    return res.json();
+}
+
+/**
+ * Screen 1 of every flow. Also used when the user goes back and changes
+ * their answer — resets onboarding_step and clears the other type's fields.
+ * POST /onboarding/user-type
+ */
+export async function setUserType(userType: UserType, accessToken: string): Promise<void> {
+    const res = await fetch(`${BACKEND_URL}/onboarding/user-type`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ user_type: userType }),
+    });
+
+    if (!res.ok) {
+        throw new Error(`Failed to set user type: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+}
+
+export interface NotificationPrefs {
+    whatsapp?: boolean;
+    email?: boolean;
+}
+
+export interface SecondaryOnboardingInput {
+    screen: number;
+    full_name?: string;
+    /** ISO date string (YYYY-MM-DD) */
+    date_of_birth?: string;
+    secondary_class_level?: "SS1" | "SS2" | "SS3";
+    school_name?: string;
+    life_goals?: string[];
+    education_sentiment?: string;
+    notification_prefs?: NotificationPrefs;
+    phone_number?: string;
+}
+
+/**
+ * Save one screen of the secondary-school onboarding flow (incremental save).
+ * POST /onboarding/secondary
+ * Throws UnderAgeError if date_of_birth puts the student under 13.
+ */
+export async function saveSecondaryOnboarding(
+    input: SecondaryOnboardingInput,
+    accessToken: string
+): Promise<void> {
+    const res = await fetch(`${BACKEND_URL}/onboarding/secondary`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(input),
+    });
+
+    if (res.status === 422) throw new UnderAgeError();
+    if (!res.ok) {
+        throw new Error(`Failed to save onboarding screen: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+}
+
+export interface UniversityOnboardingInput {
+    screen: number;
+    full_name?: string;
+    /** ISO date string (YYYY-MM-DD) */
+    date_of_birth?: string;
+    institution_name?: string;
+    course_of_study?: string;
+    initial_struggle_topics?: string[];
+    education_sentiment?: string;
+    notification_prefs?: NotificationPrefs;
+    phone_number?: string;
+}
+
+/**
+ * Save one screen of the university onboarding flow (incremental save).
+ * POST /onboarding/university
+ * Throws UnderAgeError if date_of_birth puts the student under 13.
+ */
+export async function saveUniversityOnboarding(
+    input: UniversityOnboardingInput,
+    accessToken: string
+): Promise<void> {
+    const res = await fetch(`${BACKEND_URL}/onboarding/university`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(input),
+    });
+
+    if (res.status === 422) throw new UnderAgeError();
+    if (!res.ok) {
+        throw new Error(`Failed to save onboarding screen: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+}
+
+export interface ParentOnboardingInput {
+    screen: number;
+    full_name?: string;
+    whatsapp_number?: string;
+}
+
+/**
+ * Save one screen of the parent onboarding flow (incremental save).
+ * POST /onboarding/parent
+ */
+export async function saveParentOnboarding(
+    input: ParentOnboardingInput,
+    accessToken: string
+): Promise<void> {
+    const res = await fetch(`${BACKEND_URL}/onboarding/parent`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(input),
+    });
+
+    if (!res.ok) {
+        throw new Error(`Failed to save onboarding screen: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+}
+
+/**
+ * Record terms + accuracy acceptance (the final gate screen in every flow).
+ * POST /onboarding/accept-terms
+ */
+export async function acceptOnboardingTerms(accessToken: string): Promise<void> {
+    const res = await fetch(`${BACKEND_URL}/onboarding/accept-terms`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!res.ok) {
+        throw new Error(`Failed to accept terms: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+}
+
+/**
+ * Marks onboarding as complete. Called from whichever action ends a flow:
+ * uni/parent's final screen, the "free chapter" / invited-member paywall
+ * choices. (Promo redemption marks completion itself, server-side.)
+ * POST /onboarding/complete
+ */
+export async function completeOnboarding(accessToken: string): Promise<void> {
+    const res = await fetch(`${BACKEND_URL}/onboarding/complete`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!res.ok) {
+        throw new Error(`Failed to complete onboarding: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+}
+
+export interface SchoolResult {
+    id: string;
+    school_name: string;
+    city: string | null;
+    state: string | null;
+}
+
+/**
+ * Autocomplete suggestions for the secondary school screen.
+ * GET /onboarding/schools/search?q=
+ */
+export async function searchSchools(query: string, accessToken: string): Promise<SchoolResult[]> {
+    const res = await fetch(`${BACKEND_URL}/onboarding/schools/search?q=${encodeURIComponent(query)}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!res.ok) {
+        throw new Error(`School search failed: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+
+    return res.json();
+}
+
+export interface PaywallStatus {
+    is_member: boolean;
+    owner_name: string | null;
+}
+
+/**
+ * Tells the Paywall screen whether to show the normal paywall or the
+ * "you're covered" invited-member confirmation.
+ * GET /onboarding/paywall-status
+ */
+export async function fetchPaywallStatus(accessToken: string): Promise<PaywallStatus> {
+    const res = await fetch(`${BACKEND_URL}/onboarding/paywall-status`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!res.ok) {
+        throw new Error(`Failed to check paywall status: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+
+    return res.json();
+}
+
+/** Thrown when a promo code is invalid, inactive, or past its uses/expiry. */
+export class PromoCodeError extends Error {
+    constructor(public code: "promo_code_invalid" | "promo_code_expired") {
+        super(code === "promo_code_expired" ? "This code has expired or reached its limit." : "That code isn't valid.");
+        this.name = "PromoCodeError";
+    }
+}
+
+/**
+ * Redeem a pilot-school promo code. Marks onboarding complete on success.
+ * POST /onboarding/promo
+ */
+export async function redeemPromoCode(
+    code: string,
+    accessToken: string
+): Promise<{ access_until: string }> {
+    const res = await fetch(`${BACKEND_URL}/onboarding/promo`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ code }),
+    });
+
+    if (res.status === 404) throw new PromoCodeError("promo_code_invalid");
+    if (res.status === 410) throw new PromoCodeError("promo_code_expired");
+    if (!res.ok) {
+        throw new Error(`Failed to redeem promo code: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+
+    return res.json();
 }
