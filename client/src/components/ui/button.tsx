@@ -28,7 +28,7 @@ const buttonVariants = cva(
       size: {
         default: "min-h-9 px-4 py-2",
         sm: "min-h-8 rounded-md px-3 text-xs",
-        lg: "min-h-10 rounded-md px-8",
+        lg: "min-h-11 rounded-full px-8 shadow-[0_0_24px_-8px_hsl(var(--primary)/0.6)] hover:shadow-[0_0_32px_-6px_hsl(var(--primary)/0.75)]",
         icon: "h-9 w-9",
       },
     },

@@ -23,46 +23,57 @@
   --sidebar: 210 20% 97%;
   --sidebar-foreground: 200 30% 20%;
   --sidebar-border: 210 20% 92%;
-  --sidebar-primary: 200 30% 45%;
-  /* Slate Blue from Logo */
+  --sidebar-primary: 212 90% 46%;
+  /* Vivid Blue */
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 210 20% 94%;
   --sidebar-accent-foreground: 200 30% 30%;
-  --sidebar-ring: 200 30% 45%;
+  --sidebar-ring: 212 90% 46%;
   --popover: 0 0% 100%;
   --popover-foreground: 200 30% 15%;
   --popover-border: 210 20% 90%;
-  --primary: 200 30% 45%;
-  /* Slate Blue from Logo */
+  --primary: 212 90% 46%;
+  /* Vivid Blue */
   --primary-foreground: 0 0% 100%;
   --secondary: 210 20% 95%;
   --secondary-foreground: 200 30% 20%;
   --muted: 210 20% 96%;
   --muted-foreground: 210 10% 50%;
   /* Muted Slate Gray */
-  --accent: 200 30% 45%;
+  --accent: 212 90% 46%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 84% 45%;
   --destructive-foreground: 0 0% 100%;
   --input: 210 20% 90%;
-  --ring: 200 30% 45%;
-  --chart-1: 200 30% 45%;
-  --chart-2: 200 30% 55%;
-  --chart-3: 200 30% 65%;
-  --chart-4: 200 30% 75%;
-  --chart-5: 200 30% 85%;
+  --ring: 212 90% 46%;
+  --chart-1: 212 90% 46%;
+  --chart-2: 212 80% 56%;
+  --chart-3: 212 70% 66%;
+  --chart-4: 212 60% 76%;
+  --chart-5: 212 50% 86%;
 
-  /* Secondary accent — keyword highlights, onboarding progress indicators.
-     Same value in both themes; kept vibrant against both light and dark card
-     surfaces. */
+  /* Secondary accent — keyword highlights (Feature 05, not yet built). Same
+     value in both themes; kept vibrant against both light and dark card
+     surfaces. Not used for onboarding/brand accents anymore — see --primary. */
   --amber: 38 92% 50%;
   --amber-foreground: 26 40% 10%;
+
+  /* Decorative gradient surfaces only (auth background, onboarding shell,
+     dashboard hero band) — not meant for text-dense areas. */
+  --gradient-from: 0 0% 100%;
+  /* White */
+  --gradient-via: 212 80% 88%;
+  /* Soft light-blue wash */
+  --gradient-to: 212 90% 76%;
+  /* Deeper light-blue */
 
   /* Platform default (dashboard, chat, quiz, …). The landing page opts back
      into its display font via .font-landing. */
   --font-sans: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
+  /* Headline/display font — auth, onboarding, and major section headings. */
+  --font-display: "Space Grotesk", Inter, sans-serif;
   --radius: .75rem;
   --shadow-2xs: 0px 1px 2px 0px hsl(200 30% 5% / 0.02);
   --shadow-xs: 0px 2px 4px 0px hsl(200 30% 5% / 0.03);
@@ -104,34 +115,44 @@
   --sidebar: 200 30% 2%;
   --sidebar-foreground: 0 0% 100%;
   --sidebar-border: 200 20% 12%;
-  --sidebar-primary: 200 30% 45%;
-  /* Slate Blue from Logo */
-  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-primary: 212 90% 62%;
+  /* Vivid Blue (dark) */
+  --sidebar-primary-foreground: 210 40% 8%;
   --sidebar-accent: 200 20% 10%;
   --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 200 30% 45%;
+  --sidebar-ring: 212 90% 62%;
   --popover: 200 25% 6%;
   --popover-foreground: 0 0% 100%;
   --popover-border: 200 20% 12%;
-  --primary: 200 30% 45%;
-  /* Slate Blue from Logo */
-  --primary-foreground: 0 0% 100%;
+  --primary: 212 90% 62%;
+  /* Vivid Blue (dark) */
+  --primary-foreground: 210 40% 8%;
+  /* Deliberately dark navy, not white — white-on-62%-lightness-blue fails
+     AA contrast (~2.4:1); dark navy text on this fill is ~7.5:1. */
   --secondary: 200 15% 12%;
   --secondary-foreground: 0 0% 100%;
   --muted: 200 15% 10%;
   --muted-foreground: 200 10% 65%;
   /* Muted Slate Gray */
-  --accent: 200 30% 45%;
-  --accent-foreground: 0 0% 100%;
+  --accent: 212 90% 62%;
+  --accent-foreground: 210 40% 8%;
   --destructive: 0 84% 35%;
   --destructive-foreground: 0 84% 98%;
   --input: 200 15% 12%;
-  --ring: 200 30% 45%;
-  --chart-1: 200 30% 45%;
-  --chart-2: 200 30% 55%;
-  --chart-3: 200 30% 65%;
-  --chart-4: 200 30% 75%;
-  --chart-5: 200 30% 85%;
+  --ring: 212 90% 62%;
+  --chart-1: 212 90% 62%;
+  --chart-2: 212 80% 68%;
+  --chart-3: 212 70% 74%;
+  --chart-4: 212 60% 80%;
+  --chart-5: 212 50% 86%;
+
+  /* Decorative gradient surfaces only — see :root for usage notes. */
+  --gradient-from: 210 40% 4%;
+  /* Near-black */
+  --gradient-via: 214 55% 12%;
+  /* Deep navy */
+  --gradient-to: 212 75% 22%;
+  /* Richer navy-blue */
 
   --shadow-2xs: 0px 1px 2px 0px hsl(200 30% 5% / 0.1);
   --shadow-xs: 0px 2px 4px 0px hsl(200 30% 5% / 0.15);
@@ -330,6 +351,12 @@
  * need to be distinguished from eachother visually.
  */
 @layer utilities {
+
+  /* Decorative brand gradient — white/light-blue in light mode, black/navy in
+     dark mode (see --gradient-from/via/to). Auth + onboarding chrome only. */
+  .bg-brand-gradient {
+    background: linear-gradient(135deg, hsl(var(--gradient-from)) 0%, hsl(var(--gradient-via)) 50%, hsl(var(--gradient-to)) 100%);
+  }
 
   /* Hide ugly search cancel button in Chrome until we can style it properly */
   input[type="search"]::-webkit-search-cancel-button {

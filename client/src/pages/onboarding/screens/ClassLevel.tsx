@@ -1,28 +1,25 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { saveSecondaryOnboarding } from "@/lib/api";
-import { ScreenProps } from "../utils";
+import { ADVANCE_DELAY_MS, ScreenProps } from "../utils";
 
 const LEVELS = ["SS1", "SS2", "SS3"] as const;
 
 export default function ClassLevel({ accessToken, screenNumber, onNext, onBack }: ScreenProps) {
     const [submitting, setSubmitting] = useState<string | null>(null);
 
-    const handlePick = async (level: (typeof LEVELS)[number]) => {
+    const handlePick = (level: (typeof LEVELS)[number]) => {
         if (submitting) return;
         setSubmitting(level);
-        try {
-            await saveSecondaryOnboarding({ screen: screenNumber, secondary_class_level: level }, accessToken);
-            onNext({ secondaryClassLevel: level });
-        } catch (err) {
+        saveSecondaryOnboarding({ screen: screenNumber, secondary_class_level: level }, accessToken).catch((err) => {
             console.error("Failed to save class level:", err);
-            setSubmitting(null);
-        }
+        });
+        setTimeout(() => onNext({ secondaryClassLevel: level }), ADVANCE_DELAY_MS);
     };
 
     return (
-        <div className="text-center space-y-8">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight">
+        <div className="space-y-8">
+            <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight">
                 What class are you in?
             </h1>
 

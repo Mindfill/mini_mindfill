@@ -115,8 +115,8 @@ export default function Courses() {
                             />
                             <div>
                                 <h1
-                                    className="text-2xl font-bold tracking-tight"
-                                    style={{ textShadow: "0 0 30px rgba(245, 158, 11, 0.15)" }}
+                                    className="font-display text-2xl font-bold tracking-tight"
+                                    style={{ textShadow: "0 0 30px rgba(37, 130, 224, 0.15)" }}
                                 >
                                     Courses
                                 </h1>

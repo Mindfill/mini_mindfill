@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { saveSecondaryOnboarding, saveUniversityOnboarding } from "@/lib/api";
-import { ScreenProps } from "../utils";
+import { ADVANCE_DELAY_MS, ScreenProps } from "../utils";
 
 interface NotificationPhoneProps extends ScreenProps {
     userType: "secondary" | "university";
@@ -22,36 +22,30 @@ export default function NotificationPhone({
     const [emailPref, setEmailPref] = useState(true);
     const [phone, setPhone] = useState("");
     const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
-    const handleSubmit = async () => {
+    const handleSubmit = () => {
         if (submitting) return;
         setSubmitting(true);
-        setError(null);
-        try {
-            const payload: any = {
-                screen: screenNumber,
-                notification_prefs: { whatsapp, email: emailPref },
-            };
-            if (phone.trim()) payload.phone_number = phone.trim();
+        const payload: any = {
+            screen: screenNumber,
+            notification_prefs: { whatsapp, email: emailPref },
+        };
+        if (phone.trim()) payload.phone_number = phone.trim();
 
-            if (userType === "secondary") {
-                await saveSecondaryOnboarding(payload, accessToken);
-            } else {
-                await saveUniversityOnboarding(payload, accessToken);
-            }
-            onNext({ notificationWhatsapp: whatsapp, notificationEmail: emailPref, phoneNumber: phone.trim() });
-        } catch (err) {
-            console.error("Failed to save notification prefs:", err);
-            setError("Couldn't save that — please try again.");
-        } finally {
-            setSubmitting(false);
-        }
+        const save =
+            userType === "secondary"
+                ? saveSecondaryOnboarding(payload, accessToken)
+                : saveUniversityOnboarding(payload, accessToken);
+        save.catch((err) => console.error("Failed to save notification prefs:", err));
+        setTimeout(
+            () => onNext({ notificationWhatsapp: whatsapp, notificationEmail: emailPref, phoneNumber: phone.trim() }),
+            ADVANCE_DELAY_MS
+        );
     };
 
     return (
-        <div className="text-center space-y-6">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight">
+        <div className="space-y-6">
+            <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight">
                 How should we reach you?
             </h1>
 
@@ -80,11 +74,10 @@ export default function NotificationPhone({
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+234..."
+                    className="h-12"
                     disabled={submitting}
                 />
             </div>
-
-            {error && <p className="text-sm text-red-400">{error}</p>}
 
             <Button size="lg" disabled={submitting} onClick={handleSubmit} className="w-full gap-2">
                 {submitting && <Loader2 className="w-4 h-4 animate-spin" />}

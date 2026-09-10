@@ -10,30 +10,23 @@ export default function Sentiment({ accessToken, screenNumber, onNext, onBack, u
     const [picked, setPicked] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
-    const handlePick = async (value: string) => {
+    const handlePick = (value: string) => {
         if (submitting) return;
         setSubmitting(true);
         setPicked(value);
-        try {
-            const payload = { screen: screenNumber, education_sentiment: value };
-            if (userType === "secondary") {
-                await saveSecondaryOnboarding(payload, accessToken);
-            } else {
-                await saveUniversityOnboarding(payload, accessToken);
-            }
-            setTimeout(() => onNext({ educationSentiment: value }), 900);
-        } catch (err) {
-            console.error("Failed to save sentiment:", err);
-            setPicked(null);
-            setSubmitting(false);
-        }
+        const payload = { screen: screenNumber, education_sentiment: value };
+        const save = userType === "secondary"
+            ? saveSecondaryOnboarding(payload, accessToken)
+            : saveUniversityOnboarding(payload, accessToken);
+        save.catch((err) => console.error("Failed to save sentiment:", err));
+        setTimeout(() => onNext({ educationSentiment: value }), 900);
     };
 
     const response = SENTIMENT_OPTIONS.find((o) => o.value === picked)?.response;
 
     return (
-        <div className="text-center space-y-6">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight">
+        <div className="space-y-6">
+            <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight">
                 Real talk — is school actually worth it?
             </h1>
 
@@ -44,7 +37,7 @@ export default function Sentiment({ accessToken, screenNumber, onNext, onBack, u
                         onClick={() => handlePick(opt.value)}
                         disabled={submitting}
                         className={`p-4 rounded-xl border text-sm font-medium hover-elevate active-elevate-2 disabled:opacity-60 ${
-                            picked === opt.value ? "border-amber bg-amber/5" : "border-border bg-card"
+                            picked === opt.value ? "border-primary bg-primary/5" : "border-border bg-card"
                         }`}
                     >
                         {opt.label}
@@ -56,7 +49,7 @@ export default function Sentiment({ accessToken, screenNumber, onNext, onBack, u
                 Your answer is completely anonymous. We genuinely want to know.
             </p>
 
-            {response && <p className="text-amber font-medium fade-in">{response}</p>}
+            {response && <p className="text-primary font-medium fade-in">{response}</p>}
 
             <button onClick={onBack} disabled={submitting} className="text-sm text-muted-foreground hover:text-foreground">
                 Back

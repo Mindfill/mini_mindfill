@@ -3,7 +3,23 @@
  * All requests attach the Supabase JWT as a Bearer token.
  */
 
+import { getDeviceToken } from "./device";
+
 const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "https://mindfill-api.onrender.com").trim().replace(/[`'"]/g, "");
+
+/**
+ * Single place every authenticated request builds its headers — attaches the
+ * Supabase bearer token and, when one is registered, the device token used
+ * for the multi-device limit (Feature 01).
+ */
+function authHeaders(accessToken?: string, json = false): Record<string, string> {
+    const headers: Record<string, string> = {};
+    if (json) headers["Content-Type"] = "application/json";
+    if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
+    const deviceToken = getDeviceToken();
+    if (deviceToken) headers["X-Device-Token"] = deviceToken;
+    return headers;
+}
 
 /** Thrown when an API call returns HTTP 402 — the user is out of credits. */
 export class OutOfCreditsError extends Error {
@@ -30,9 +46,7 @@ export async function fetchLessonHistory(
 ): Promise<ChatMessage[]> {
     console.log(`[API] Fetching history for: ${lessonSlug} at ${BACKEND_URL}`);
     const res = await fetch(`${BACKEND_URL}/lessons/${lessonSlug}/history`, {
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken),
     });
 
     if (!res.ok) {
@@ -158,10 +172,7 @@ export async function submitLessonMessage(
 ): Promise<NoteChatResponse> {
     const res = await fetch(`${BACKEND_URL}/lessons/${lessonSlug}/submit`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken, true),
         body: JSON.stringify({ content }),
     });
 
@@ -216,9 +227,7 @@ export interface DashboardResponse {
  */
 export async function fetchDashboard(accessToken: string): Promise<DashboardResponse> {
     const res = await fetch(`${BACKEND_URL}/dashboard`, {
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken),
     });
 
     if (!res.ok) {
@@ -238,12 +247,7 @@ export async function submitReview(
     suggestion: string,
     accessToken?: string
 ): Promise<void> {
-    const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-    };
-    if (accessToken) {
-        headers["Authorization"] = `Bearer ${accessToken}`;
-    }
+    const headers = authHeaders(accessToken, true);
 
     const res = await fetch(`${BACKEND_URL}/api/reviews`, {
         method: "POST",
@@ -343,7 +347,7 @@ export async function fetchVisualizationsStatus(
     if (index !== undefined) qs.set("index", String(index));
 
     const res = await fetch(`${BACKEND_URL}/visualizations/status?${qs.toString()}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: authHeaders(accessToken),
     });
 
     if (!res.ok) {
@@ -412,9 +416,7 @@ export async function fetchQuizSections(
     accessToken: string
 ): Promise<QuizSectionOption[]> {
     const res = await fetch(`${BACKEND_URL}/quiz/${noteId}`, {
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken),
     });
 
     if (!res.ok) {
@@ -453,10 +455,7 @@ export async function uploadNote(
         formData.append("course_id", courseId);
     }
 
-    const headers: Record<string, string> = {};
-    if (accessToken) {
-        headers["Authorization"] = `Bearer ${accessToken}`;
-    }
+    const headers = authHeaders(accessToken);
 
     const res = await fetch(`${BACKEND_URL}/notes/upload`, {
         method: "POST",
@@ -484,9 +483,7 @@ export async function onboardNote(
     accessToken: string
 ): Promise<NoteLessonPlanResponse> {
     const res = await fetch(`${BACKEND_URL}/notes/${noteId}/onboard`, {
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken),
     });
 
     if (!res.ok) {
@@ -512,10 +509,7 @@ export async function sendNoteChatMessage(
     // JSON (session_id, visualizations, flags) is parsed once at [DONE].
     const res = await fetch(`${BACKEND_URL}/notes/${noteId}/chat`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken, true),
         body: JSON.stringify(request),
     });
 
@@ -542,9 +536,7 @@ export async function fetchNoteHistory(
     accessToken: string
 ): Promise<NoteChatMessage[]> {
     const res = await fetch(`${BACKEND_URL}/notes/${noteId}/history`, {
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken),
     });
 
     if (!res.ok) {
@@ -561,9 +553,7 @@ export async function fetchNoteHistory(
  */
 export async function fetchCourses(accessToken: string): Promise<Course[]> {
     const res = await fetch(`${BACKEND_URL}/courses`, {
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken),
     });
 
     if (!res.ok) {
@@ -584,10 +574,7 @@ export async function createCourse(
 ): Promise<Course> {
     const res = await fetch(`${BACKEND_URL}/courses`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken, true),
         body: JSON.stringify(course),
     });
 
@@ -606,9 +593,7 @@ export async function createCourse(
 export async function deleteCourse(courseId: string, accessToken: string): Promise<void> {
     const res = await fetch(`${BACKEND_URL}/courses/${courseId}`, {
         method: "DELETE",
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken),
     });
 
     if (!res.ok) {
@@ -637,9 +622,7 @@ export interface ProfileUpdate {
  */
 export async function fetchProfile(accessToken: string): Promise<Profile> {
     const res = await fetch(`${BACKEND_URL}/profile`, {
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken),
     });
 
     if (!res.ok) {
@@ -657,10 +640,7 @@ export async function fetchProfile(accessToken: string): Promise<Profile> {
 export async function updateProfile(update: ProfileUpdate, accessToken: string): Promise<Profile> {
     const res = await fetch(`${BACKEND_URL}/profile`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken, true),
         body: JSON.stringify(update),
     });
 
@@ -682,10 +662,7 @@ export async function linkParent(
 ): Promise<{ status: "linked" | "invited" }> {
     const res = await fetch(`${BACKEND_URL}/profile/link-parent`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken, true),
         body: JSON.stringify({ parent_email: parentEmail }),
     });
 
@@ -718,10 +695,7 @@ export async function initiatePayment(
 ): Promise<{ payment_url: string }> {
     const res = await fetch(`${BACKEND_URL}/payments/initiate`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken, true),
         body: JSON.stringify({ plan }),
     });
 
@@ -742,9 +716,7 @@ export async function initiatePayment(
 export async function cancelSubscription(accessToken: string): Promise<void> {
     const res = await fetch(`${BACKEND_URL}/subscriptions/cancel`, {
         method: "DELETE",
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken),
     });
 
     if (!res.ok) {
@@ -764,10 +736,7 @@ export async function generateNoteQuiz(
 ): Promise<QuizResponse> {
     const res = await fetch(`${BACKEND_URL}/notes/${noteId}/quiz`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken, true),
         body: JSON.stringify({ selected_sections: selectedSections }),
     });
 
@@ -813,10 +782,7 @@ export async function submitFlashcardResults(
 ): Promise<void> {
     const res = await fetch(`${BACKEND_URL}/notes/${noteId}/flashcards/submit`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken, true),
         body: JSON.stringify(submission),
     });
 
@@ -837,10 +803,7 @@ export async function fetchFlashcards(
 ): Promise<FlashcardsResponse> {
     const res = await fetch(`${BACKEND_URL}/notes/${noteId}/flashcards`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken, true),
         body: JSON.stringify({ selected_sections: selectedSections }),
     });
 
@@ -864,10 +827,7 @@ export async function generateFlashcards(
 ): Promise<FlashcardsResponse> {
     const res = await fetch(`${BACKEND_URL}/notes/${noteId}/flashcards/generate`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken, true),
         body: JSON.stringify({ selected_sections: selectedSections }),
     });
 
@@ -891,10 +851,7 @@ export async function submitQuizResults(
 ): Promise<void> {
     const res = await fetch(`${BACKEND_URL}/notes/${noteId}/quiz/submit`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken, true),
         body: JSON.stringify(submission),
     });
 
@@ -942,7 +899,7 @@ export interface OnboardingStatus {
  */
 export async function fetchOnboardingStatus(accessToken: string): Promise<OnboardingStatus> {
     const res = await fetch(`${BACKEND_URL}/onboarding/status`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: authHeaders(accessToken),
     });
 
     if (!res.ok) {
@@ -960,10 +917,7 @@ export async function fetchOnboardingStatus(accessToken: string): Promise<Onboar
 export async function setUserType(userType: UserType, accessToken: string): Promise<void> {
     const res = await fetch(`${BACKEND_URL}/onboarding/user-type`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken, true),
         body: JSON.stringify({ user_type: userType }),
     });
 
@@ -1001,10 +955,7 @@ export async function saveSecondaryOnboarding(
 ): Promise<void> {
     const res = await fetch(`${BACKEND_URL}/onboarding/secondary`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken, true),
         body: JSON.stringify(input),
     });
 
@@ -1038,10 +989,7 @@ export async function saveUniversityOnboarding(
 ): Promise<void> {
     const res = await fetch(`${BACKEND_URL}/onboarding/university`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken, true),
         body: JSON.stringify(input),
     });
 
@@ -1067,10 +1015,7 @@ export async function saveParentOnboarding(
 ): Promise<void> {
     const res = await fetch(`${BACKEND_URL}/onboarding/parent`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken, true),
         body: JSON.stringify(input),
     });
 
@@ -1086,7 +1031,7 @@ export async function saveParentOnboarding(
 export async function acceptOnboardingTerms(accessToken: string): Promise<void> {
     const res = await fetch(`${BACKEND_URL}/onboarding/accept-terms`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: authHeaders(accessToken),
     });
 
     if (!res.ok) {
@@ -1103,11 +1048,141 @@ export async function acceptOnboardingTerms(accessToken: string): Promise<void> 
 export async function completeOnboarding(accessToken: string): Promise<void> {
     const res = await fetch(`${BACKEND_URL}/onboarding/complete`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: authHeaders(accessToken),
     });
 
     if (!res.ok) {
         throw new Error(`Failed to complete onboarding: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+}
+
+// ── DEVICES API (Feature 01) ────────────────────────────────────────────────
+
+export interface DeviceEntry {
+    device_token: string;
+    device_name: string | null;
+    last_seen_at: string;
+    registered_at: string;
+}
+
+/**
+ * List this user's registered devices.
+ * GET /devices
+ */
+export async function fetchDevices(accessToken: string): Promise<DeviceEntry[]> {
+    const res = await fetch(`${BACKEND_URL}/devices`, {
+        headers: authHeaders(accessToken),
+    });
+
+    if (!res.ok) {
+        throw new Error(`Failed to fetch devices: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+
+    const data = await res.json();
+    return data.devices ?? [];
+}
+
+/**
+ * Deregister a device, freeing its slot immediately.
+ * DELETE /devices/{device_token}
+ */
+export async function deregisterDevice(deviceToken: string, accessToken: string): Promise<void> {
+    const res = await fetch(`${BACKEND_URL}/devices/${encodeURIComponent(deviceToken)}`, {
+        method: "DELETE",
+        headers: authHeaders(accessToken),
+    });
+
+    if (!res.ok) {
+        throw new Error(`Failed to remove device: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+}
+
+// ── SUBSCRIPTION MEMBERS API (Feature 01) ───────────────────────────────────
+
+export interface SubscriptionMember {
+    user_id: string;
+    status: string;
+    invited_at: string | null;
+    joined_at: string | null;
+    full_name: string | null;
+}
+
+export interface PendingInvite {
+    invited_email: string;
+    expires_at: string;
+}
+
+export interface MembersResponse {
+    members: SubscriptionMember[];
+    pending_invites: PendingInvite[];
+}
+
+/**
+ * Owner-only: list active members + pending invites on the family plan.
+ * GET /subscriptions/members
+ */
+export async function fetchSubscriptionMembers(accessToken: string): Promise<MembersResponse> {
+    const res = await fetch(`${BACKEND_URL}/subscriptions/members`, {
+        headers: authHeaders(accessToken),
+    });
+
+    if (!res.ok) {
+        throw new Error(`Failed to fetch members: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+
+    return res.json();
+}
+
+/**
+ * Owner-only: invite a member by email (same endpoint resends if already pending).
+ * POST /subscriptions/invite
+ */
+export async function inviteSubscriptionMember(
+    email: string,
+    accessToken: string
+): Promise<{ status: "invited" | "resent" }> {
+    const res = await fetch(`${BACKEND_URL}/subscriptions/invite`, {
+        method: "POST",
+        headers: authHeaders(accessToken, true),
+        body: JSON.stringify({ email }),
+    });
+
+    if (!res.ok) {
+        throw new Error(await parseErrorDetail(res));
+    }
+
+    return res.json();
+}
+
+/**
+ * Accept a family-plan invite (existing users — new signups resolve
+ * automatically via the post-signup hook).
+ * POST /subscriptions/invite/accept
+ */
+export async function acceptSubscriptionInvite(token: string, accessToken: string): Promise<void> {
+    const res = await fetch(`${BACKEND_URL}/subscriptions/invite/accept`, {
+        method: "POST",
+        headers: authHeaders(accessToken, true),
+        body: JSON.stringify({ token }),
+    });
+
+    if (!res.ok) {
+        throw new Error(await parseErrorDetail(res));
+    }
+}
+
+/**
+ * Owner-only: remove a member from the family plan.
+ * DELETE /subscriptions/members/{user_id}
+ */
+export async function removeSubscriptionMember(memberUserId: string, accessToken: string): Promise<void> {
+    const res = await fetch(`${BACKEND_URL}/subscriptions/members/${memberUserId}`, {
+        method: "DELETE",
+        headers: authHeaders(accessToken),
+    });
+
+    if (!res.ok) {
+        throw new Error(await parseErrorDetail(res));
     }
 }
 
@@ -1124,7 +1199,7 @@ export interface SchoolResult {
  */
 export async function searchSchools(query: string, accessToken: string): Promise<SchoolResult[]> {
     const res = await fetch(`${BACKEND_URL}/onboarding/schools/search?q=${encodeURIComponent(query)}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: authHeaders(accessToken),
     });
 
     if (!res.ok) {
@@ -1146,7 +1221,7 @@ export interface PaywallStatus {
  */
 export async function fetchPaywallStatus(accessToken: string): Promise<PaywallStatus> {
     const res = await fetch(`${BACKEND_URL}/onboarding/paywall-status`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: authHeaders(accessToken),
     });
 
     if (!res.ok) {
@@ -1174,10 +1249,7 @@ export async function redeemPromoCode(
 ): Promise<{ access_until: string }> {
     const res = await fetch(`${BACKEND_URL}/onboarding/promo`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-        },
+        headers: authHeaders(accessToken, true),
         body: JSON.stringify({ code }),
     });
 

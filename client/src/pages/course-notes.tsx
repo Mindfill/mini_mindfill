@@ -216,7 +216,7 @@ export default function CourseNotes() {
                             >
                                 <ArrowLeft className="w-3 h-3" /> All Notes
                             </button>
-                            <h1 className="text-2xl font-semibold tracking-tight">{heading}</h1>
+                            <h1 className="font-display text-2xl font-semibold tracking-tight">{heading}</h1>
                             <p className="text-muted-foreground text-sm">{subtitle}</p>
                         </div>
                         <div className="flex items-center gap-3 flex-shrink-0">

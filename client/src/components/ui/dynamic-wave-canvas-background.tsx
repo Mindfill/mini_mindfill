@@ -66,15 +66,16 @@ const HeroWave = () => {
                     const wave = (fastSin(a) + fastCos(d)) * 0.5;
                     const intensity = 0.35 + 0.45 * wave;
 
-                    // Amber/stone palette derived from the site theme
-                    // Base is warm stone grey (#C9C9C5), accent is amber (#F59E0B)
-                    const base = 0.78 + 0.05 * fastCos(u_x + u_y + time * 0.3);
-                    const amberAccent = 0.18 * fastSin(a * 1.5 + time * 0.2);
-                    const warmAccent = 0.12 * fastCos(d * 2 + time * 0.1);
+                    // Neon-blue palette derived from the site theme (~hsl(212 90% 55%)).
+                    // glowT/shimmer are both normalized to 0..1 (not signed) so the
+                    // hue never flips warm — only brightness/glow varies, always
+                    // staying deep-navy-to-vivid-blue/cyan.
+                    const glowT = 0.5 + 0.5 * fastSin(a * 1.2 + time * 0.15);
+                    const shimmer = 0.5 + 0.5 * fastCos(d * 1.7 + time * 0.1);
 
-                    const r = Math.max(0, Math.min(1, base + amberAccent * 1.2 + warmAccent * 0.3)) * intensity;
-                    const g = Math.max(0, Math.min(1, base + amberAccent * 0.55 + warmAccent * 0.2)) * intensity;
-                    const b = Math.max(0, Math.min(1, base - amberAccent * 0.4 + warmAccent * 0.1)) * intensity;
+                    const r = Math.max(0, Math.min(1, 0.02 + glowT * 0.10 + shimmer * 0.04)) * intensity;
+                    const g = Math.max(0, Math.min(1, 0.05 + glowT * 0.30 + shimmer * 0.12)) * intensity;
+                    const b = Math.max(0, Math.min(1, 0.18 + glowT * 0.65 + shimmer * 0.25)) * intensity;
 
                     const idx = (y * width + x) * 4;
                     data[idx] = r * 255;

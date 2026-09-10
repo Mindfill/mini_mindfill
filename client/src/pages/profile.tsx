@@ -21,6 +21,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Loader2, User as UserIcon, Sparkles, CheckCircle2, UserPlus, Mail } from "lucide-react";
+import FamilyMembersSection from "@/components/billing/FamilyMembersSection";
 
 export default function Profile() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
@@ -199,7 +200,7 @@ export default function Profile() {
                             <UserIcon className="w-7 h-7" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
+                            <h1 className="font-display text-2xl font-semibold tracking-tight">Profile</h1>
                             <p className="text-muted-foreground text-sm">Manage your personal information</p>
                         </div>
                     </div>
@@ -307,6 +308,11 @@ export default function Profile() {
                             </div>
                         )}
                     </section>
+
+                    {/* Family plan members (secondary school only — renders nothing if not applicable) */}
+                    {userType === "secondary" && accessToken && (
+                        <FamilyMembersSection accessToken={accessToken} />
+                    )}
 
                     {/* Parent linking (not applicable to parent accounts themselves) */}
                     {userType !== "parent" && (

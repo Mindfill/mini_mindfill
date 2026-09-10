@@ -3,7 +3,7 @@ import { Loader2, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { saveSecondaryOnboarding } from "@/lib/api";
-import { ScreenProps, SECONDARY_GOAL_OPTIONS } from "../utils";
+import { ADVANCE_DELAY_MS, ScreenProps, SECONDARY_GOAL_OPTIONS } from "../utils";
 
 export default function Goals({ accessToken, screenNumber, collected, onNext, onBack }: ScreenProps) {
     const [selected, setSelected] = useState<string[]>(collected.lifeGoals || []);
@@ -15,25 +15,22 @@ export default function Goals({ accessToken, screenNumber, collected, onNext, on
         setSelected((prev) => (prev.includes(goal) ? prev.filter((g) => g !== goal) : [...prev, goal]));
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = () => {
         const goals = [...selected];
         if (otherOpen && otherText.trim()) goals.push(otherText.trim());
         if (goals.length === 0 || submitting) return;
         setSubmitting(true);
-        try {
-            await saveSecondaryOnboarding({ screen: screenNumber, life_goals: goals }, accessToken);
-            onNext({ lifeGoals: goals });
-        } catch (err) {
+        saveSecondaryOnboarding({ screen: screenNumber, life_goals: goals }, accessToken).catch((err) => {
             console.error("Failed to save goals:", err);
-            setSubmitting(false);
-        }
+        });
+        setTimeout(() => onNext({ lifeGoals: goals }), ADVANCE_DELAY_MS);
     };
 
     const goalCount = selected.length + (otherOpen && otherText.trim() ? 1 : 0);
 
     return (
-        <div className="text-center space-y-6">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight">
+        <div className="space-y-6">
+            <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight">
                 What are you trying to do with your life{collected.fullName ? `, ${collected.fullName}` : ""}?
             </h1>
 
@@ -45,15 +42,15 @@ export default function Goals({ accessToken, screenNumber, collected, onNext, on
                             key={goal}
                             onClick={() => toggle(goal)}
                             className={`flex items-center gap-3 p-4 rounded-xl border hover-elevate active-elevate-2 ${
-                                active ? "border-amber bg-amber/5" : "border-border bg-card"
+                                active ? "border-primary bg-primary/5" : "border-border bg-card"
                             }`}
                         >
                             <div
                                 className={`w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 ${
-                                    active ? "bg-amber border-amber" : "border-muted-foreground"
+                                    active ? "bg-primary border-primary" : "border-muted-foreground"
                                 }`}
                             >
-                                {active && <Check className="w-3.5 h-3.5 text-amber-foreground" />}
+                                {active && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
                             </div>
                             <span className="text-sm font-medium">{goal}</span>
                         </button>
@@ -63,15 +60,15 @@ export default function Goals({ accessToken, screenNumber, collected, onNext, on
                 <button
                     onClick={() => setOtherOpen((o) => !o)}
                     className={`flex items-center gap-3 p-4 rounded-xl border hover-elevate active-elevate-2 ${
-                        otherOpen ? "border-amber bg-amber/5" : "border-border bg-card"
+                        otherOpen ? "border-primary bg-primary/5" : "border-border bg-card"
                     }`}
                 >
                     <div
                         className={`w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 ${
-                            otherOpen ? "bg-amber border-amber" : "border-muted-foreground"
+                            otherOpen ? "bg-primary border-primary" : "border-muted-foreground"
                         }`}
                     >
-                        {otherOpen && <Check className="w-3.5 h-3.5 text-amber-foreground" />}
+                        {otherOpen && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
                     </div>
                     <span className="text-sm font-medium">Other — I'll tell you myself</span>
                 </button>

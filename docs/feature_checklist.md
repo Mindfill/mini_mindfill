@@ -341,12 +341,12 @@
 ### Secondary school, university, parent. Promo code system.
 
 **DB (YOU run these in Supabase SQL editor — not Claude Code):**
-- [ ] user_profiles ALTER TABLE (all new columns — see setup_checklist.md Part 2)
-- [ ] promo_codes table created
-- [ ] promo_redemptions table created
+- [x] user_profiles ALTER TABLE (all new columns — see setup_checklist.md Part 2)
+- [x] promo_codes table created
+- [x] promo_redemptions table created
 
 **Backend — Secondary School Onboarding:**
-- [ ] POST /onboarding/secondary — incremental save per screen
+- [x] POST /onboarding/secondary — incremental save per screen
       Screen 1: full_name
       Screen 2: date_of_birth + age validation (block under-13)
       Screen 3: secondary_class_level
@@ -355,13 +355,13 @@
       Screen 6: education_sentiment
       Screen 7: notification_prefs + phone_number (encrypted via Vault)
       Screen 8: paywall / promo code / membership detection
-- [ ] onboarding_step incremented per screen (resume on re-login)
-- [ ] Under-13 hard stop: clear message, no data stored, account suspended
-- [ ] Invited member detection: check subscription_members before paywall
-- [ ] POST /onboarding/promo — validate code, redeem, create pilot subscription
+- [x] onboarding_step incremented per screen (resume on re-login)
+- [x] Under-13 hard stop: clear message, no data stored, account suspended
+- [x] Invited member detection: check subscription_members before paywall
+- [x] POST /onboarding/promo — validate code, redeem, create pilot subscription
 
 **Backend — University Onboarding:**
-- [ ] POST /onboarding/university — incremental save per screen
+- [x] POST /onboarding/university — incremental save per screen
       Screen 1: full_name
       Screen 2: date_of_birth
       Screen 3: institution_name + course_of_study
@@ -371,59 +371,59 @@
       Screen 7: dashboard (no paywall — existing credit system)
 
 **Backend — Parent Onboarding:**
-- [ ] POST /onboarding/parent — 2 screens: full_name, dashboard
-- [ ] role = parent set at signup
-- [ ] Empty parent dashboard state until student links them
+- [x] POST /onboarding/parent — 2 screens: full_name, dashboard
+- [x] role = parent set at signup
+- [x] Empty parent dashboard state until student links them
 
 **Backend — Email/Password Auth:**
-- [ ] Supabase email/password provider enabled (David does this in dashboard)
-- [ ] Email verification before onboarding starts
-- [ ] Password reset flow (Supabase native until custom domain)
-- [ ] Post-signup hook: check subscription_invites AND pending_parent_links
+- [x] Supabase email/password provider enabled (David does this in dashboard)
+- [x] Email verification before onboarding starts
+- [x] Password reset flow (Supabase native until custom domain)
+- [x] Post-signup hook: check subscription_invites AND pending_parent_links
       for new user's email — resolve any pending links automatically
 
 **Backend — Promo Code Admin:**
-- [ ] POST /admin/promo/create — generate code, set access_days, max_uses, expiry
-- [ ] GET /admin/promo/list — all codes with uses_count and status
-- [ ] PATCH /admin/promo/{id}/toggle — activate/deactivate
+- [x] POST /admin/promo/create — generate code, set access_days, max_uses, expiry
+- [x] GET /admin/promo/list — all codes with uses_count and status
+- [x] PATCH /admin/promo/{id}/toggle — activate/deactivate
 
 **Backend — user_events:**
-- [ ] onboarding_started, onboarding_screen_completed (with screen_number + user_type)
-- [ ] onboarding_completed, onboarding_dropped
-- [ ] promo_code_redeemed, promo_code_invalid, promo_code_expired
-- [ ] parent_link_initiated, parent_link_completed, parent_invite_sent
+- [x] onboarding_started, onboarding_screen_completed (with screen_number + user_type)
+- [x] onboarding_completed, onboarding_dropped
+- [x] promo_code_redeemed, promo_code_invalid, promo_code_expired
+- [x] parent_link_initiated, parent_link_completed, parent_invite_sent
 
 **Frontend — Secondary School Onboarding (8 screens):**
-- [ ] Full-viewport screens, GSAP page transitions
-- [ ] Single question per screen
-- [ ] Screen 1: name input
-- [ ] Screen 2: DOB picker + age range motivational response, under-13 block
-- [ ] Screen 3: SS1/SS2/SS3 large tap targets
-- [ ] Screen 4: school autocomplete input with fuzzy suggestions
-- [ ] Screen 5: goal multi-select (6 options + Other free text)
-- [ ] Screen 6: education sentiment (4 options + empathetic one-liner response)
-- [ ] Screen 7: notification preferences toggle + optional phone number
-- [ ] Screen 8: paywall (plan cards + promo code entry + "free chapter" skip)
+- [x] Full-viewport screens, GSAP page transitions
+- [x] Single question per screen
+- [x] Screen 1: name input
+- [x] Screen 2: DOB picker + age range motivational response, under-13 block
+- [x] Screen 3: SS1/SS2/SS3 large tap targets
+- [x] Screen 4: school autocomplete input with fuzzy suggestions
+- [x] Screen 5: goal multi-select (6 options + Other free text)
+- [x] Screen 6: education sentiment (4 options + empathetic one-liner response)
+- [x] Screen 7: notification preferences toggle + optional phone number
+- [x] Screen 8: paywall (plan cards + promo code entry + "free chapter" skip)
       Invited member variant: membership confirmation screen instead
-- [ ] Each screen posts immediately (incremental save)
-- [ ] Resume from last completed screen on re-login
+- [x] Each screen posts immediately (incremental save)
+- [x] Resume from last completed screen on re-login
 
 **Frontend — University Onboarding (7 screens):**
-- [ ] Screens 1-2: same as secondary
-- [ ] Screen 3: institution + course inputs
-- [ ] Screen 4: struggle topic multi-select
-- [ ] Screen 5: education sentiment (same as secondary)
-- [ ] Screen 6: notification preferences + phone number
-- [ ] Screen 7: lands on dashboard (no paywall screen)
+- [x] Screens 1-2: same as secondary
+- [x] Screen 3: institution + course inputs
+- [x] Screen 4: struggle topic multi-select
+- [x] Screen 5: education sentiment (same as secondary)
+- [x] Screen 6: notification preferences + phone number
+- [x] Screen 7: lands on dashboard (no paywall screen)
 
 **Frontend — Parent Onboarding (2 screens):**
-- [ ] Screen 1: name
-- [ ] Screen 2: parent dashboard with empty state instructions
+- [x] Screen 1: name
+- [x] Screen 2: parent dashboard with empty state instructions
 
 **Frontend — Profile Settings:**
-- [ ] "Add a parent or guardian" section
-- [ ] Parent email input + link button
-- [ ] Pending/linked status display
+- [x] "Add a parent or guardian" section
+- [x] Parent email input + link button
+- [x] Pending/linked status display
 
 ---
 

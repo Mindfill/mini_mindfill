@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import { BookOpen, Clock, Play, ArrowRight, Activity } from "lucide-react";
 import { fetchDashboard, DashboardResponse } from "@/lib/api";
 
 export default function Dashboard() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
+    const { onboardingCompleted, loading: profileLoading } = useUserProfile();
     const [, navigate] = useLocation();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -14,18 +16,25 @@ export default function Dashboard() {
 
     const userName = user?.user_metadata?.full_name || user?.email || "User";
 
-    const loadDashboard = async () => {
+    const loadDashboard = async (isRetry = false) => {
         if (!session) return;
 
-        setLoading(true);
+        if (!isRetry) setLoading(true);
         setError(null);
         try {
             const dashboardData = await fetchDashboard(session.access_token);
             setData(dashboardData);
+            setLoading(false);
         } catch (err) {
+            if (!isRetry) {
+                // A brief failure right after finishing onboarding (or any
+                // other transient hiccup) resolves itself on a silent retry —
+                // most users never see this at all, no manual refresh needed.
+                setTimeout(() => loadDashboard(true), 800);
+                return;
+            }
             console.error(err);
             setError("Unable to load dashboard");
-        } finally {
             setLoading(false);
         }
     };
@@ -36,10 +45,14 @@ export default function Dashboard() {
             return;
         }
 
-        if (session) {
+        // Wait for onboarding status to resolve before hitting a gated
+        // endpoint — otherwise a not-yet-onboarded user (or the moment right
+        // after completing onboarding) can see an error flash instead of the
+        // redirect UserProfileProvider is about to perform.
+        if (session && !profileLoading && onboardingCompleted) {
             loadDashboard();
         }
-    }, [session, authLoading, navigate]);
+    }, [session, authLoading, navigate, profileLoading, onboardingCompleted]);
 
     const handleSignOut = async () => {
         await supabaseSignOut();
@@ -97,7 +110,7 @@ export default function Dashboard() {
                         <h2 className="text-xl font-semibold mb-2">Unable to load dashboard</h2>
                         <p className="text-muted-foreground text-sm mb-6">There was a problem fetching your data.</p>
                         <button
-                            onClick={loadDashboard}
+                            onClick={() => loadDashboard()}
                             className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-xl font-medium transition-colors"
                         >
                             Retry
@@ -126,7 +139,7 @@ export default function Dashboard() {
                 <main className="max-w-4xl mx-auto p-6 md:p-10 space-y-10">
 
                     <div className="mb-8">
-                        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+                        <h1 className="font-display text-2xl font-semibold tracking-tight">Dashboard</h1>
                     </div>
 
                     {/* 1. Continue Learning Card (Hero) */}
@@ -247,7 +260,7 @@ export default function Dashboard() {
                                 </div>
                                 <button
                                     onClick={() => navigate(`/lessons/${next_recommended.lesson_slug}`)}
-                                    className="bg-white text-black hover:bg-white/90 px-6 py-3 rounded-xl font-medium transition-colors flex flex-shrink-0 items-center justify-center gap-2"
+                                    className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3 rounded-xl font-medium transition-colors flex flex-shrink-0 items-center justify-center gap-2"
                                 >
                                     <Play className="w-4 h-4 flex-shrink-0" /> Start Lesson
                                 </button>
@@ -260,7 +273,7 @@ export default function Dashboard() {
                                 </div>
                                 <button
                                     onClick={() => navigate("/courses")}
-                                    className="bg-white text-black hover:bg-white/90 px-6 py-3 rounded-xl font-medium transition-colors flex-shrink-0"
+                                    className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3 rounded-xl font-medium transition-colors flex-shrink-0"
                                 >
                                     Explore Courses
                                 </button>

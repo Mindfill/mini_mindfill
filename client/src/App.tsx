@@ -21,6 +21,7 @@ import Privacy from "@/pages/privacy";
 import Terms from "@/pages/terms";
 import ResetPassword from "@/pages/reset-password";
 import Onboarding from "@/pages/onboarding";
+import InviteAccept from "@/pages/invite-accept";
 
 function Router() {
   return (
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/onboarding" component={Onboarding} />
+      <Route path="/invite/accept" component={InviteAccept} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/courses" component={Courses} />
       <Route path="/lessons/:lessonSlug" component={LessonChat} />
@@ -51,6 +53,7 @@ import { CreditsProvider } from "@/hooks/use-credits";
 import { SubscriptionProvider } from "@/hooks/use-subscription";
 import { UserProfileProvider } from "@/hooks/use-user-profile";
 import PaywallDialog from "@/components/billing/PaywallDialog";
+import DeviceLimitDialog from "@/components/billing/DeviceLimitDialog";
 
 function App() {
   return (
@@ -64,6 +67,7 @@ function App() {
             <Toaster />
             <Router />
             <PaywallDialog />
+            <DeviceLimitDialog />
           </TooltipProvider>
           </CreditsProvider>
           </SubscriptionProvider>

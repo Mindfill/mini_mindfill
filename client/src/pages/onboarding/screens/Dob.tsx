@@ -32,7 +32,7 @@ export default function Dob({ accessToken, screenNumber, collected, onNext, onBa
             }
             const computedAge = calculateAge(dob);
             setResponse(ageResponse(computedAge, userType));
-            setTimeout(() => onNext({ dateOfBirth: dob }), 900);
+            setTimeout(() => onNext({ dateOfBirth: dob }), 600);
         } catch (err) {
             if (err instanceof UnderAgeError) {
                 setError("You need to be 13 or older to use Techcess. Come back when you are — we'll be here.");
@@ -46,8 +46,8 @@ export default function Dob({ accessToken, screenNumber, collected, onNext, onBa
     };
 
     return (
-        <form onSubmit={handleSubmit} className="text-center space-y-8">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight">
+        <form onSubmit={handleSubmit} className="space-y-8">
+            <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight">
                 How old are you{collected.fullName ? `, ${collected.fullName}` : ""}?
             </h1>
 
@@ -57,7 +57,7 @@ export default function Dob({ accessToken, screenNumber, collected, onNext, onBa
                 value={dob}
                 onChange={(e) => setDob(e.target.value)}
                 max={new Date().toISOString().slice(0, 10)}
-                className="text-center text-lg h-12"
+                className="text-lg h-12"
                 disabled={submitting || !!response}
             />
 
@@ -65,7 +65,7 @@ export default function Dob({ accessToken, screenNumber, collected, onNext, onBa
                 <p className="text-sm text-muted-foreground">You're {age} years old.</p>
             )}
 
-            {response && <p className="text-amber font-medium fade-in">{response}</p>}
+            {response && <p className="text-primary font-medium fade-in">{response}</p>}
             {error && <p className="text-sm text-red-400">{error}</p>}
 
             <Button type="submit" size="lg" disabled={!dob || submitting || !!response} className="w-full gap-2">

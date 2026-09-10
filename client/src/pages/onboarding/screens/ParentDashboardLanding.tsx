@@ -3,10 +3,12 @@ import { useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { completeOnboarding } from "@/lib/api";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import { ScreenProps } from "../utils";
 
 export default function ParentDashboardLanding({ accessToken }: ScreenProps) {
     const [, navigate] = useLocation();
+    const { refresh: refreshProfile } = useUserProfile();
     const [submitting, setSubmitting] = useState(false);
 
     const handleContinue = async () => {
@@ -14,6 +16,7 @@ export default function ParentDashboardLanding({ accessToken }: ScreenProps) {
         setSubmitting(true);
         try {
             await completeOnboarding(accessToken);
+            await refreshProfile();
             navigate("/dashboard");
         } catch (err) {
             console.error("Failed to complete onboarding:", err);
@@ -22,8 +25,8 @@ export default function ParentDashboardLanding({ accessToken }: ScreenProps) {
     };
 
     return (
-        <div className="text-center space-y-8">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight">
+        <div className="space-y-8">
+            <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight">
                 You're set up.
             </h1>
             <p className="text-muted-foreground">

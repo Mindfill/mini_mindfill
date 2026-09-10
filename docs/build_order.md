@@ -62,33 +62,33 @@ Build this before dashboards and lesson flow.
 
 ### 2A — Backend
 ```
-[ ] POST /onboarding/secondary (incremental, 8 screens)
-[ ] POST /onboarding/university (incremental, 7 screens)
-[ ] POST /onboarding/parent (2 screens)
-[ ] POST /onboarding/promo (validate + redeem promo code)
-[ ] POST /admin/promo/create
-[ ] GET  /admin/promo/list
-[ ] PATCH /admin/promo/{id}/toggle
-[ ] Membership detection at paywall screen
-[ ] Under-13 hard stop
+[x] POST /onboarding/secondary (incremental, 8 screens)
+[x] POST /onboarding/university (incremental, 7 screens)
+[x] POST /onboarding/parent (2 screens)
+[x] POST /onboarding/promo (validate + redeem promo code)
+[x] POST /admin/promo/create
+[x] GET  /admin/promo/list
+[x] PATCH /admin/promo/{id}/toggle
+[x] Membership detection at paywall screen
+[x] Under-13 hard stop
 ```
 
 ### 2B — Frontend
 ```
-[ ] Onboarding routing + screen progression logic
-[ ] Screen 1: name
-[ ] Screen 2: DOB + age range response + under-13 block
-[ ] Screen 3: class level selection
-[ ] Screen 4: school autocomplete
-[ ] Screen 5: goal multi-select
-[ ] Screen 6: education sentiment + empathetic response
-[ ] Screen 7: notification preferences + phone number
-[ ] Screen 8: paywall + promo code + free chapter escape
-[ ] Invited member variant of screen 8
-[ ] Uni onboarding screens (7)
-[ ] Parent onboarding screens (2)
-[ ] GSAP transitions between all screens
-[ ] Incremental save + resume on re-login
+[x] Onboarding routing + screen progression logic
+[x] Screen 1: name
+[x] Screen 2: DOB + age range response + under-13 block
+[x] Screen 3: class level selection
+[x] Screen 4: school autocomplete
+[x] Screen 5: goal multi-select
+[x] Screen 6: education sentiment + empathetic response
+[x] Screen 7: notification preferences + phone number
+[x] Screen 8: paywall + promo code + free chapter escape
+[x] Invited member variant of screen 8
+[x] Uni onboarding screens (7)
+[x] Parent onboarding screens (2)
+[x] Transitions between all screens (framer-motion AnimatePresence, not GSAP — see memory)
+[x] Incremental save + resume on re-login
 ```
 
 ---

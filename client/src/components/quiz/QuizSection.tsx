@@ -301,7 +301,7 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
 
     const renderScreen1 = () => (
         <div className="max-w-4xl mx-auto py-12 px-6">
-            <h2 className="text-2xl font-bold mb-8 text-center" style={{ textShadow: "0 0 30px rgba(245, 158, 11, 0.15)" }}>Choose your mode</h2>
+            <h2 className="font-display text-2xl font-bold mb-8 text-center" style={{ textShadow: "0 0 30px rgba(37, 130, 224, 0.15)" }}>Choose your mode</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
                     { id: "mcq", title: "MCQ", desc: "Test your knowledge with multiple choice questions", icon: <BookOpen className="w-8 h-8 text-emerald-400 mb-4" /> },
@@ -327,7 +327,7 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
             <button onClick={() => setScreen(1)} className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-8">
                 <ArrowLeft className="w-4 h-4 mr-2" /> Back
             </button>
-            <h2 className="text-2xl font-bold mb-8" style={{ textShadow: "0 0 30px rgba(245, 158, 11, 0.15)" }}>Quiz Settings</h2>
+            <h2 className="font-display text-2xl font-bold mb-8" style={{ textShadow: "0 0 30px rgba(37, 130, 224, 0.15)" }}>Quiz Settings</h2>
 
             <div className="space-y-8 bg-card border border-border rounded-2xl p-8">
                 <div>
@@ -636,7 +636,7 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
         return (
             <div className="max-w-3xl mx-auto py-12 px-6 animate-in fade-in zoom-in-95 duration-500 pb-32">
                 <div className="text-center mb-16">
-                    <div className="w-24 h-24 mx-auto bg-gradient-to-br from-primary to-blue-500 rounded-full flex items-center justify-center p-[2px] mb-8 shadow-[0_0_40px_rgba(245, 158, 11,0.2)]">
+                    <div className="w-24 h-24 mx-auto bg-gradient-to-br from-primary to-blue-500 rounded-full flex items-center justify-center p-[2px] mb-8 shadow-[0_0_40px_rgba(37,130,224,0.2)]">
                         <div className="w-full h-full bg-background rounded-full flex items-center justify-center">
                             <CheckCircle className="w-10 h-10 text-primary" />
                         </div>

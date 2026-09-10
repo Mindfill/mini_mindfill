@@ -11,6 +11,7 @@ import {
     PromoCodeError,
     PaymentPlan,
 } from "@/lib/api";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import { ScreenProps } from "../utils";
 
 interface PlanInfo {
@@ -30,6 +31,7 @@ const PLANS: PlanInfo[] = [
 
 export default function Paywall({ accessToken, collected }: ScreenProps) {
     const [, navigate] = useLocation();
+    const { refresh: refreshProfile } = useUserProfile();
     const [checkingMembership, setCheckingMembership] = useState(true);
     const [isMember, setIsMember] = useState(false);
     const [ownerName, setOwnerName] = useState<string | null>(null);
@@ -58,6 +60,7 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
         setPayingOrSkipping(true);
         try {
             await completeOnboarding(accessToken);
+            await refreshProfile();
             navigate("/dashboard");
         } catch (err) {
             console.error("Failed to complete onboarding:", err);
@@ -89,6 +92,7 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
         setPayingOrSkipping(true);
         try {
             await completeOnboarding(accessToken);
+            await refreshProfile();
             // TODO: route to Ch00 Mental Models once the secondary lesson flow
             // (Feature 02) and secondary dashboard (Feature 04) exist.
             navigate("/dashboard");
@@ -105,6 +109,7 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
         setPromoError(null);
         try {
             await redeemPromoCode(promoCode.trim(), accessToken);
+            await refreshProfile();
             navigate("/dashboard");
         } catch (err) {
             if (err instanceof PromoCodeError) {
@@ -124,8 +129,8 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
 
     if (isMember) {
         return (
-            <div className="text-center space-y-8">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight">
+            <div className="space-y-8">
+                <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight">
                     You're all set{ownerName ? ` — ${ownerName} has got you covered.` : "."}
                 </h1>
                 <Button size="lg" onClick={handleMemberContinue} disabled={payingOrSkipping} className="w-full gap-2">
@@ -137,8 +142,8 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
     }
 
     return (
-        <div className="text-center space-y-6">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight">
+        <div className="space-y-6">
+            <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight">
                 {collected.fullName ? `${collected.fullName}, you're ready.` : "You're ready."} Let's get you in.
             </h1>
 
@@ -149,24 +154,26 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
                         <button
                             key={plan.id}
                             onClick={() => setSelectedPlan(plan.id)}
-                            className={`relative text-left p-4 rounded-2xl border transition-all ${
-                                active ? "border-amber bg-amber/5 ring-1 ring-amber" : "border-border bg-card"
+                            className={`text-left p-4 rounded-2xl border transition-all ${
+                                active ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border bg-card"
                             }`}
                         >
-                            {plan.badge && (
-                                <span className="absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider bg-amber text-amber-foreground px-2 py-0.5 rounded-full">
-                                    {plan.badge}
-                                </span>
-                            )}
-                            <div className="flex items-center gap-1.5 mb-2">
+                            {/* Badge sits inline after the name and wraps to its own
+                                line if the card is too narrow — never overlaps. */}
+                            <div className="flex items-center gap-1.5 mb-2 flex-wrap">
                                 <span
-                                    className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-                                        active ? "bg-amber border-amber" : "border-border"
+                                    className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center flex-shrink-0 ${
+                                        active ? "bg-primary border-primary" : "border-border"
                                     }`}
                                 >
-                                    {active && <Check className="w-2.5 h-2.5 text-amber-foreground" />}
+                                    {active && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
                                 </span>
                                 <span className="text-xs font-bold">{plan.name}</span>
+                                {plan.badge && (
+                                    <span className="text-[10px] font-bold uppercase tracking-wider bg-primary text-primary-foreground px-2 py-0.5 rounded-full whitespace-nowrap">
+                                        {plan.badge}
+                                    </span>
+                                )}
                             </div>
                             <div className="flex items-baseline gap-1">
                                 <span className="text-lg font-bold">{plan.price}</span>
@@ -199,9 +206,9 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
                             onChange={(e) => setPromoCode(e.target.value)}
                             placeholder="Enter code"
                             disabled={redeemingPromo}
-                            className="flex-1"
+                            className="flex-1 h-11"
                         />
-                        <Button type="submit" disabled={!promoCode.trim() || redeemingPromo} className="gap-2">
+                        <Button type="submit" disabled={!promoCode.trim() || redeemingPromo} className="gap-2 h-11">
                             {redeemingPromo && <Loader2 className="w-4 h-4 animate-spin" />}
                             Apply
                         </Button>

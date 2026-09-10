@@ -3,14 +3,13 @@ import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { saveSecondaryOnboarding, searchSchools, SchoolResult } from "@/lib/api";
-import { ScreenProps } from "../utils";
+import { ADVANCE_DELAY_MS, ScreenProps } from "../utils";
 
 export default function School({ accessToken, screenNumber, collected, onNext, onBack }: ScreenProps) {
     const [schoolName, setSchoolName] = useState(collected.schoolName || "");
     const [suggestions, setSuggestions] = useState<SchoolResult[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const debounceRef = useRef<number>();
 
     useEffect(() => {
@@ -30,26 +29,20 @@ export default function School({ accessToken, screenNumber, collected, onNext, o
         return () => window.clearTimeout(debounceRef.current);
     }, [schoolName, accessToken]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const trimmed = schoolName.trim();
         if (!trimmed || submitting) return;
         setSubmitting(true);
-        setError(null);
-        try {
-            await saveSecondaryOnboarding({ screen: screenNumber, school_name: trimmed }, accessToken);
-            onNext({ schoolName: trimmed });
-        } catch (err) {
+        saveSecondaryOnboarding({ screen: screenNumber, school_name: trimmed }, accessToken).catch((err) => {
             console.error("Failed to save school:", err);
-            setError("Couldn't save that — please try again.");
-        } finally {
-            setSubmitting(false);
-        }
+        });
+        setTimeout(() => onNext({ schoolName: trimmed }), ADVANCE_DELAY_MS);
     };
 
     return (
-        <form onSubmit={handleSubmit} className="text-center space-y-6">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight">
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight">
                 Where do you go to school?
             </h1>
 
@@ -64,7 +57,7 @@ export default function School({ accessToken, screenNumber, collected, onNext, o
                     onFocus={() => setShowSuggestions(true)}
                     onBlur={() => window.setTimeout(() => setShowSuggestions(false), 150)}
                     placeholder="School name"
-                    className="text-center text-lg h-12"
+                    className="text-lg h-12"
                     disabled={submitting}
                 />
                 {showSuggestions && suggestions.length > 0 && (
@@ -92,8 +85,6 @@ export default function School({ accessToken, screenNumber, collected, onNext, o
             </div>
 
             <p className="text-xs text-muted-foreground">Don't worry if your school isn't listed — just type it in.</p>
-
-            {error && <p className="text-sm text-red-400">{error}</p>}
 
             <Button type="submit" size="lg" disabled={!schoolName.trim() || submitting} className="w-full gap-2">
                 {submitting && <Loader2 className="w-4 h-4 animate-spin" />}

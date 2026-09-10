@@ -1,3 +1,8 @@
+/** Deliberate pause after every onboarding click before advancing — gives the
+ * step a settled, intentional feel instead of an instant jump-cut. The save
+ * itself fires immediately in the background; this delay is purely visual. */
+export const ADVANCE_DELAY_MS = 500;
+
 export function calculateAge(dob: string): number {
     const birth = new Date(dob);
     const today = new Date();

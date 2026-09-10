@@ -37,7 +37,7 @@ export default function Upgrade() {
                             <Sparkles className="w-7 h-7" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-semibold tracking-tight">Upgrade to Pro</h1>
+                            <h1 className="font-display text-2xl font-semibold tracking-tight">Upgrade to Pro</h1>
                             <p className="text-muted-foreground text-sm">Unlock unlimited learning.</p>
                         </div>
                     </div>
