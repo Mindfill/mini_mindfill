@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchQuizSections, submitQuizResults, type QuizAttempt, type QuizQuestion, type QuizSectionOption } from "@/lib/api";
 import MarkdownLatex from "@/components/ui/markdown-latex";
+import TheoryExplainModal, { type TheoryExplainContext } from "@/components/notes/TheoryExplainModal";
 import {
     CheckCircle,
     XCircle,
@@ -10,7 +11,10 @@ import {
     Sparkles,
     ArrowLeft,
     Check,
+    HelpCircle,
 } from "lucide-react";
+
+type QuizType = "objective" | "theory";
 
 interface NoteQuizViewProps {
     questions: QuizQuestion[];
@@ -19,9 +23,11 @@ interface NoteQuizViewProps {
     accessToken: string;
     /** From generate_quiz; sent back on submission (null until a quiz loads). */
     quizSessionId: string | null;
+    /** The type of the currently loaded quiz (default "objective" when no quiz is loaded yet). */
+    quizType: QuizType;
     onClose: () => void;
-    /** Generate a quiz for the chosen section ids (integers). */
-    onGenerate: (sectionIds: number[]) => void;
+    /** Generate a quiz for the chosen section ids (integers) and chosen quiz type. */
+    onGenerate: (sectionIds: number[], quizType: QuizType) => void;
     /** Clear the current quiz to return to the section picker. */
     onClearQuiz: () => void;
     generating?: boolean;
@@ -40,6 +46,7 @@ export default function NoteQuizView({
     noteId,
     accessToken,
     quizSessionId,
+    quizType,
     onClose,
     onGenerate,
     onClearQuiz,
@@ -50,12 +57,14 @@ export default function NoteQuizView({
     const [submitted, setSubmitted] = useState(false);
     const [answers, setAnswers] = useState<(string | null)[]>([]);
     const [finished, setFinished] = useState(false);
+    const [explainContext, setExplainContext] = useState<TheoryExplainContext | null>(null);
 
     // Section picker state (shown when there's no quiz yet)
     const [sectionOptions, setSectionOptions] = useState<QuizSectionOption[]>([]);
     const [selectedSectionIds, setSelectedSectionIds] = useState<string[]>([]);
     const [loadingSections, setLoadingSections] = useState(false);
     const [sectionsError, setSectionsError] = useState<string | null>(null);
+    const [selectedType, setSelectedType] = useState<QuizType>("objective");
 
     const showPicker = questions.length === 0;
 
@@ -95,7 +104,7 @@ export default function NoteQuizView({
     // The generation endpoint expects section ids as integers.
     const handleGenerate = () => {
         if (selectedSectionIds.length === 0) return;
-        onGenerate(selectedSectionIds.map((id) => Number(id)));
+        onGenerate(selectedSectionIds.map((id) => Number(id)), selectedType);
     };
 
     const handleNewQuiz = () => {
@@ -159,10 +168,10 @@ export default function NoteQuizView({
             };
         });
 
-        submitQuizResults(noteId, { quiz_session_id: quizSessionId, score, total, attempts }, accessToken).catch(
+        submitQuizResults(noteId, { quiz_session_id: quizSessionId, quiz_type: quizType, score, total, attempts }, accessToken).catch(
             (err) => console.error("Failed to submit quiz results:", err)
         );
-    }, [finished, quizSessionId, noteId, accessToken, questions, answers, score, total]);
+    }, [finished, quizSessionId, quizType, noteId, accessToken, questions, answers, score, total]);
 
     const reset = () => {
         setCurrentIndex(0);
@@ -220,6 +229,22 @@ export default function NoteQuizView({
                     <p className="text-muted-foreground max-w-sm leading-relaxed">
                         Choose the sections you want to be tested on.
                     </p>
+                </div>
+
+                <div className="flex justify-center gap-2 mb-8">
+                    {(["objective", "theory"] as QuizType[]).map((t) => (
+                        <button
+                            key={t}
+                            onClick={() => setSelectedType(t)}
+                            className={`flex-1 py-3 px-4 rounded-xl border text-sm font-semibold capitalize transition-colors ${
+                                selectedType === t
+                                    ? "bg-primary/20 border-primary text-primary"
+                                    : "bg-card border-border text-muted-foreground hover:bg-muted"
+                            }`}
+                        >
+                            {t}
+                        </button>
+                    ))}
                 </div>
 
                 {loadingSections ? (
@@ -403,11 +428,37 @@ export default function NoteQuizView({
                                             />
                                         </div>
                                     )}
+                                    {!correct && quizType === "theory" && (
+                                        <button
+                                            onClick={() =>
+                                                setExplainContext({
+                                                    question: q.question,
+                                                    options: q.options,
+                                                    studentAnswer: ans ?? "",
+                                                    correctAnswer: correctOption(q),
+                                                    explanation: q.explanation ?? "",
+                                                    difficulty: q.difficulty,
+                                                })
+                                            }
+                                            className="self-start flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline pt-1"
+                                        >
+                                            <HelpCircle className="w-3.5 h-3.5" /> Explain this
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         );
                     })}
                 </div>
+
+                {explainContext && (
+                    <TheoryExplainModal
+                        noteId={noteId}
+                        accessToken={accessToken}
+                        context={explainContext}
+                        onClose={() => setExplainContext(null)}
+                    />
+                )}
             </div>
         );
     }
@@ -508,6 +559,23 @@ export default function NoteQuizView({
                                 className="text-sm leading-relaxed text-foreground/90"
                             />
                         )}
+                        {!answeredCorrect && quizType === "theory" && (
+                            <button
+                                onClick={() =>
+                                    setExplainContext({
+                                        question: current.question,
+                                        options: current.options,
+                                        studentAnswer: selected ?? "",
+                                        correctAnswer: correctOption(current),
+                                        explanation: current.explanation ?? "",
+                                        difficulty: current.difficulty,
+                                    })
+                                }
+                                className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                            >
+                                <HelpCircle className="w-3.5 h-3.5" /> Explain this
+                            </button>
+                        )}
                     </div>
 
                     <div className="flex justify-end">
@@ -520,6 +588,15 @@ export default function NoteQuizView({
                         </button>
                     </div>
                 </div>
+            )}
+
+            {explainContext && (
+                <TheoryExplainModal
+                    noteId={noteId}
+                    accessToken={accessToken}
+                    context={explainContext}
+                    onClose={() => setExplainContext(null)}
+                />
             )}
 
             {/* Submit */}

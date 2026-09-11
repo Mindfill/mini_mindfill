@@ -381,6 +381,7 @@ export interface QuizResponse {
     /** Returned by generate_quiz; sent back on submission. */
     quiz_session_id?: string;
     session_id?: string;
+    quiz_type?: "objective" | "theory";
     questions: QuizQuestion[];
 }
 
@@ -397,6 +398,7 @@ export interface QuizAttempt {
 
 export interface QuizSubmission {
     quiz_session_id: string;
+    quiz_type?: "objective" | "theory";
     score: number;
     total: number;
     attempts: QuizAttempt[];
@@ -732,18 +734,52 @@ export async function cancelSubscription(accessToken: string): Promise<void> {
 export async function generateNoteQuiz(
     noteId: string,
     selectedSections: number[],
-    accessToken: string
+    accessToken: string,
+    quizType: "objective" | "theory" = "objective"
 ): Promise<QuizResponse> {
     const res = await fetch(`${BACKEND_URL}/notes/${noteId}/quiz`, {
         method: "POST",
         headers: authHeaders(accessToken, true),
-        body: JSON.stringify({ selected_sections: selectedSections }),
+        body: JSON.stringify({ selected_sections: selectedSections, quiz_type: quizType }),
     });
 
     if (res.status === 402) throw new OutOfCreditsError();
     if (!res.ok) {
         const text = (await res.text()) || res.statusText;
         throw new Error(`Failed to generate quiz: ${res.status} — ${text}`);
+    }
+
+    return res.json();
+}
+
+export interface TheoryExplainRequest {
+    question: string;
+    options: string[];
+    student_answer: string;
+    correct_answer: string;
+    explanation: string;
+    difficulty?: string;
+    history?: { role: string; content: string }[];
+}
+
+/**
+ * Get a personalized explanation for a wrong theory-quiz answer.
+ * POST /notes/{note_id}/quiz/explain
+ */
+export async function explainTheoryAnswer(
+    noteId: string,
+    payload: TheoryExplainRequest,
+    accessToken: string
+): Promise<{ message: string }> {
+    const res = await fetch(`${BACKEND_URL}/notes/${noteId}/quiz/explain`, {
+        method: "POST",
+        headers: authHeaders(accessToken, true),
+        body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to fetch explanation: ${res.status} — ${text}`);
     }
 
     return res.json();

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { fetchVisualizationsStatus, extractStreamingContent, type VizStatus } from "@/lib/api";
 import MarkdownLatex from "@/components/ui/markdown-latex";
+import type { KeyTerm } from "@/lib/keywordHighlight";
 import { Loader2, RefreshCw } from "lucide-react";
 
 const POLL_MS = 5000; // matches the backend retry interval
@@ -38,6 +39,8 @@ interface ChatContentProps {
     /** Kept for API compatibility; the viz container polls the same way regardless. */
     isHistory?: boolean;
     className?: string;
+    /** Feature 05 — omit for the live-streaming bubble; only committed messages get highlighted. */
+    keyTerms?: KeyTerm[];
 }
 
 type Segment = { type: "text"; text: string } | { type: "viz"; index: number };
@@ -70,14 +73,14 @@ const isTerminal = (s?: VizStatus) => isReady(s) || isPermanentFail(s);
  * /visualizations/status (every 5s while in view) and reflects the render state:
  * loading → retrying → video, or a permanent-failure state.
  */
-export default function ChatContent({ content, sessionId, className }: ChatContentProps) {
+export default function ChatContent({ content, sessionId, className, keyTerms }: ChatContentProps) {
     const segments = useMemo(() => parseSegments(normalizeContent(content)), [content]);
 
     return (
         <div className={className}>
             {segments.map((seg, i) =>
                 seg.type === "text" ? (
-                    seg.text.trim() ? <MarkdownLatex key={i} content={seg.text} /> : null
+                    seg.text.trim() ? <MarkdownLatex key={i} content={seg.text} keyTerms={keyTerms} /> : null
                 ) : (
                     <VizSlot key={i} index={seg.index} sessionId={sessionId} />
                 )

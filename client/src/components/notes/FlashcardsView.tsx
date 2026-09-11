@@ -271,14 +271,18 @@ export default function FlashcardsView({ noteId, accessToken }: FlashcardsViewPr
                     onClick={() => setFlipped((f) => !f)}
                 >
                     {/* Front — question */}
-                    <div className="absolute inset-0 fc-backface flex flex-col items-center justify-center p-8 bg-card border border-border rounded-2xl shadow-xl overflow-y-auto">
-                        <span className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground/60 mb-4">Question</span>
-                        <MarkdownLatex content={card.question} className="text-lg text-foreground font-medium text-center" />
+                    <div className="absolute inset-0 fc-backface bg-card border border-border rounded-2xl shadow-xl overflow-hidden">
+                        <div className="w-full h-full flex flex-col items-center justify-center p-8 overflow-y-auto">
+                            <span className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground/60 mb-4">Question</span>
+                            <MarkdownLatex content={card.question} className="text-lg text-foreground font-medium text-center" />
+                        </div>
                     </div>
                     {/* Back — answer */}
-                    <div className="absolute inset-0 fc-backface fc-flip flex flex-col items-center justify-center p-8 bg-card border border-primary/30 rounded-2xl shadow-xl overflow-y-auto">
-                        <span className="text-[10px] font-bold tracking-widest uppercase text-primary/70 mb-4">Answer</span>
-                        <MarkdownLatex content={card.answer} className="text-lg text-foreground text-center" />
+                    <div className="absolute inset-0 fc-backface fc-flip bg-card border border-primary/30 rounded-2xl shadow-xl overflow-hidden">
+                        <div className="w-full h-full flex flex-col items-center justify-center p-8 overflow-y-auto">
+                            <span className="text-[10px] font-bold tracking-widest uppercase text-primary/70 mb-4">Answer</span>
+                            <MarkdownLatex content={card.answer} className="text-lg text-foreground text-center" />
+                        </div>
                     </div>
                 </div>
             </div>

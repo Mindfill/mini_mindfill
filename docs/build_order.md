@@ -231,14 +231,14 @@ With backend complete and content seeded, build the student UI.
 Small contained features. Build together in one session.
 
 ```
-[ ] ALTER TABLE note_quizzes ADD COLUMN quiz_type (David runs this)
-[ ] POST /notes/{note_id}/quiz — quiz_type param added
-[ ] POST /notes/{note_id}/quiz/submit — theory branch (answer reveal)
-[ ] Theory system prompt block added
-[ ] Quiz type toggle UI (Objective / Theory)
-[ ] Theory question display (text area + solution reveal)
-[ ] Keyword highlighting in notes chat (frontend only)
-[ ] Hover tooltip (desktop) + bottom sheet (mobile)
+[x] ALTER TABLE note_quizzes ADD COLUMN quiz_type (David ran this)
+[x] POST /notes/{note_id}/quiz — quiz_type param added
+[x] POST /notes/{note_id}/quiz/submit — theory branch (answer reveal)
+[x] Theory system prompt block added
+[x] Quiz type toggle UI (Objective / Theory)
+[x] Theory question display (MCQ, not text area — see feature_checklist.md deviation notes; solution reveal on wrong answers via new /quiz/explain mini-chat)
+[x] Keyword highlighting in notes chat (frontend only)
+[x] Hover tooltip (desktop) + bottom sheet (mobile)
 ```
 
 ---

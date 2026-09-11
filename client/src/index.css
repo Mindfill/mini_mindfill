@@ -231,6 +231,15 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  /* Exception: Radix's internal floating-position wrapper (used by Tooltip,
+     Popover, DropdownMenu, Select, HoverCard, Menubar, ContextMenu) sets its
+     own position via inline `transform` every time it repositions — it must
+     snap there instantly. The blanket rule above was smoothing that snap into
+     a visible slide/fly-in across every one of those components. */
+  [data-radix-popper-content-wrapper] {
+    transition: none;
+  }
+
   /* Disable transition on page load for performance */
   .no-transition {
     transition: none !important;

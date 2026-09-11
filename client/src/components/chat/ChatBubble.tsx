@@ -1,4 +1,5 @@
 import ChatContent from "@/components/chat/ChatContent";
+import type { KeyTerm } from "@/lib/keywordHighlight";
 import mindfillIcon from "@/assets/mindfill.png";
 
 interface ChatBubbleProps {
@@ -8,9 +9,11 @@ interface ChatBubbleProps {
     sessionId?: string;
     /** History messages lazy-load their videos on scroll. */
     isHistory?: boolean;
+    /** Feature 05 — omit for the live-streaming bubble; only committed messages get highlighted. */
+    keyTerms?: KeyTerm[];
 }
 
-export default function ChatBubble({ role, content, sessionId, isHistory }: ChatBubbleProps) {
+export default function ChatBubble({ role, content, sessionId, isHistory, keyTerms }: ChatBubbleProps) {
     const isUser = role === "user";
 
     return (
@@ -40,7 +43,7 @@ export default function ChatBubble({ role, content, sessionId, isHistory }: Chat
                         }
                     `}
                 >
-                    <ChatContent content={content} sessionId={sessionId} isHistory={isHistory} />
+                    <ChatContent content={content} sessionId={sessionId} isHistory={isHistory} keyTerms={role === "assistant" ? keyTerms : undefined} />
                 </div>
             </div>
         </div>

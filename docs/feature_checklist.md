@@ -208,26 +208,47 @@
 ## FEATURE 03 — Notes Quiz Theory Generation
 ### Uni side only. Upgrade to existing notes quiz system.
 
-**DB (YOU run this in Supabase SQL editor — not Claude Code):**
-- [ ] ALTER TABLE note_quizzes ADD COLUMN quiz_type text DEFAULT 'objective'
+**DB (David ran these in Supabase SQL editor):**
+- [x] ALTER TABLE note_quizzes ADD COLUMN quiz_type text NOT NULL DEFAULT 'objective'
       CHECK (quiz_type IN ('objective','theory'))
+- [x] ALTER TABLE note_question_attempts ADD COLUMN quiz_type text NOT NULL DEFAULT 'objective'
+      CHECK (quiz_type IN ('objective','theory')) — not in original spec, added for
+      Feature 04 dashboard analytics (theory vs objective attempts without a join)
+- [x] ALTER TYPE usage_type_enum ADD VALUE 'theory_quiz_evaluation'
 
 **Backend:**
-- [ ] POST /notes/{note_id}/quiz — add optional quiz_type param (default: objective)
-      theory branch: structured textbook problem set generation
+- [x] POST /notes/{note_id}/quiz — quiz_type param (default: objective), threaded
+      into the generation prompt's input; theory branch: 15 calculation-heavy
+      MULTIPLE-CHOICE questions with full worked-solution explanations
+      (DEVIATION: theory is MCQ, not free-text/textbook-problem-set as originally
+      spec'd — matches the quiz-type branch already present in
+      notes_quiz_generator(), confirmed with David during build)
       quiz_type stored on note_quizzes row
-- [ ] POST /notes/{note_id}/quiz/submit — theory branch:
-      store submitted_answer, return working + answer immediately
-      no model evaluation, no Haiku call
-- [ ] Theory system prompt block added to existing quiz generation prompt
-- [ ] user_events: quiz_generated_theory, quiz_submitted_theory
+- [x] POST /notes/{note_id}/quiz/submit — grading unchanged (client-computed
+      is_correct, same as objective, since theory is MCQ); quiz_type stored on
+      note_question_attempts row
+- [x] POST /notes/{note_id}/quiz/explain (new endpoint, not in original spec) —
+      on-demand stateless explanation mini-chat (gpt-5.6-luna) for wrong theory
+      answers, modeled on quiz.py's /quiz/explain. DEVIATION: doc said "no model
+      evaluation, no Haiku call" — David asked for Luna-powered feedback on wrong
+      answers; kept out of /submit (fires only when the student opens it) to avoid
+      adding latency to grading.
+- [x] Theory system prompt block — already existed in notes_quiz_generator();
+      the actual gap was quiz_type never being passed into the model call, fixed
+- [x] user_events: quiz_generated_theory, quiz_submitted_theory,
+      theory_answer_passed, theory_answer_failed (no "partial" state — binary
+      MCQ grading, not free-text rubric evaluation)
 
 **Frontend:**
-- [ ] Toggle above section selector: [● Objective  ○ Theory]
-- [ ] Default: Objective (existing behaviour unchanged)
-- [ ] Theory question display: text area for attempt
-- [ ] After theory submit: reveal working steps + answer in full
-- [ ] No feedback message, no pass/fail for theory
+- [x] Toggle above section selector: [Objective / Theory]
+- [x] Default: Objective (existing behaviour unchanged)
+- [x] Theory questions render as multiple-choice, same UI as objective
+      (DEVIATION from "text area for attempt" — see MCQ decision above)
+- [x] After theory submit: reveal working steps + answer in full (explanation field)
+- [x] Pass/fail feedback IS shown for theory (DEVIATION from "no feedback message")
+      — binary correct/incorrect like objective, plus an on-demand "Explain this"
+      button on wrong answers opening TheoryExplainModal.tsx for personalized
+      Luna feedback
 
 ---
 
@@ -322,18 +343,25 @@
 ### Uni side. Frontend only. No backend changes.
 
 **Frontend:**
-- [ ] At note session start: extract key_definitions from lesson plan payload
-      (check exact column structure before implementing — ask David if unclear)
-- [ ] Build term → definition lookup Map
-- [ ] After each AI stream completes: run highlighting pass
+- [x] At note session start: extract key_definitions from lesson plan payload
+      (DEVIATION: actual field is note_lesson_plans.content.key_terms — a JSON
+      key inside the existing `content` column, not a separate "key_definitions"
+      column — confirmed against the real lesson-plan generation schema in
+      mindfill_mvp_backend/app/routers/notes.py)
+- [x] Build term → definition lookup Map
+- [x] After each AI stream completes: run highlighting pass
       (never during streaming)
-- [ ] Word boundary matching, longer terms first
-- [ ] Skip KaTeX nodes (class 'katex') and code blocks
-- [ ] Wrap: <mark class="key-term" data-term="...">
-- [ ] Desktop: hover tooltip (200ms fade-in, amber-50 background)
-- [ ] Mobile: tap to expand inline or bottom sheet
-- [ ] escapeRegex() applied to all term strings
+- [x] Word boundary matching, longer terms first
+- [x] Skip KaTeX nodes (class 'katex') and code blocks
+- [x] Wrap: <mark class="key-term" data-term="...">
+- [x] Desktop: hover tooltip (DEVIATION: neon-blue underline + glow instead of
+      amber, per David's request; plain in-place fade, no slide/zoom — see
+      note below on a global CSS fix this required)
+- [x] Mobile: tap to expand inline or bottom sheet
+- [x] escapeRegex() applied to all term strings
 - [ ] user_events: key_term_hovered, key_term_tapped
+      (SKIPPED — David's call: not worth a frontend write path to a table
+      that's otherwise backend-only, for a lightweight analytics signal)
 
 ---
 

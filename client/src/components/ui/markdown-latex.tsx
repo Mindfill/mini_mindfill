@@ -1,21 +1,33 @@
+import { useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import KeyTermMark from "@/components/notes/KeyTermMark";
+import { buildHighlightMatcher, rehypeHighlightKeyTerms, type KeyTerm } from "@/lib/keywordHighlight";
 
 interface MarkdownLatexProps {
     content: string;
     className?: string;
     /** Render inline (span wrapper, no block paragraphs) — for chips, labels, table cells. */
     inline?: boolean;
+    /**
+     * Feature 05 — when provided (and non-empty), highlights these terms in the
+     * rendered text with a hover tooltip / tap bottom-sheet. Omit entirely for
+     * every other caller (quiz, flashcards, etc.) — behaviour there is unchanged.
+     */
+    keyTerms?: KeyTerm[];
 }
 
 /**
  * Renders Markdown with inline and block LaTeX math via KaTeX.
  * Also includes premium code syntax highlighting.
  */
-export default function MarkdownLatex({ content, className = "", inline = false }: MarkdownLatexProps) {
+export default function MarkdownLatex({ content, className = "", inline = false, keyTerms }: MarkdownLatexProps) {
+    const matcher = useMemo(() => buildHighlightMatcher(keyTerms ?? []), [keyTerms]);
+    const [activeTerm, setActiveTerm] = useState<{ term: string; definition: string } | null>(null);
     // Normalize LaTeX delimiters. Display math (\[ … \]) gets blank lines around
     // it so remark-math treats it as a block and KaTeX renders it on its own
     // line; inline math (\( … \)) stays inline. This also guards against the
@@ -51,9 +63,19 @@ export default function MarkdownLatex({ content, className = "", inline = false 
         <div className={`prose prose-sm dark:prose-invert max-w-none ${className}`}>
             <ReactMarkdown
                 remarkPlugins={[remarkMath]}
-                rehypePlugins={[rehypeKatex]}
+                rehypePlugins={[rehypeKatex, [rehypeHighlightKeyTerms, matcher]]}
                 components={{
                     p: ({ children }) => <p className="mb-2 last:mb-0 text-inherit leading-relaxed">{children}</p>,
+                    mark: (props: any) =>
+                        matcher ? (
+                            <KeyTermMark
+                                {...props}
+                                defMap={matcher.defMap}
+                                onTap={(term, definition) => setActiveTerm({ term, definition })}
+                            />
+                        ) : (
+                            <mark {...props} />
+                        ),
                     code: ({ node, inline, className: cname, children, ...props }: any) => {
                         const match = /language-(\w+)/.exec(cname || "");
                         return !inline && match ? (
@@ -101,6 +123,19 @@ export default function MarkdownLatex({ content, className = "", inline = false 
             >
                 {processedContent}
             </ReactMarkdown>
+
+            {matcher && (
+                <Sheet open={!!activeTerm} onOpenChange={(open) => !open && setActiveTerm(null)}>
+                    <SheetContent side="bottom" className="max-h-[60vh] overflow-y-auto">
+                        <SheetHeader>
+                            <SheetTitle className="capitalize">{activeTerm?.term}</SheetTitle>
+                            <SheetDescription className="text-foreground text-sm leading-relaxed pt-2">
+                                {activeTerm?.definition}
+                            </SheetDescription>
+                        </SheetHeader>
+                    </SheetContent>
+                </Sheet>
+            )}
         </div>
     );
 }

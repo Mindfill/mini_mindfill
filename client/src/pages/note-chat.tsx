@@ -26,6 +26,7 @@ import NoteQuizView from "@/components/notes/NoteQuizView";
 import FlashcardsView from "@/components/notes/FlashcardsView";
 import SectionSelector, { type PlanSection } from "@/components/notes/SectionSelector";
 import { useToast } from "@/hooks/use-toast";
+import { extractKeyTerms, type KeyTerm } from "@/lib/keywordHighlight";
 
 // Per-note cache (keyed by noteId) so returning to a note restores its title,
 // PDF link, sections and conversation without re-hitting the DB / API.
@@ -37,6 +38,8 @@ type NoteChatCacheEntry = {
     messages: NoteChatMessage[];
     /** Note session id — lets cached history lazy-load [VIZ:N] videos after refresh. */
     chatSessionId?: string | null;
+    /** Feature 05 — cached so a returning session doesn't re-fetch the lesson plan just for this. */
+    keyTerms?: KeyTerm[];
 };
 
 const NOTE_CHAT_CACHE_KEY = "techcess:note-chat-cache";
@@ -97,9 +100,11 @@ export default function NoteChat() {
     const [activeTab, setActiveTab] = useState<"chat" | "quiz" | "flashcards">("chat");
     const [lessonPlan, setLessonPlan] = useState<NoteLessonPlanResponse | null>(null);
     const [sections, setSections] = useState<PlanSection[]>(cached?.sections ?? []);
+    const [keyTerms, setKeyTerms] = useState<KeyTerm[]>(cached?.keyTerms ?? []);
     const [selectedSections, setSelectedSections] = useState<string[]>([]);
     const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
     const [quizSessionId, setQuizSessionId] = useState<string | null>(null);
+    const [quizType, setQuizType] = useState<"objective" | "theory">("objective");
     const [generatingQuiz, setGeneratingQuiz] = useState(false);
 
     const userName = user?.user_metadata?.full_name || user?.email || "User";
@@ -156,6 +161,25 @@ export default function NoteChat() {
                 console.warn("Could not load note session id:", sessErr);
             }
 
+            // Feature 05 — best-effort fetch of key_terms for a returning session
+            // (a fresh onboard already gets these from onboardNote's response).
+            // Purely additive: on any failure (RLS, missing row, malformed JSON)
+            // highlighting just doesn't run — chat works exactly as before.
+            try {
+                const { data: planRow } = await supabase
+                    .from("note_lesson_plans")
+                    .select("content")
+                    .eq("note_id", noteId)
+                    .eq("user_id", session.user.id)
+                    .maybeSingle();
+                if (planRow?.content) {
+                    const parsed = JSON.parse(planRow.content);
+                    setKeyTerms(extractKeyTerms(parsed?.key_terms));
+                }
+            } catch (planErr) {
+                console.warn("Could not load key terms for highlighting:", planErr);
+            }
+
             // Check if lesson plan exists by trying to fetch history
             try {
                 const history = await fetchNoteHistory(noteId, accessToken);
@@ -187,6 +211,7 @@ export default function NoteChat() {
                     plan.lesson_plan.sections.map((s) => ({ id: String(s.id), title: s.title })) as PlanSection[]
                 );
             }
+            setKeyTerms(extractKeyTerms(plan.lesson_plan?.key_terms));
             // Display the onboarding message as first message
             setMessages([
                 { role: "assistant", content: plan.onboarding_message }
@@ -241,10 +266,10 @@ export default function NoteChat() {
     // Keep the cache in sync so back-navigation restores the latest conversation.
     useEffect(() => {
         if (hasLoaded && noteId) {
-            noteChatCache[noteId] = { noteTitle, noteUrl, sections, messages, chatSessionId };
+            noteChatCache[noteId] = { noteTitle, noteUrl, sections, messages, chatSessionId, keyTerms };
             persistNoteChatCache();
         }
-    }, [hasLoaded, noteId, noteTitle, noteUrl, sections, messages, chatSessionId]);
+    }, [hasLoaded, noteId, noteTitle, noteUrl, sections, messages, chatSessionId, keyTerms]);
 
     const handleRefresh = async () => {
         if (refreshing) return;
@@ -312,14 +337,15 @@ export default function NoteChat() {
 
     const handleSend = (content: string) => doSend(content, true);
 
-    const handleGenerateQuiz = async (sectionIds: number[]) => {
+    const handleGenerateQuiz = async (sectionIds: number[], type: "objective" | "theory") => {
         if (!session || sectionIds.length === 0 || generatingQuiz) return;
 
         setGeneratingQuiz(true);
         try {
-            const response = await generateNoteQuiz(noteId, sectionIds, accessToken);
+            const response = await generateNoteQuiz(noteId, sectionIds, accessToken, type);
             setQuizQuestions(response.questions);
             setQuizSessionId(response.session_id ?? response.quiz_session_id ?? null);
+            setQuizType(response.quiz_type ?? type);
             setActiveTab("quiz");
         } catch (err) {
             console.error("Failed to generate quiz:", err);
@@ -523,9 +549,10 @@ export default function NoteChat() {
                         noteId={noteId}
                         accessToken={accessToken}
                         quizSessionId={quizSessionId}
+                        quizType={quizType}
                         onClose={() => setActiveTab("chat")}
                         onGenerate={handleGenerateQuiz}
-                        onClearQuiz={() => { setQuizQuestions([]); setQuizSessionId(null); }}
+                        onClearQuiz={() => { setQuizQuestions([]); setQuizSessionId(null); setQuizType("objective"); }}
                         generating={generatingQuiz}
                     />
                 </div>
@@ -561,6 +588,7 @@ export default function NoteChat() {
                                     content={msg.content}
                                     sessionId={msg.session_id ?? chatSessionId ?? undefined}
                                     isHistory={idx < historyCount}
+                                    keyTerms={keyTerms}
                                 />
                             ))}
 

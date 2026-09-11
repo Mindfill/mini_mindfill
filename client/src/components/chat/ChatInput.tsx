@@ -44,7 +44,8 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
                         placeholder="Ask TECHCESS anything…"
                         disabled={disabled}
                         rows={1}
-                        className="flex-1 bg-transparent text-foreground text-[15px] resize-none outline-none placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed max-h-[160px] py-1.5"
+                        className="flex-1 bg-transparent text-foreground text-[15px] resize-none outline-none placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed max-h-[160px] py-1.5 [&::-webkit-scrollbar]:hidden"
+                        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                         data-testid="chat-input"
                     />
                     <button
