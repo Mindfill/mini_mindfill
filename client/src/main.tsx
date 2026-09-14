@@ -3,7 +3,6 @@ import { createRoot } from "react-dom/client";
 import { StrictMode } from "react";
 import App from "./App";
 import "./index.css";
-import "katex/dist/katex.min.css";
 import "@fontsource/opendyslexic/400.css";
 import "@fontsource/opendyslexic/700.css";
 import { PostHogProvider } from "posthog-js/react";

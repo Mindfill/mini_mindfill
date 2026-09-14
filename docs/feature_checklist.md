@@ -75,6 +75,8 @@
 - [ ] school_admin_links table created
 - [ ] parents table created
 - [ ] parent_students table created
+- [x] student_progress_history table created (assume already exists — do not
+      CREATE it; see feature_02_secondary_lesson_flow.md for schema/write path)
 
 **Backend — Curriculum Seeding (Admin):**
 - [ ] POST /admin/curriculum/seed — CSV import, transforms manim_prompts JSONB
@@ -97,6 +99,12 @@
 - [ ] POST /secondary/sessions/complete — close session, fire Haiku extraction
       (if first_attempt + exchange_count >= min_exchange_count),
       update student_knowledge_state, unlock next subsection
+- [ ] On every student_knowledge_state update at session complete: read the
+      prior row first (previous_depth/previous_depth_score), then insert an
+      append-only row into student_progress_history (event_type derived as
+      first_completion/review/regression/recovery, depth_score mapped
+      surface=1/procedural=2/conceptual=3/transferable=4, struggle_points
+      from Haiku extraction) — never UPDATE/DELETE that table
 - [ ] GET /secondary/sessions/{session_id}/history — conversation history
 - [ ] GET /secondary/progress/{student_id} — full student progress state
 - [ ] GET /secondary/dashboard — all dashboard widgets (see Feature 04)
@@ -256,86 +264,116 @@
 ### Uni student, secondary student, parent, school admin
 
 **DB (YOU run these in Supabase SQL editor — not Claude Code):**
-- [ ] DROP FUNCTION IF EXISTS get_dashboard (YOU run this in Supabase SQL editor)
-- [ ] school_admin_links table created
-- [ ] pending_parent_links table created
-- [ ] calculate_streak DB function created (YOU run this in Supabase SQL editor)
-- [ ] get_usage_graph_uni(p_user_id, p_days) DB function created — queries user_events by user_id (YOU run this in Supabase SQL editor)
-- [ ] get_usage_graph_secondary(p_user_id, p_days) DB function created — queries section_learning_events by student_id (YOU run this in Supabase SQL editor)
+- [x] DROP FUNCTION IF EXISTS get_dashboard (YOU run this in Supabase SQL editor)
+- [x] school_admin_links table created
+- [x] pending_parent_links table created
+- [x] calculate_streak DB function created (YOU run this in Supabase SQL editor)
+- [x] get_usage_graph_uni(p_user_id, p_days) DB function created — queries user_events by user_id (YOU run this in Supabase SQL editor)
+- [x] get_usage_graph_secondary(p_user_id, p_days) DB function created — queries section_learning_events by student_id (YOU run this in Supabase SQL editor)
+- [x] DEVIATION — both get_usage_graph_* functions were replaced (same signature,
+      same return shape) to read from a new `daily_active_time` table fed by
+      `record_activity_heartbeat(p_user_id, p_seconds)`. Event counts and
+      session_duration_seconds both over-report study time (a tab left open
+      inflates it), so usage is now real page-visible time measured by the
+      frontend's activity heartbeat.
 
 **Backend — Uni Dashboard (expanded):**
-- [ ] GET /dashboard — multi-query assembly replacing RPC
-- [ ] Streak: current + longest, grace day logic, qualifying event types
-- [ ] Usage graph: 7 days, minutes, current vs previous 7 days %
-- [ ] Session count this week vs last week
-- [ ] Existing widgets preserved: continue_learning, recent_sessions,
+- [x] GET /dashboard — multi-query assembly replacing RPC
+- [x] Streak: current + longest, grace day logic, qualifying event types
+      (reuses user_profiles.streak_current/longest, already maintained by
+      update_streak() — the schema doc forbids duplicating streak logic)
+- [x] Usage graph: 7 days, minutes, current vs previous 7 days %
+- [x] Session count this week vs last week
+- [x] Existing widgets preserved: continue_learning, recent_sessions,
       progress, next_recommended, recent_notes
 
 **Backend — Secondary Dashboard:**
-- [ ] GET /secondary/dashboard
-- [ ] Continue learning: last incomplete subsection deep link
-- [ ] Chapter progress rings (completed/total subsections per chapter)
-- [ ] Streak: current + longest, grace day, GSAP on increment
-- [ ] Usage graph: 7 days from section_learning_events.session_duration_seconds
-- [ ] Strengths: highest avg comprehension_depth per chapter (past 3 months)
-- [ ] Weaknesses: lowest scores + struggle_points frequency
-- [ ] Most pressing: low score + prerequisite for upcoming chapters
-- [ ] Session count this week vs last week
-- [ ] Days since last session
-- [ ] Recently completed chapters
-- [ ] Next chapter preview
+- [x] GET /secondary/dashboard
+- [x] Continue learning: last incomplete subsection deep link
+- [x] Chapter progress rings (completed/total subsections per chapter)
+- [x] Streak: current + longest, grace day, GSAP on increment
+- [x] Usage graph: 7 days (see the daily_active_time deviation above)
+- [x] Strengths: highest avg comprehension_depth per chapter (past 3 months)
+- [x] Weaknesses: lowest scores + struggle_points frequency
+- [x] Most pressing: low score + prerequisite for upcoming chapters
+- [x] Session count this week vs last week
+- [x] Days since last session
+- [x] Recently completed chapters
+- [x] Next chapter preview
+- [x] GET /secondary/usage-graph?period=daily|weekly — backs the graph toggle
+      (4x7-day buckets vs the previous 4 weeks)
+- NOTE: every secondary number stays zero until Feature 02 ships — nothing
+  writes section_learning_events or student_progress_history yet. Expected.
 
 **Backend — Parent Dashboard:**
-- [ ] GET /parent/dashboard — requires role = parent
-- [ ] Per linked student: name, class, streak, study time, current chapter,
+- [x] GET /parent/dashboard — requires role = parent
+- [x] Per linked student: name, class, streak, study time, current chapter,
       chapter progress, top weaknesses, last active, sessions this week
-- [ ] POST /profile/link-parent — student links parent email
+      (uni-student children use the uni streak/usage sources; depth-based
+      strengths/weaknesses stay empty for them — no such signal exists yet)
+- [x] POST /profile/link-parent — student links parent email
       existing account → create parent_students immediately, send notification
       no account → create pending_parent_links, send parent_invite email
-- [ ] Post-signup hook: check pending_parent_links for email, resolve link
+- [x] Post-signup hook: check pending_parent_links for email, resolve link
 
 **Backend — School Admin Dashboard:**
-- [ ] GET /school/dashboard — requires role = school_admin
-- [ ] School overview: total students, active this week, avg study time,
+- [x] GET /school/dashboard — requires role = school_admin
+- [x] School overview: total students, active this week, avg study time,
       avg streak, % completed at least one chapter
-- [ ] Per-student table: name, class, sessions, current chapter,
+- [x] Per-student table: name, class, sessions, current chapter,
       last active, status (active/inactive/at_risk)
-- [ ] Weak topics: top 3 most common struggle_points across school (3 months)
-- [ ] GET /school/report/monthly — aggregated monthly data
-- [ ] At-risk logic: no session 14+ days OR surface comprehension 2+ weeks
+- [x] Weak topics: top 3 most common struggle_points across school (3 months)
+- [x] GET /school/report/monthly — aggregated monthly data
+- [x] At-risk logic: no session 14+ days OR surface comprehension 2+ weeks
+      (recency half only — the comprehension half activates once Feature 02
+      populates student_progress_history)
+- [x] ADDED — POST /admin/schools + /admin/schools/{id}/admins: school_admin
+      accounts are provisioned manually and have no onboarding flow, so both
+      /school and /admin are exempt from the onboarding gate
 
 **Backend — APScheduler additions:**
-- [ ] Weekly parent WhatsApp nudge job (Termii) — add to existing scheduler
-- [ ] Monthly school report job (Resend/Termii) — add to existing scheduler
+- [x] Weekly parent nudge job — email only (Resend). DEVIATION: Termii
+      WhatsApp deferred per the spec's own pilot-scale resolution
+- [x] Monthly school report job (Resend) — same deferral
 
 **Backend — user_events:**
-- [ ] parent_linked, parent_invite_sent, parent_invite_accepted
-- [ ] school_report_viewed, dashboard_viewed (all types, with user_type tag)
+- [x] parent_linked, parent_invite_sent, parent_invite_accepted
+      (the direct-link case logs Feature 06's parent_link_completed rather
+      than a duplicate parent_linked; parent_invite_accepted fires alongside
+      it on the invite-resolution path so the two are distinguishable)
+- [x] school_report_viewed, dashboard_viewed (all types, with user_type tag)
 
 **Frontend — Uni Dashboard (upgraded):**
-- [ ] Streak counter with GSAP animation on increment
-- [ ] 7-day usage graph (Y: minutes, X: day labels)
-- [ ] Percentage highlights above graph (vs previous 7 days)
-- [ ] Session count comparison
-- [ ] Existing widgets styled to new design system
+- [x] Streak counter with GSAP animation on increment
+- [x] 7-day usage graph (Y: minutes, X: day labels)
+- [x] Percentage highlights above graph (vs previous 7 days)
+- [x] Session count comparison
+- [x] Existing widgets styled to new design system
 
 **Frontend — Secondary Dashboard:**
-- [ ] All widgets from backend above
-- [ ] Subject progress rings per chapter
-- [ ] Strengths/weaknesses display (topic names only, no scores)
-- [ ] Daily/weekly toggle on graph (current vs previous period)
+- [x] All widgets from backend above
+- [x] Subject progress rings per chapter
+- [x] Strengths/weaknesses display (topic names only, no scores)
+- [x] Daily/weekly toggle on graph (current vs previous period)
 
 **Frontend — Parent Dashboard:**
-- [ ] Per-student summary cards
-- [ ] Study time graph per student
-- [ ] Weakness topics per student
-- [ ] Empty state before any student links them
+- [x] Per-student summary cards
+- [x] Study time graph per student
+- [x] Weakness topics per student
+- [x] Empty state before any student links them
 
 **Frontend — School Admin Dashboard:**
-- [ ] School overview stats
-- [ ] Student table with status badges (active/inactive/at_risk)
-- [ ] Weak topics list
-- [ ] Monthly report download or view
+- [x] School overview stats
+- [x] Student table with status badges (active/inactive/at_risk)
+- [x] Weak topics list
+- [x] Monthly report download or view (CSV download of the same snapshot the
+      monthly email carries)
+
+**Not in the original checklist, still open (tracked for a later session):**
+- [ ] Parent dashboard "Users" nav section — deeper per-student drill-down
+      beyond the summary card. Not yet specced.
+- [ ] CSV upload UI for seeding lesson/curriculum content — belongs to
+      Feature 02's curriculum-authoring admin tool, not here.
 
 ---
 

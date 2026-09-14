@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import AppSidebar from "@/components/sidebar/AppSidebar";
+import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
+import { GlassButton } from "@/components/ui/glass-button";
 import { supabase } from "@/lib/supabase";
 import { Note, Course, fetchCourses, deleteCourse } from "@/lib/api";
 import { Plus, FileSearch, FolderPlus } from "lucide-react";
@@ -189,7 +191,8 @@ export default function NotesDashboard() {
 
     if (authLoading || (loading && !hasLoaded)) {
         return (
-            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+            <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
+                <AnimatedGradientBg />
                 <AppSidebar userName={userName || "Loading..."} activeItem="home" onSignOut={handleSignOut} />
                 <div className="flex-1 overflow-y-auto">
                     <div className="max-w-4xl mx-auto p-6 md:p-10 space-y-10 animate-pulse">
@@ -209,10 +212,11 @@ export default function NotesDashboard() {
 
     if (error) {
         return (
-            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+            <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
+                <AnimatedGradientBg />
                 <AppSidebar userName={userName} activeItem="notes" onSignOut={handleSignOut} />
-                <div className="flex-1 flex items-center justify-center p-8">
-                    <div className="bg-card border border-border rounded-2xl p-8 max-w-sm w-full text-center">
+                <div className="flex-1 flex items-center justify-center p-8 relative">
+                    <div className="glass-panel rounded-2xl p-8 max-w-sm w-full text-center">
                         <h2 className="text-xl font-semibold mb-2">Unable to load notes</h2>
                         <p className="text-muted-foreground text-sm mb-6">There was a problem fetching your notes.</p>
                         <button
@@ -231,14 +235,15 @@ export default function NotesDashboard() {
     const showBigEmptyState = notes.length === 0 && courses.length === 0;
 
     return (
-        <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+        <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
+            <AnimatedGradientBg />
             <AppSidebar
                 userName={userName}
                 activeItem="notes"
                 onSignOut={handleSignOut}
             />
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto relative">
                 <main className="max-w-4xl mx-auto p-6 md:p-10 space-y-10">
 
                     {/* Header */}
@@ -263,18 +268,15 @@ export default function NotesDashboard() {
                             >
                                 <FolderPlus className="w-4 h-4" /> New Course
                             </button>
-                            <button
-                                onClick={() => setUploadModalOpen(true)}
-                                className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2.5 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
-                            >
+                            <GlassButton onClick={() => setUploadModalOpen(true)} contentClassName="flex items-center gap-2">
                                 <Plus className="w-4 h-4" /> Upload Note
-                            </button>
+                            </GlassButton>
                         </div>
                     </div>
 
                     {showBigEmptyState ? (
                         /* Empty State — no notes and no courses at all */
-                        <div className="rounded-3xl p-10 border border-border bg-card text-center">
+                        <div className="rounded-3xl p-10 glass-panel text-center">
                             <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
                                 <FileSearch className="w-8 h-8 text-primary" />
                             </div>
@@ -282,12 +284,9 @@ export default function NotesDashboard() {
                             <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
                                 Upload your first PDF to start learning interactively with TECHCESS
                             </p>
-                            <button
-                                onClick={() => setUploadModalOpen(true)}
-                                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] inline-flex items-center gap-2"
-                            >
+                            <GlassButton onClick={() => setUploadModalOpen(true)} contentClassName="flex items-center gap-2">
                                 <Plus className="w-4 h-4" /> Upload Your First Note
-                            </button>
+                            </GlassButton>
                         </div>
                     ) : (
                         <>

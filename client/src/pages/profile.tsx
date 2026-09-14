@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import AppSidebar from "@/components/sidebar/AppSidebar";
+import AppSidebar, { deriveVariant } from "@/components/sidebar/AppSidebar";
+import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import { fetchProfile, updateProfile, cancelSubscription, linkParent } from "@/lib/api";
 import { useCredits } from "@/hooks/use-credits";
 import { useUserProfile } from "@/hooks/use-user-profile";
@@ -37,11 +38,15 @@ export default function Profile() {
     const [dob, setDob] = useState("");
     const [cancelling, setCancelling] = useState(false);
 
-    const userName = user?.user_metadata?.full_name || user?.email || "User";
     const accessToken = session?.access_token || "";
     const { toast } = useToast();
     const { isPaid } = useCredits();
-    const { userType } = useUserProfile();
+    const { userType, role, fullName: onboardingFullName } = useUserProfile();
+    const sidebarVariant = deriveVariant(userType, role);
+    // Prefer the name saved during onboarding/profile edits — falls back to
+    // auth metadata/email only while that hasn't loaded yet, so this never
+    // flips to the email-derived name after the page has finished loading.
+    const userName = fullName || onboardingFullName || user?.user_metadata?.full_name || user?.email || "User";
 
     const [parentEmail, setParentEmail] = useState("");
     const [linkingParent, setLinkingParent] = useState(false);
@@ -156,8 +161,9 @@ export default function Profile() {
 
     if (authLoading || (loading && !hasLoaded)) {
         return (
-            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
-                <AppSidebar userName={userName || "Loading..."} activeItem="profile" onSignOut={handleSignOut} />
+            <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
+                <AnimatedGradientBg />
+                <AppSidebar userName={userName || "Loading..."} activeItem="profile" onSignOut={handleSignOut} variant={sidebarVariant} />
                 <div className="flex-1 flex flex-col items-center justify-center bg-background">
                     <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
                     <p className="text-xs font-bold tracking-[0.2em] uppercase text-muted-foreground animate-pulse">
@@ -170,10 +176,11 @@ export default function Profile() {
 
     if (error) {
         return (
-            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
-                <AppSidebar userName={userName} activeItem="profile" onSignOut={handleSignOut} />
-                <div className="flex-1 flex items-center justify-center p-8">
-                    <div className="bg-card border border-border rounded-2xl p-8 max-w-sm w-full text-center">
+            <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
+                <AnimatedGradientBg />
+                <AppSidebar userName={userName} activeItem="profile" onSignOut={handleSignOut} variant={sidebarVariant} />
+                <div className="flex-1 flex items-center justify-center p-8 relative">
+                    <div className="glass-panel rounded-2xl p-8 max-w-sm w-full text-center">
                         <h2 className="text-xl font-semibold mb-2">Unable to load profile</h2>
                         <p className="text-muted-foreground text-sm mb-6">There was a problem fetching your profile.</p>
                         <button
@@ -189,10 +196,11 @@ export default function Profile() {
     }
 
     return (
-        <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
-            <AppSidebar userName={userName} activeItem="profile" onSignOut={handleSignOut} />
+        <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
+            <AnimatedGradientBg />
+            <AppSidebar userName={userName} activeItem="profile" onSignOut={handleSignOut} variant={sidebarVariant} />
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto relative">
                 <main className="max-w-2xl mx-auto p-6 md:p-10 space-y-8">
                     {/* Header */}
                     <div className="flex items-center gap-4">
@@ -206,7 +214,7 @@ export default function Profile() {
                     </div>
 
                     {/* Form */}
-                    <form onSubmit={handleSave} className="bg-card border border-border rounded-3xl p-6 md:p-8 space-y-6">
+                    <form onSubmit={handleSave} className="glass-panel rounded-3xl p-6 md:p-8 space-y-6">
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
                             <Input id="email" value={email || ""} disabled readOnly />
@@ -243,8 +251,9 @@ export default function Profile() {
                         </div>
                     </form>
 
-                    {/* Subscription / plan */}
-                    <section className="bg-card border border-border rounded-3xl p-6 md:p-8 space-y-5">
+                    {/* Subscription / plan — parents aren't part of the credit system */}
+                    {userType !== "parent" && (
+                    <section className="glass-panel rounded-3xl p-6 md:p-8 space-y-5">
                         <div className="flex items-center justify-between gap-4">
                             <div>
                                 <h2 className="text-lg font-semibold tracking-tight">Plan &amp; billing</h2>
@@ -308,6 +317,7 @@ export default function Profile() {
                             </div>
                         )}
                     </section>
+                    )}
 
                     {/* Family plan members (secondary school only — renders nothing if not applicable) */}
                     {userType === "secondary" && accessToken && (
@@ -316,7 +326,7 @@ export default function Profile() {
 
                     {/* Parent linking (not applicable to parent accounts themselves) */}
                     {userType !== "parent" && (
-                        <section className="bg-card border border-border rounded-3xl p-6 md:p-8 space-y-5">
+                        <section className="glass-panel rounded-3xl p-6 md:p-8 space-y-5">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
                                     <UserPlus className="w-5 h-5" />

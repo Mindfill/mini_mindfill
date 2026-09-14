@@ -1,11 +1,13 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation, useParams } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useActivityHeartbeat } from "@/hooks/use-activity-heartbeat";
 import { fetchLessonHistory, submitLessonMessage, OutOfCreditsError, type ChatMessage } from "@/lib/api";
 import { useCredits } from "@/hooks/use-credits";
 import { useSubscription } from "@/hooks/use-subscription";
 import { supabase } from "@/lib/supabase";
 import AppSidebar from "@/components/sidebar/AppSidebar";
+import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatInput from "@/components/chat/ChatInput";
 import TypingIndicator from "@/components/chat/TypingIndicator";
@@ -15,6 +17,7 @@ import mindfillIcon from "@/assets/mindfill.png";
 
 export default function LessonChat() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
+    useActivityHeartbeat(session?.access_token);
     const [, navigate] = useLocation();
     const params = useParams<{ lessonSlug: string }>();
     const lessonSlug = params.lessonSlug || "";
@@ -151,7 +154,7 @@ export default function LessonChat() {
 
     if (authLoading || (loading && !error)) {
         return (
-            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+            <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden">
                 <AppSidebar userName={userName} activeItem="courses" onSignOut={handleSignOut} />
                 <div className="flex-1 flex flex-col items-center justify-center bg-background">
                     <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
@@ -165,7 +168,7 @@ export default function LessonChat() {
 
     if (error) {
         return (
-            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+            <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden">
                 <AppSidebar userName={userName} activeItem="courses" onSignOut={handleSignOut} />
                 <div className="flex-1 flex flex-col items-center justify-center bg-background p-6 text-center">
                     <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mb-6">
@@ -197,14 +200,15 @@ export default function LessonChat() {
     // ── MAIN RENDER ──────────────────────────────────────────────────────────
 
     return (
-        <div className="min-h-screen bg-background text-foreground flex">
+        <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
+            <AnimatedGradientBg />
             <AppSidebar
                 userName={userName}
                 activeItem="courses"
                 onSignOut={handleSignOut}
             />
 
-            <div className="flex-1 flex flex-col min-h-screen bg-background">
+            <div className="flex-1 flex flex-col min-h-0 bg-background">
                 {/* Header */}
                 <header className="sticky top-0 z-20 bg-background/40 backdrop-blur-xl border-b border-border px-6 py-5 flex justify-between items-center">
                     <div className="flex items-center gap-4">

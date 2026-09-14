@@ -1,10 +1,11 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { fetchOnboardingStatus, OnboardingStatus, UserType } from "@/lib/api";
+import { fetchOnboardingStatus, OnboardingStatus, UserType, UserRole } from "@/lib/api";
 
 interface UserProfileContextType {
     userType: UserType | null;
+    role: UserRole | null;
     onboardingStep: number;
     onboardingCompleted: boolean;
     termsAccepted: boolean;
@@ -17,8 +18,10 @@ interface UserProfileContextType {
 const UserProfileContext = createContext<UserProfileContextType | undefined>(undefined);
 
 // Routes that must stay reachable regardless of onboarding/terms state —
-// otherwise a user could never reach /onboarding to finish it.
-const EXEMPT_PATHS = ["/", "/login", "/reset-password", "/onboarding", "/privacy", "/terms", "/waitlist"];
+// otherwise a user could never reach /onboarding to finish it. /school is
+// staff-only: school_admin accounts are provisioned manually and never go
+// through onboarding at all (mirrors app/core/onboarding_gate.py's exemption).
+const EXEMPT_PATHS = ["/", "/login", "/reset-password", "/onboarding", "/privacy", "/terms", "/waitlist", "/school", "/admin"];
 
 function isExempt(path: string): boolean {
     return EXEMPT_PATHS.some((p) => path === p || (p !== "/" && path.startsWith(p + "/")));
@@ -80,6 +83,7 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
         <UserProfileContext.Provider
             value={{
                 userType: status?.user_type ?? null,
+                role: status?.role ?? null,
                 onboardingStep: status?.onboarding_step ?? 0,
                 onboardingCompleted: status?.onboarding_completed ?? false,
                 termsAccepted: status?.terms_accepted ?? false,

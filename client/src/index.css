@@ -456,3 +456,93 @@
     inset: -1px;
   }
 }
+
+@layer utilities {
+  /* Apple-glass surface — frosted, translucent, theme-aware. Used for
+     dashboard cards, sidebar, and any panel that should feel premium/floating
+     rather than flat. Pair with a bg-brand-gradient (or AnimatedGradientBg)
+     ancestor so there's something to frost. */
+  .glass-panel {
+    background: hsl(var(--card) / 0.6);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid hsl(var(--card-border) / 0.6);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.5), var(--shadow-lg);
+  }
+
+  .dark .glass-panel {
+    background: hsl(var(--card) / 0.55);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06), var(--shadow-lg);
+  }
+
+  /* Lighter-weight glass, for the mobile dropdown menu and small chips. */
+  .glass-chip {
+    background: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid hsl(var(--card-border) / 0.5);
+  }
+
+  /* Glass button (Apple-style frosted pill) — see components/ui/glass-button.tsx */
+  .glass-button-wrap {
+    position: relative;
+    display: inline-block;
+  }
+
+  .glass-button {
+    position: relative;
+    z-index: 1;
+    display: block;
+    background: linear-gradient(180deg, hsl(var(--primary) / 0.95) 0%, hsl(var(--primary) / 0.85) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.35),
+      inset 0 -1px 0 0 rgba(0, 0, 0, 0.08),
+      0 1px 2px rgba(0, 0, 0, 0.08);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-button:hover {
+    transform: translateY(-1px);
+  }
+
+  .glass-button:active {
+    transform: translateY(0) scale(0.97);
+  }
+
+  .glass-button-text {
+    color: hsl(var(--primary-foreground));
+  }
+
+  .glass-button-shadow {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: hsl(var(--primary) / 0.5);
+    filter: blur(16px);
+    opacity: 0.5;
+    transform: scale(0.92) translateY(6px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+
+  .glass-button-wrap:hover .glass-button-shadow {
+    opacity: 0.75;
+    transform: scale(0.98) translateY(8px);
+  }
+
+  /* Secondary (outline-glass) variant — for less prominent actions sitting on
+     a glass-panel, where a solid primary pill would be too loud. */
+  .glass-button-wrap.glass-button-outline .glass-button {
+    background: hsl(var(--card) / 0.5);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.25), inset 0 0 0 1px hsl(var(--card-border) / 0.8);
+  }
+
+  .glass-button-wrap.glass-button-outline .glass-button-text {
+    color: hsl(var(--foreground));
+  }
+
+  .glass-button-wrap.glass-button-outline .glass-button-shadow {
+    background: transparent;
+  }
+}

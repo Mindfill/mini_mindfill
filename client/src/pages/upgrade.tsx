@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useCredits } from "@/hooks/use-credits";
 import AppSidebar from "@/components/sidebar/AppSidebar";
+import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import PlanSelector from "@/components/billing/PlanSelector";
 import { Sparkles, Check } from "lucide-react";
 
@@ -27,10 +28,11 @@ export default function Upgrade() {
     };
 
     return (
-        <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+        <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
+            <AnimatedGradientBg />
             <AppSidebar userName={userName} activeItem="profile" onSignOut={handleSignOut} />
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto relative">
                 <main className="max-w-2xl mx-auto p-6 md:p-10 space-y-8">
                     <div className="flex items-center gap-4">
                         <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
@@ -43,7 +45,7 @@ export default function Upgrade() {
                     </div>
 
                     {isPaid ? (
-                        <div className="bg-card border border-border rounded-3xl p-8 text-center">
+                        <div className="glass-panel rounded-3xl p-8 text-center">
                             <div className="w-14 h-14 mx-auto rounded-full bg-green-500/10 text-green-500 flex items-center justify-center mb-4">
                                 <Check className="w-7 h-7" />
                             </div>
@@ -59,7 +61,7 @@ export default function Upgrade() {
                             </button>
                         </div>
                     ) : (
-                        <div className="bg-card border border-border rounded-3xl p-6 md:p-8">
+                        <div className="glass-panel rounded-3xl p-6 md:p-8">
                             <PlanSelector />
                         </div>
                     )}

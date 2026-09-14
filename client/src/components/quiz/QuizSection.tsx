@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
+import { gsap } from "gsap";
 import { fetchQuestions, fetchTimedBatch, submitAttempt, submitBatchAttempts, fetchStats, fetchExplanation } from "@/lib/quizApi";
 import MarkdownLatex from "@/components/ui/markdown-latex";
+import CorrectAnswerBurst from "@/components/quiz/CorrectAnswerBurst";
 import { BookOpen, GraduationCap, Timer as TimerIcon, ChevronRight, CheckCircle, XCircle, Send, Loader2, ArrowLeft, X } from "lucide-react";
 
 interface QuizSectionProps {
@@ -65,12 +67,23 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
     const [explainContext, setExplainContext] = useState<{ qIndex: number; q: any; studentAnswer: string; correctAnswer: string } | null>(null);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const feedbackIconRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (showExplain) {
             messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
         }
     }, [explainHistory, showExplain]);
+
+    useEffect(() => {
+        if (submitted && feedbackData?.correct && feedbackIconRef.current) {
+            gsap.fromTo(
+                feedbackIconRef.current,
+                { scale: 0.5, rotate: -15 },
+                { scale: 1, rotate: 0, duration: 0.5, ease: "back.out(2.5)" }
+            );
+        }
+    }, [submitted, feedbackData]);
 
     // Timer effect
     useEffect(() => {
@@ -578,9 +591,12 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
                 {/* MCQ / Flashcard Feedback */}
                 {submitted && feedbackData && mode !== "timed" && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className={`p-6 rounded-2xl border ${feedbackData.correct ? "bg-emerald-500/10 border-emerald-500/20" : "bg-red-500/10 border-red-500/20"} mb-6`}>
+                        <div className={`relative p-6 rounded-2xl border ${feedbackData.correct ? "bg-emerald-500/10 border-emerald-500/20" : "bg-red-500/10 border-red-500/20"} mb-6`}>
+                            {feedbackData.correct && <CorrectAnswerBurst triggerKey={currentIndex} />}
                             <h4 className={`flex items-center gap-2 font-bold mb-3 ${feedbackData.correct ? "text-emerald-400" : "text-red-400"}`}>
-                                {feedbackData.correct ? <CheckCircle className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+                                <div ref={feedbackData.correct ? feedbackIconRef : undefined}>
+                                    {feedbackData.correct ? <CheckCircle className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+                                </div>
                                 {feedbackData.correct ? "Correct" : "Incorrect"}
                             </h4>
                             {feedbackData.correct_answer && !feedbackData.correct && (

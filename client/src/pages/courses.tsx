@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import AppSidebar from "@/components/sidebar/AppSidebar";
+import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import CourseCard from "@/components/courses/CourseCard";
 import mindfillIcon from "@/assets/mindfill.png";
 
@@ -95,7 +96,8 @@ export default function Courses() {
     }
 
     return (
-        <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+        <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
+            <AnimatedGradientBg />
             <AppSidebar
                 userName={userName}
                 activeItem="courses"
@@ -105,7 +107,7 @@ export default function Courses() {
             {/* Main content */}
             <div className="flex-1 flex flex-col h-full relative overflow-y-auto">
                 {/* Top header */}
-                <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border">
+                <header className="sticky top-0 z-20 glass-chip border-b border-border/50">
                     <div className="px-8 py-6">
                         <div className="flex items-center gap-3">
                             <img
@@ -129,7 +131,7 @@ export default function Courses() {
                 </header>
 
                 {/* Course grid */}
-                <main className="flex-1 p-8">
+                <main className="flex-1 p-8 relative">
                     {courses.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-20">
                             <img

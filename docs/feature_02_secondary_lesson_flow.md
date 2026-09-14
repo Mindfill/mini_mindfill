@@ -304,6 +304,78 @@ CREATE INDEX idx_section_learning_events_subsection ON section_learning_events(s
 CREATE INDEX idx_section_learning_events_created ON section_learning_events(created_at);
 ```
 
+### student_progress_history (append-only, assume already created)
+```sql
+-- Table already exists — do not CREATE it, just write to it.
+CREATE TABLE student_progress_history (
+  id                    uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id            uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  subsection_id         uuid NOT NULL REFERENCES curriculum_subsections(id),
+  event_type            text NOT NULL CHECK (event_type IN (
+                          'first_completion','review','regression','recovery')),
+  comprehension_depth   text NOT NULL CHECK (comprehension_depth IN (
+                          'surface','procedural','conceptual','transferable')),
+  depth_score           int NOT NULL CHECK (depth_score BETWEEN 1 AND 4),
+  previous_depth        text CHECK (previous_depth IN (
+                          'surface','procedural','conceptual','transferable')),
+  previous_depth_score  int CHECK (previous_depth_score BETWEEN 1 AND 4),
+  struggle_points       jsonb,   -- from Haiku extraction output
+  created_at            timestamptz NOT NULL DEFAULT now()
+);
+-- RLS: students SELECT their own rows only. No INSERT policy for
+-- authenticated — backend writes via service role.
+```
+
+**Append-only. Never UPDATE or DELETE rows in this table** — it's the full
+timeline of a student's comprehension depth per subsection, used by the
+dashboard to show weakness resolution over time.
+
+**Depth score mapping (use this everywhere depth_score is derived):**
+```
+surface      = 1
+procedural   = 2
+conceptual   = 3
+transferable = 4
+```
+
+**event_type derivation** (compare new depth_score to the subsection's
+previous depth_score from student_knowledge_state before overwriting it):
+```
+first_completion — no previous student_knowledge_state row for this subsection
+review            — revisit, depth_score unchanged
+regression        — revisit, new depth_score LOWER than previous
+recovery          — revisit, new depth_score HIGHER than previous
+```
+
+**Write path — on every /secondary/sessions/complete (first_attempt with
+extraction, per the Session Lifecycle section above):**
+```
+1. Before overwriting student_knowledge_state, read the existing row for
+   this (student_id, subsection_id) to get previous_depth + previous_depth_score
+2. Update student_knowledge_state as normal
+3. Insert into student_progress_history:
+   - event_type derived from the comparison above
+   - comprehension_depth + depth_score = new values
+   - previous_depth + previous_depth_score = old values (null if first_completion)
+   - struggle_points = Haiku extraction output's struggle_points
+```
+
+**Dashboard queries this table feeds (Feature 04):**
+```sql
+-- Weakness resolution: "used to struggle here, now mastered"
+SELECT subsection_id
+FROM student_progress_history
+WHERE student_id = :current_user
+GROUP BY subsection_id
+HAVING MIN(depth_score) = 1 AND MAX(depth_score) >= 3;
+
+-- Current weaknesses (from student_knowledge_state, not this table):
+SELECT * FROM student_knowledge_state
+WHERE student_id = :current_user
+  AND comprehension_depth IN ('surface','procedural')
+  AND completion_status = 'completed';
+```
+
 ---
 
 ## DB Schema — School + Parent Structure

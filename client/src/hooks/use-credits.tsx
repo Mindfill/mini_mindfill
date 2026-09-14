@@ -36,16 +36,23 @@ export function CreditsProvider({ children }: { children: ReactNode }) {
         let cancelled = false;
         setLoading(true);
 
-        // 1. Initial balance + plan.
+        // 1. Initial balance + plan. Filtered explicitly by user_id — don't
+        // rely on RLS alone to scope this, since a loose SELECT policy (e.g.
+        // one added later so family members can see plan info) could make
+        // .single() resolve to the wrong row.
         supabase
             .from("user_credits")
             .select("balance, subscription_status")
-            .single()
+            .eq("user_id", userId)
+            .maybeSingle()
             .then(({ data, error }) => {
                 if (cancelled) return;
                 if (!error && data) {
                     setCredits(Number(data.balance));
                     setSubscriptionStatus((data.subscription_status as string) ?? null);
+                } else {
+                    setCredits(null);
+                    setSubscriptionStatus(null);
                 }
                 setLoading(false);
             });

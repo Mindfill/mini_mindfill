@@ -3,6 +3,7 @@ import { useLocation, useParams } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import AppSidebar from "@/components/sidebar/AppSidebar";
+import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import PdfViewer from "@/components/notes/PdfViewer";
 import { ArrowLeft, ExternalLink, MessageSquare, X } from "lucide-react";
 
@@ -101,9 +102,10 @@ export default function NoteReader() {
 
     if (authLoading || (loading && !hasLoaded && !error)) {
         return (
-            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+            <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
+                <AnimatedGradientBg />
                 <AppSidebar userName={userName || "Loading..."} activeItem="notes" onSignOut={handleSignOut} />
-                <div className="flex-1 flex flex-col items-center justify-center bg-background">
+                <div className="flex-1 flex flex-col items-center justify-center bg-background/0 relative">
                     <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
                     <p className="text-xs font-bold tracking-[0.2em] uppercase text-muted-foreground animate-pulse">
                         Loading Note...
@@ -115,9 +117,10 @@ export default function NoteReader() {
 
     if (error || !fileUrl) {
         return (
-            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+            <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
+                <AnimatedGradientBg />
                 <AppSidebar userName={userName} activeItem="notes" onSignOut={handleSignOut} />
-                <div className="flex-1 flex flex-col items-center justify-center bg-background p-6 text-center">
+                <div className="flex-1 flex flex-col items-center justify-center bg-background/0 relative p-6 text-center">
                     <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mb-6">
                         <X className="w-8 h-8 text-red-500" />
                     </div>
@@ -145,7 +148,7 @@ export default function NoteReader() {
     }
 
     return (
-        <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+        <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
             <AppSidebar userName={userName} activeItem="notes" onSignOut={handleSignOut} />
 
             <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-background">

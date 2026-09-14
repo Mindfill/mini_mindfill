@@ -201,27 +201,32 @@ With backend complete and content seeded, build the student UI.
 
 ### 7A — Backend
 ```
-[ ] GET /dashboard (uni — expanded multi-query)
-[ ] GET /secondary/dashboard
-[ ] GET /parent/dashboard
-[ ] POST /profile/link-parent
-[ ] GET /school/dashboard
-[ ] GET /school/report/monthly
-[ ] calculate_streak called from Python (RPC exists — call it)
-[ ] get_usage_graph_uni / get_usage_graph_secondary called from Python based on user_type (RPCs exist — call the correct one)
-[ ] APScheduler: weekly parent WhatsApp nudge job
-[ ] APScheduler: monthly school report job
+[x] GET /dashboard (uni — expanded multi-query)
+[x] GET /secondary/dashboard
+[x] GET /parent/dashboard
+[x] POST /profile/link-parent
+[x] GET /school/dashboard
+[x] GET /school/report/monthly
+[x] calculate_streak called from Python (RPC exists — call it)
+    (uni streak reuses user_profiles.streak_current/longest — already maintained
+    by update_streak(); the RPC is used for the secondary/parent paths)
+[x] get_usage_graph_uni / get_usage_graph_secondary called from Python based on user_type (RPCs exist — call the correct one)
+    (both RPCs were rewritten to read real page-visible time from the new
+    daily_active_time table instead of event counts — same signature)
+[x] APScheduler: weekly parent WhatsApp nudge job — email only (Resend);
+    Termii WhatsApp deliberately deferred per the spec's pilot-scale resolution
+[x] APScheduler: monthly school report job
 ```
 
 ### 7B — Frontend
 ```
-[ ] Uni dashboard (upgraded — streak, usage graph, % highlights)
-[ ] Secondary student dashboard (all widgets)
-[ ] Parent dashboard (student summary cards)
-[ ] School admin dashboard (overview + student table + weak topics)
-[ ] 7-day bar graph component (shared, used across all dashboards)
-[ ] Streak counter with GSAP animation (shared component)
-[ ] Percentage highlight chips above graph
+[x] Uni dashboard (upgraded — streak, usage graph, % highlights)
+[x] Secondary student dashboard (all widgets)
+[x] Parent dashboard (student summary cards)
+[x] School admin dashboard (overview + student table + weak topics)
+[x] 7-day bar graph component (shared, used across all dashboards)
+[x] Streak counter with GSAP animation (shared component)
+[x] Percentage highlight chips above graph
 ```
 
 ---

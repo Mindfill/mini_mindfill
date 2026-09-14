@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { Note, Course, fetchCourses, deleteCourse } from "@/lib/api";
 import { invalidateNotesCache } from "@/pages/notes";
 import AppSidebar from "@/components/sidebar/AppSidebar";
+import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import NoteUploadModal from "@/components/notes/NoteUploadModal";
 import NoteCard from "@/components/notes/NoteCard";
 import { useToast } from "@/hooks/use-toast";
@@ -158,9 +159,10 @@ export default function CourseNotes() {
 
     if (authLoading || (loading && !hasLoaded)) {
         return (
-            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+            <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
+                <AnimatedGradientBg />
                 <AppSidebar userName={userName || "Loading..."} activeItem="notes" onSignOut={handleSignOut} />
-                <div className="flex-1 flex flex-col items-center justify-center bg-background">
+                <div className="flex-1 flex flex-col items-center justify-center bg-background/0 relative">
                     <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
                     <p className="text-xs font-bold tracking-[0.2em] uppercase text-muted-foreground animate-pulse">
                         Loading Course...
@@ -172,10 +174,11 @@ export default function CourseNotes() {
 
     if (error) {
         return (
-            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+            <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
+                <AnimatedGradientBg />
                 <AppSidebar userName={userName} activeItem="notes" onSignOut={handleSignOut} />
-                <div className="flex-1 flex items-center justify-center p-8">
-                    <div className="bg-card border border-border rounded-2xl p-8 max-w-sm w-full text-center">
+                <div className="flex-1 flex items-center justify-center p-8 relative">
+                    <div className="glass-panel rounded-2xl p-8 max-w-sm w-full text-center">
                         <h2 className="text-xl font-semibold mb-2">Unable to load course</h2>
                         <p className="text-muted-foreground text-sm mb-6">There was a problem fetching this course.</p>
                         <div className="flex gap-3 justify-center">
@@ -202,10 +205,11 @@ export default function CourseNotes() {
     const subtitle = course?.course_code ? course?.name : "Course notes";
 
     return (
-        <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+        <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
+            <AnimatedGradientBg />
             <AppSidebar userName={userName} activeItem="notes" onSignOut={handleSignOut} />
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto relative">
                 <main className="max-w-4xl mx-auto p-6 md:p-10 space-y-10">
                     {/* Header */}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">

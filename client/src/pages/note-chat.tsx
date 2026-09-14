@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation, useParams } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useActivityHeartbeat } from "@/hooks/use-activity-heartbeat";
 import { supabase } from "@/lib/supabase";
 import {
     fetchNoteHistory,
@@ -74,6 +75,7 @@ function clearNoteChatCache() {
 
 export default function NoteChat() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
+    useActivityHeartbeat(session?.access_token);
     const [, navigate] = useLocation();
     const params = useParams<{ noteId: string }>();
     const noteId = params.noteId || "";
@@ -361,7 +363,7 @@ export default function NoteChat() {
 
     if (authLoading || (loading && !hasLoaded && !loadError)) {
         return (
-            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+            <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden">
                 <AppSidebar userName={userName} activeItem="courses" onSignOut={handleSignOut} />
                 <div className="flex-1 flex flex-col items-center justify-center bg-background">
                     <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
@@ -376,7 +378,7 @@ export default function NoteChat() {
     // Onboarding required screen
     if (!loading && messages.length === 0 && !onboarding && !loadError) {
         return (
-            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+            <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden">
                 <AppSidebar userName={userName} activeItem="courses" onSignOut={handleSignOut} />
                 <div className="flex-1 flex flex-col items-center justify-center bg-background p-6 text-center">
                     <img
@@ -412,7 +414,7 @@ export default function NoteChat() {
 
     if (loadError) {
         return (
-            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+            <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden">
                 <AppSidebar userName={userName} activeItem="notes" onSignOut={handleSignOut} />
                 <div className="flex-1 flex flex-col items-center justify-center bg-background p-6 text-center">
                     <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mb-6">
@@ -442,7 +444,7 @@ export default function NoteChat() {
     }
 
     return (
-        <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+        <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden">
             <AppSidebar
                 userName={userName}
                 activeItem="notes"

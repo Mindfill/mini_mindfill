@@ -196,6 +196,25 @@ export async function submitLessonMessage(
     return { content: accumulated };
 }
 
+export interface StreakData {
+    current_streak: number;
+    longest_streak: number;
+    last_active_date: string | null;
+}
+
+export interface UsageDay {
+    date: string;
+    minutes: number;
+}
+
+export interface UsageGraph {
+    days: UsageDay[];
+    change_percent: number;
+    change_direction: "up" | "down" | "same";
+    sessions_this_week: number;
+    sessions_change_percent: number;
+}
+
 export interface DashboardResponse {
     continue_learning: {
         session_id: string;
@@ -207,7 +226,7 @@ export interface DashboardResponse {
         session_id: string;
         lesson_slug: string;
         lesson_title: string;
-        created_at: string;
+        last_activity_at: string;
     }[];
     progress: {
         lessons_completed: number;
@@ -219,6 +238,13 @@ export interface DashboardResponse {
         lesson_slug: string;
         lesson_title: string;
     } | null;
+    recent_notes: {
+        note_id: string;
+        title: string;
+        last_opened_at: string;
+    }[];
+    streak: StreakData;
+    usage_graph: UsageGraph;
 }
 
 /**
@@ -236,6 +262,182 @@ export async function fetchDashboard(accessToken: string): Promise<DashboardResp
     }
 
     return res.json();
+}
+
+export interface SubsectionProgress {
+    subsection_id: string;
+    subsection_title: string;
+    chapter_title: string;
+    section_label: string;
+}
+
+export interface ChapterRing {
+    chapter_id: string;
+    chapter_title: string;
+    percent_complete: number;
+    is_complete: boolean;
+}
+
+export interface StrengthWeakness {
+    chapter_title: string;
+    signal: "strength" | "weakness";
+}
+
+export interface SecondaryDashboardResponse {
+    continue_learning: SubsectionProgress | null;
+    chapter_rings: ChapterRing[];
+    streak: StreakData;
+    usage_graph: UsageGraph;
+    strengths: StrengthWeakness[];
+    weaknesses: StrengthWeakness[];
+    most_pressing: StrengthWeakness | null;
+    sessions_this_week: number;
+    sessions_change_percent: number;
+    days_since_last_session: number | null;
+    recently_completed_chapters: string[];
+    next_chapter_preview: string | null;
+}
+
+export async function fetchSecondaryDashboard(accessToken: string): Promise<SecondaryDashboardResponse> {
+    const res = await fetch(`${BACKEND_URL}/secondary/dashboard`, {
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to fetch secondary dashboard: ${res.status} — ${text}`);
+    }
+    return res.json();
+}
+
+export type UsagePeriod = "daily" | "weekly";
+
+export interface UsageGraphWindow {
+    period: UsagePeriod;
+    days: UsageDay[];
+    change_percent: number;
+    change_direction: "up" | "down" | "same";
+}
+
+/** Backs the secondary dashboard graph's daily/weekly toggle — "daily" is the
+ * same 7-day window the dashboard payload already carries, so only "weekly"
+ * actually needs fetching. */
+export async function fetchSecondaryUsageGraph(
+    period: UsagePeriod,
+    accessToken: string,
+): Promise<UsageGraphWindow> {
+    const res = await fetch(`${BACKEND_URL}/secondary/usage-graph?period=${period}`, {
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to fetch usage graph: ${res.status} — ${text}`);
+    }
+    return res.json();
+}
+
+export interface StudentSummary {
+    student_id: string;
+    student_name: string;
+    class_level: string;
+    current_streak: number;
+    study_minutes_this_week: number;
+    study_minutes_change_percent: number;
+    current_chapter: string;
+    chapter_progress_percent: number;
+    top_strengths: string[];
+    top_weaknesses: string[];
+    resolved_weaknesses: string[];
+    last_active_date: string | null;
+    sessions_this_week: number;
+}
+
+export interface ParentDashboardResponse {
+    students: StudentSummary[];
+    generated_at: string;
+}
+
+export async function fetchParentDashboard(accessToken: string): Promise<ParentDashboardResponse> {
+    const res = await fetch(`${BACKEND_URL}/parent/dashboard`, {
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to fetch parent dashboard: ${res.status} — ${text}`);
+    }
+    return res.json();
+}
+
+export interface SchoolOverview {
+    total_students: number;
+    active_this_week: number;
+    avg_study_minutes_this_week: number;
+    avg_streak: number;
+    chapters_completed_percent: number;
+}
+
+export interface StudentRow {
+    student_id: string;
+    student_name: string;
+    class_level: string;
+    sessions_this_week: number;
+    current_chapter: string;
+    top_strengths: string[];
+    resolved_weaknesses: string[];
+    last_active_date: string | null;
+    status: "active" | "inactive" | "at_risk";
+}
+
+export interface WeakTopic {
+    chapter_title: string;
+    struggle_count: number;
+}
+
+export interface SchoolDashboardResponse {
+    school_name: string;
+    overview: SchoolOverview;
+    students: StudentRow[];
+    weak_topics: WeakTopic[];
+    generated_at: string;
+}
+
+export async function fetchSchoolDashboard(accessToken: string): Promise<SchoolDashboardResponse> {
+    const res = await fetch(`${BACKEND_URL}/school/dashboard`, {
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to fetch school dashboard: ${res.status} — ${text}`);
+    }
+    return res.json();
+}
+
+export async function fetchSchoolMonthlyReport(accessToken: string): Promise<SchoolDashboardResponse> {
+    const res = await fetch(`${BACKEND_URL}/school/report/monthly`, {
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to fetch school report: ${res.status} — ${text}`);
+    }
+    return res.json();
+}
+
+/**
+ * Record page-visible active time for the usage-time dashboard graphs.
+ * POST /activity/heartbeat. `keepalive` lets the request outlive a page
+ * unload/tab-hide (the flush that fires on those events).
+ */
+export async function postActivityHeartbeat(
+    seconds: number,
+    accessToken: string,
+    keepalive = false
+): Promise<void> {
+    await fetch(`${BACKEND_URL}/activity/heartbeat`, {
+        method: "POST",
+        headers: authHeaders(accessToken, true),
+        body: JSON.stringify({ seconds }),
+        keepalive,
+    });
 }
 
 /**
@@ -918,6 +1120,7 @@ async function parseErrorDetail(res: Response): Promise<string> {
 }
 
 export type UserType = "secondary" | "university" | "parent";
+export type UserRole = "student" | "parent" | "school_admin" | "admin";
 
 export interface OnboardingStatus {
     user_type: UserType;
@@ -925,6 +1128,7 @@ export interface OnboardingStatus {
     onboarding_completed: boolean;
     terms_accepted: boolean;
     full_name: string | null;
+    role: UserRole;
 }
 
 /**
@@ -1295,5 +1499,190 @@ export async function redeemPromoCode(
         throw new Error(`Failed to redeem promo code: ${res.status} — ${await parseErrorDetail(res)}`);
     }
 
+    return res.json();
+}
+
+// ── ADMIN API (schools + promo codes — role=admin only) ─────────────────────
+
+export interface AdminSchool {
+    id: string;
+    school_name: string;
+    city: string | null;
+    state: string | null;
+    contact_name: string | null;
+    contact_email: string | null;
+    contact_phone: string | null;
+    is_active: boolean;
+}
+
+export async function fetchAdminSchools(accessToken: string): Promise<AdminSchool[]> {
+    const res = await fetch(`${BACKEND_URL}/admin/schools`, {
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to fetch schools: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+export interface ImportIssue {
+    entity: string;
+    row: string;
+    id: string;
+    reason: string;
+}
+
+export interface ContentImportReport {
+    dry_run: boolean;
+    filename: string;
+    sheets: string[];
+    /** Size and hash of the bytes the server received — identical values
+     * across two uploads mean the same file content was sent both times. */
+    file_bytes: number;
+    file_sha256: string;
+    counts: Record<string, {
+        created_or_updated: number;
+        /** Rows the database doesn't have yet, by slug. */
+        new: number;
+        /** Rows already present — an upsert refreshes their content. */
+        updated: number;
+        skipped: number;
+        rejected: number;
+    }>;
+    rejected: ImportIssue[];
+    skipped: ImportIssue[];
+    blank_rows: Record<string, number>;
+    warnings: string[];
+}
+
+/**
+ * Upload an authoring workbook to the curriculum tables.
+ * POST /admin/content/import — dryRun parses and validates without writing.
+ */
+export async function importCurriculumContent(
+    file: File,
+    dryRun: boolean,
+    accessToken: string,
+): Promise<ContentImportReport> {
+    const body = new FormData();
+    body.append("file", file);
+
+    const res = await fetch(`${BACKEND_URL}/admin/content/import?dry_run=${dryRun}`, {
+        method: "POST",
+        // No Content-Type header — the browser must set the multipart boundary.
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body,
+    });
+    if (!res.ok) {
+        throw new Error(`Import failed: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+export interface AdminSchoolCreateInput {
+    school_name: string;
+    city?: string;
+    state?: string;
+    contact_name?: string;
+    contact_email?: string;
+    contact_phone?: string;
+}
+
+export async function createAdminSchool(input: AdminSchoolCreateInput, accessToken: string): Promise<AdminSchool> {
+    const res = await fetch(`${BACKEND_URL}/admin/schools`, {
+        method: "POST",
+        headers: authHeaders(accessToken, true),
+        body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to create school: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+export interface AdminSchoolAdmin {
+    user_id: string;
+    full_name: string | null;
+    linked_at: string | null;
+}
+
+export async function fetchSchoolAdmins(schoolId: string, accessToken: string): Promise<AdminSchoolAdmin[]> {
+    const res = await fetch(`${BACKEND_URL}/admin/schools/${schoolId}/admins`, {
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to fetch school admins: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+export async function assignSchoolAdmin(
+    schoolId: string,
+    email: string,
+    accessToken: string
+): Promise<{ status: string; user_id: string }> {
+    const res = await fetch(`${BACKEND_URL}/admin/schools/${schoolId}/admins`, {
+        method: "POST",
+        headers: authHeaders(accessToken, true),
+        body: JSON.stringify({ email }),
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to assign school admin: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+export interface AdminPromoCode {
+    id: string;
+    code: string;
+    description: string | null;
+    plan_type: string;
+    access_days: number;
+    max_uses: number | null;
+    uses_count: number;
+    expires_at: string | null;
+    is_active: boolean;
+    created_at: string;
+}
+
+export async function fetchAdminPromoCodes(accessToken: string): Promise<AdminPromoCode[]> {
+    const res = await fetch(`${BACKEND_URL}/admin/promo/list`, {
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to fetch promo codes: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+export interface AdminPromoCreateInput {
+    code: string;
+    description?: string;
+    plan_type: string;
+    access_days: number;
+    max_uses?: number;
+    expires_at?: string;
+}
+
+export async function createAdminPromoCode(input: AdminPromoCreateInput, accessToken: string): Promise<AdminPromoCode> {
+    const res = await fetch(`${BACKEND_URL}/admin/promo/create`, {
+        method: "POST",
+        headers: authHeaders(accessToken, true),
+        body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to create promo code: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+export async function toggleAdminPromoCode(promoId: string, accessToken: string): Promise<AdminPromoCode> {
+    const res = await fetch(`${BACKEND_URL}/admin/promo/${promoId}/toggle`, {
+        method: "PATCH",
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to toggle promo code: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
     return res.json();
 }

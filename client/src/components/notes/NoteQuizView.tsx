@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { gsap } from "gsap";
 import { fetchQuizSections, submitQuizResults, type QuizAttempt, type QuizQuestion, type QuizSectionOption } from "@/lib/api";
 import MarkdownLatex from "@/components/ui/markdown-latex";
+import CorrectAnswerBurst from "@/components/quiz/CorrectAnswerBurst";
 import TheoryExplainModal, { type TheoryExplainContext } from "@/components/notes/TheoryExplainModal";
 import {
     CheckCircle,
@@ -172,6 +174,18 @@ export default function NoteQuizView({
             (err) => console.error("Failed to submit quiz results:", err)
         );
     }, [finished, quizSessionId, quizType, noteId, accessToken, questions, answers, score, total]);
+
+    const feedbackIconRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        if (submitted && current && isCorrect(current, selected) && feedbackIconRef.current) {
+            gsap.fromTo(
+                feedbackIconRef.current,
+                { scale: 0.5, rotate: -15 },
+                { scale: 1, rotate: 0, duration: 0.5, ease: "back.out(2.5)" }
+            );
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [submitted, currentIndex]);
 
     const reset = () => {
         setCurrentIndex(0);
@@ -535,16 +549,19 @@ export default function NoteQuizView({
             {submitted && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div
-                        className={`p-6 rounded-2xl border mb-6 ${
+                        className={`relative p-6 rounded-2xl border mb-6 ${
                             answeredCorrect ? "bg-emerald-500/10 border-emerald-500/20" : "bg-red-500/10 border-red-500/20"
                         }`}
                     >
+                        {answeredCorrect && <CorrectAnswerBurst triggerKey={currentIndex} />}
                         <h4
                             className={`flex items-center gap-2 font-bold mb-3 ${
                                 answeredCorrect ? "text-emerald-400" : "text-red-400"
                             }`}
                         >
-                            {answeredCorrect ? <CheckCircle className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+                            <div ref={answeredCorrect ? feedbackIconRef : undefined}>
+                                {answeredCorrect ? <CheckCircle className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+                            </div>
                             {answeredCorrect ? "Correct" : "Incorrect"}
                         </h4>
                         {!answeredCorrect && (
