@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/lib/supabase";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
+import TechcessLoader from "@/components/brand/TechcessLoader";
+import PageFade from "@/components/ui/page-fade";
+import { useCourseCatalogue } from "@/lib/appQueries";
 import CourseCard from "@/components/courses/CourseCard";
 import mindfillIcon from "@/assets/mindfill.png";
 
@@ -34,42 +36,18 @@ interface GroupedModule extends Module {
 export default function Courses() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
     const [, navigate] = useLocation();
-    const [loading, setLoading] = useState(true);
-    const [courses, setCourses] = useState<Course[]>([]);
-    const [modules, setModules] = useState<Module[]>([]);
-    const [lessons, setLessons] = useState<Lesson[]>([]);
-
     const userName = user?.user_metadata?.full_name || user?.email || "User";
 
+    // Cached (lib/appQueries.ts): the catalogue is the same for everyone and
+    // barely changes, so coming back from a lesson is instant.
+    const { data, isPending } = useCourseCatalogue();
+    const courses: Course[] = data?.courses ?? [];
+    const modules: Module[] = data?.modules ?? [];
+    const lessons: Lesson[] = data?.lessons ?? [];
+    const loading = isPending && !data;
+
     useEffect(() => {
-        if (!authLoading && !session) {
-            navigate("/login");
-            return;
-        }
-
-        if (session) {
-            const fetchAllData = async () => {
-                setLoading(true);
-                // Fetch courses, modules, and lessons in parallel
-                const [coursesRes, modulesRes, lessonsRes] = await Promise.all([
-                    supabase.from("courses").select("id, title, slug").order("order_index", { ascending: true }),
-                    supabase.from("modules").select("id, course_id, title, slug").order("order_index", { ascending: true }),
-                    supabase.from("lessons").select("id, module_id, title, slug").order("order_index", { ascending: true }),
-                ]);
-
-                if (coursesRes.error) console.error("Courses query error:", coursesRes.error);
-                if (modulesRes.error) console.error("Modules query error:", modulesRes.error);
-                if (lessonsRes.error) console.error("Lessons query error:", lessonsRes.error);
-
-                if (coursesRes.data) setCourses(coursesRes.data);
-                if (modulesRes.data) setModules(modulesRes.data);
-                if (lessonsRes.data) setLessons(lessonsRes.data);
-
-                setLoading(false);
-            };
-
-            fetchAllData();
-        }
+        if (!authLoading && !session) navigate("/login");
     }, [session, authLoading, navigate]);
 
     const handleSignOut = async () => {
@@ -87,13 +65,7 @@ export default function Courses() {
             }));
     };
 
-    if (authLoading || loading) {
-        return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            </div>
-        );
-    }
+    if (authLoading || loading) return <TechcessLoader fullScreen />;
 
     return (
         <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
@@ -131,6 +103,7 @@ export default function Courses() {
                 </header>
 
                 {/* Course grid */}
+                <PageFade className="flex-1 flex flex-col">
                 <main className="flex-1 p-8 relative">
                     {courses.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-20">
@@ -157,6 +130,7 @@ export default function Courses() {
                         </div>
                     )}
                 </main>
+                </PageFade>
             </div>
         </div>
     );

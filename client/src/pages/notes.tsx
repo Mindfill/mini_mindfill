@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import AppSidebar from "@/components/sidebar/AppSidebar";
+import TechcessLoader from "@/components/brand/TechcessLoader";
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import { GlassButton } from "@/components/ui/glass-button";
 import { supabase } from "@/lib/supabase";
@@ -194,17 +195,8 @@ export default function NotesDashboard() {
             <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
                 <AnimatedGradientBg />
                 <AppSidebar userName={userName || "Loading..."} activeItem="home" onSignOut={handleSignOut} />
-                <div className="flex-1 overflow-y-auto">
-                    <div className="max-w-4xl mx-auto p-6 md:p-10 space-y-10 animate-pulse">
-                        <div className="mb-4">
-                            <div className="h-8 w-40 bg-muted rounded-lg"></div>
-                        </div>
-                        <div className="h-40 bg-card rounded-3xl w-full border border-border"></div>
-                        <div className="space-y-4">
-                            <div className="h-4 w-32 bg-card rounded"></div>
-                            <div className="h-24 bg-card rounded-2xl w-full"></div>
-                        </div>
-                    </div>
+                <div className="flex-1 overflow-y-auto relative">
+                    <TechcessLoader label="Loading your notes" />
                 </div>
             </div>
         );

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { Home, BookOpen, LogOut, Menu, X, FileText } from "lucide-react";
-import { gsap } from "gsap";
+import { Home, BookOpen, LogOut, Menu, X, FileText, GraduationCap } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { Button } from "@/components/ui/button";
@@ -16,7 +15,7 @@ type Variant = "university" | "secondary" | "parent" | "school_admin";
 
 interface AppSidebarProps {
     userName: string;
-    activeItem: "home" | "courses" | "notes" | "profile";
+    activeItem: "home" | "courses" | "notes" | "learn" | "profile";
     onSignOut: () => void;
     /** Which nav items to show — the uni-specific ones (Courses/Notes) must
      * never appear for secondary/parent/school_admin accounts. Optional: when
@@ -30,7 +29,7 @@ interface AppSidebarProps {
 type SidebarNavItem = {
     icon: React.ReactNode;
     label: string;
-    key: "home" | "courses" | "notes";
+    key: "home" | "courses" | "notes" | "learn";
     path: string;
 };
 
@@ -49,6 +48,7 @@ const NAV_ITEMS_BY_VARIANT: Record<Variant, SidebarNavItem[]> = {
     ],
     secondary: [
         { icon: <Home className="w-5 h-5" />, label: "Home", key: "home", path: "/secondary/dashboard" },
+        { icon: <GraduationCap className="w-5 h-5" />, label: "Learn", key: "learn", path: "/secondary/learn" },
     ],
     parent: [
         { icon: <Home className="w-5 h-5" />, label: "Home", key: "home", path: "/parent/dashboard" },
@@ -91,27 +91,22 @@ export default function AppSidebar({ userName, activeItem, onSignOut, variant: v
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
+    // The drawer slides in from the RIGHT, the side its button is on, so the
+    // panel appears under the thumb that opened it. Closing on Escape and
+    // locking the page behind it are what make it read as a drawer rather
+    // than a dropdown.
     useEffect(() => {
-        const el = dropdownRef.current;
-        if (!el) return;
-
-        if (mobileMenuOpen) {
-            gsap.set(el, { display: "block", height: "auto" });
-            const fullHeight = el.offsetHeight;
-            gsap.fromTo(
-                el,
-                { height: 0, opacity: 0 },
-                { height: fullHeight, opacity: 1, duration: 0.32, ease: "power2.out" }
-            );
-        } else if (el.style.display !== "none") {
-            gsap.to(el, {
-                height: 0,
-                opacity: 0,
-                duration: 0.24,
-                ease: "power2.in",
-                onComplete: () => gsap.set(el, { display: "none" }),
-            });
-        }
+        if (!mobileMenuOpen) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setMobileMenuOpen(false);
+        };
+        const previous = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        window.addEventListener("keydown", onKey);
+        return () => {
+            document.body.style.overflow = previous;
+            window.removeEventListener("keydown", onKey);
+        };
     }, [mobileMenuOpen]);
 
     const goTo = (path: string) => {
@@ -142,10 +137,11 @@ export default function AppSidebar({ userName, activeItem, onSignOut, variant: v
         </>
     );
 
-    // Parent accounts are analysis-only — there's no plan/billing concept for
-    // them, so the profile (plan & billing) page doesn't apply and its nav
-    // entry is hidden rather than shown with irrelevant content.
-    const showProfile = variant !== "parent";
+    // Parent and school-admin accounts are analysis-only — no credits, no
+    // plan, nothing to bill — so the credits display and the profile (plan &
+    // billing) page don't apply and are hidden rather than shown with
+    // irrelevant content. Their name still shows, and Sign Out stays.
+    const showProfile = variant !== "parent" && variant !== "school_admin";
 
     const UserSection = () => (
         <div className="flex flex-col gap-2">
@@ -202,33 +198,58 @@ export default function AppSidebar({ userName, activeItem, onSignOut, variant: v
                         className="p-2 rounded-lg text-foreground hover:bg-muted transition-colors"
                         data-testid="button-mobile-menu"
                         aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+                        aria-expanded={mobileMenuOpen}
+                        aria-controls="mobile-nav-drawer"
                     >
                         {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                     </button>
                 </div>
 
-                {/* Vertical dropdown — expands downward beneath the top bar */}
+                {/* Dimmed page behind the drawer — tap anywhere to close. */}
+                <div
+                    className={`fixed inset-0 z-40 bg-background/60 backdrop-blur-[2px] transition-opacity duration-300 ${
+                        mobileMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                    aria-hidden
+                />
+
+                {/* Drawer — slides in from the LEFT (David's call), matching the
+                desktop sidebar's side, even though its button sits on the right. */}
                 <div
                     ref={dropdownRef}
-                    style={{ display: "none", overflow: "hidden" }}
-                    className="glass-chip border-b border-border/50 px-4 py-4 space-y-4"
+                    id="mobile-nav-drawer"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Menu"
+                    aria-hidden={!mobileMenuOpen}
+                    className={`fixed top-0 left-0 z-50 h-[100dvh] w-[84%] max-w-xs glass-panel border-r border-border/50 flex flex-col transition-transform duration-300 ease-out ${
+                        mobileMenuOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"
+                    }`}
                 >
-                    <nav className="space-y-1">
-                        <NavList />
-                    </nav>
-                    <div className="pt-2 border-t border-border/50">
-                        <DropReviewDialog accessToken={accessToken} />
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+                        <span className="text-sm font-semibold tracking-tight">Menu</span>
+                        <button
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="p-2 -mr-2 rounded-lg text-foreground hover:bg-muted transition-colors"
+                            aria-label="Close menu"
+                            tabIndex={mobileMenuOpen ? 0 : -1}
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
                     </div>
-                    <UserSection />
+                    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+                        <nav className="space-y-1">
+                            <NavList />
+                        </nav>
+                        <div className="pt-2 border-t border-border/50">
+                            <DropReviewDialog accessToken={accessToken} />
+                        </div>
+                    </div>
+                    <div className="px-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-2 border-t border-border/50">
+                        <UserSection />
+                    </div>
                 </div>
-
-                {mobileMenuOpen && (
-                    <div
-                        className="fixed inset-0 z-30 bg-background/40"
-                        style={{ top: "var(--mobile-topbar-height, 64px)" }}
-                        onClick={() => setMobileMenuOpen(false)}
-                    />
-                )}
             </div>
         );
     }

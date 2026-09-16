@@ -18,6 +18,7 @@ import {
 import { useCredits } from "@/hooks/use-credits";
 import { useSubscription } from "@/hooks/use-subscription";
 import AppSidebar from "@/components/sidebar/AppSidebar";
+import TechcessLoader from "@/components/brand/TechcessLoader";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatInput from "@/components/chat/ChatInput";
 import TypingIndicator from "@/components/chat/TypingIndicator";
@@ -365,11 +366,8 @@ export default function NoteChat() {
         return (
             <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden">
                 <AppSidebar userName={userName} activeItem="courses" onSignOut={handleSignOut} />
-                <div className="flex-1 flex flex-col items-center justify-center bg-background">
-                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-                    <p className="text-xs font-bold tracking-[0.2em] uppercase text-muted-foreground animate-pulse">
-                        Loading Note...
-                    </p>
+                <div className="flex-1 relative">
+                    <TechcessLoader label="Loading your note" />
                 </div>
             </div>
         );

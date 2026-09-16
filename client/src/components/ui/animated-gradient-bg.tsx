@@ -36,5 +36,11 @@ export default function AnimatedGradientBg({ className = "" }: { className?: str
         return () => cancelAnimationFrame(rafId);
     }, []);
 
-    return <div ref={ref} className={`absolute inset-0 ${className}`} />;
+    // -z-10 keeps it behind page content, and pointer-events-none keeps it
+    // from swallowing clicks. Without these it painted (and sat) on top of any
+    // content whose own wrapper wasn't positioned — positioned elements draw
+    // above in-flow ones. Pages have been adding `relative` to work around
+    // that one at a time; the uni lesson chat never did, which hid its whole
+    // chat column including the input box.
+    return <div ref={ref} className={`absolute inset-0 -z-10 pointer-events-none ${className}`} />;
 }

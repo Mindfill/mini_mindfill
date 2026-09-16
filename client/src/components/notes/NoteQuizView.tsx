@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { fetchQuizSections, submitQuizResults, type QuizAttempt, type QuizQuestion, type QuizSectionOption } from "@/lib/api";
 import MarkdownLatex from "@/components/ui/markdown-latex";
+import { stripOptionLabel } from "@/lib/quizOptions";
 import CorrectAnswerBurst from "@/components/quiz/CorrectAnswerBurst";
 import TheoryExplainModal, { type TheoryExplainContext } from "@/components/notes/TheoryExplainModal";
 import {
@@ -537,7 +538,9 @@ export default function NoteQuizView({
                                     {String.fromCharCode(65 + i)}
                                 </span>
                                 <div className="flex-1">
-                                    <MarkdownLatex content={opt} className="text-inherit" />
+                                    {/* Strip any "(a)" baked into the option text — the letter
+                                        beside it is the label. */}
+                                    <MarkdownLatex content={stripOptionLabel(opt)} className="text-inherit" />
                                 </div>
                             </button>
                         );

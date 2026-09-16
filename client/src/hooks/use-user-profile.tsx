@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { fetchOnboardingStatus, OnboardingStatus, UserType, UserRole } from "@/lib/api";
@@ -36,9 +36,22 @@ function isExempt(path: string): boolean {
 export function UserProfileProvider({ children }: { children: ReactNode }) {
     const { session, isLoading: authLoading } = useAuth();
     const accessToken = session?.access_token;
+    const userId = session?.user?.id;
     const [status, setStatus] = useState<OnboardingStatus | null>(null);
     const [loading, setLoading] = useState(false);
     const [location, navigate] = useLocation();
+    // Whose profile `status` currently holds. Supabase rotates the access
+    // token hourly (and on tab focus after sleep); that must refresh the
+    // profile quietly. Flipping `loading` on every token change made every
+    // guarded page swap itself for a loading state — unmounting an open
+    // lesson and its chat mid-conversation.
+    const loadedFor = useRef<string | null>(null);
+    const [failedFor, setFailedFor] = useState<string | null>(null);
+    // Between sign-in and the fetch effect starting there's a render where
+    // loading=false but status=null — consumers read that as "not a secondary
+    // user" and briefly rendered the wrong dashboard. Treat it as loading
+    // unless the fetch already failed for this user.
+    const effectiveLoading = loading || (!!accessToken && !authLoading && status === null && failedFor !== (userId ?? null));
 
     const refresh = async () => {
         if (!accessToken) return;
@@ -54,22 +67,42 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
         if (authLoading) return;
         if (!accessToken) {
             setStatus(null);
+            loadedFor.current = null;
             return;
         }
         let cancelled = false;
-        setLoading(true);
+        const firstLoadForUser = loadedFor.current !== userId;
+        if (firstLoadForUser) {
+            setStatus(null);
+            setLoading(true);
+        }
+        // One retry: right after login the first request can 401 while the
+        // backend's clock catches up with Supabase's. Without it userType
+        // stays null for the whole session (secondary pages hang on their
+        // skeleton and the device never registers).
         fetchOnboardingStatus(accessToken)
-            .then((res) => {
-                if (!cancelled) setStatus(res);
+            .catch(async () => {
+                await new Promise((resolve) => setTimeout(resolve, 1500));
+                if (cancelled) throw new Error("cancelled");
+                return fetchOnboardingStatus(accessToken);
             })
-            .catch((e) => console.error("Failed to fetch onboarding status", e))
+            .then((res) => {
+                if (cancelled) return;
+                setStatus(res);
+                loadedFor.current = userId ?? null;
+            })
+            .catch((e) => {
+                if (cancelled) return;
+                console.error("Failed to fetch onboarding status", e);
+                setFailedFor(userId ?? null);
+            })
             .finally(() => {
                 if (!cancelled) setLoading(false);
             });
         return () => {
             cancelled = true;
         };
-    }, [accessToken, authLoading]);
+    }, [accessToken, userId, authLoading]);
 
     useEffect(() => {
         if (authLoading || loading || !status || !accessToken) return;
@@ -88,7 +121,7 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
                 onboardingCompleted: status?.onboarding_completed ?? false,
                 termsAccepted: status?.terms_accepted ?? false,
                 fullName: status?.full_name ?? null,
-                loading,
+                loading: effectiveLoading,
                 refresh,
             }}
         >

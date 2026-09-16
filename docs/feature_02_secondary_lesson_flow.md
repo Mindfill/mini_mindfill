@@ -311,6 +311,7 @@ CREATE TABLE student_progress_history (
   id                    uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id            uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   subsection_id         uuid NOT NULL REFERENCES curriculum_subsections(id),
+  chapter_id            uuid NOT NULL REFERENCES curriculum_chapters(id),  -- on the live table; missing from the original spec (found 2026-09-15)
   event_type            text NOT NULL CHECK (event_type IN (
                           'first_completion','review','regression','recovery')),
   comprehension_depth   text NOT NULL CHECK (comprehension_depth IN (

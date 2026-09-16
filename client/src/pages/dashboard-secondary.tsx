@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useUserProfile } from "@/hooks/use-user-profile";
-import AppSidebar from "@/components/sidebar/AppSidebar";
-import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
+import { useSecondaryShell } from "@/components/secondary/SecondaryShell";
+import TechcessLoader from "@/components/brand/TechcessLoader";
+import { secondaryKeys } from "@/lib/secondaryQueries";
 import { BorderBeam } from "@/components/ui/border-beam";
 import WelcomeHeader from "@/components/dashboard/WelcomeHeader";
 import StreakBadge from "@/components/dashboard/StreakBadge";
@@ -17,13 +19,13 @@ import {
     UsagePeriod,
 } from "@/lib/api";
 
+/** Rendered inside SecondaryLayout, which owns the sidebar, background and
+ * the signed-in / secondary-account guards. */
 export default function SecondaryDashboard() {
-    const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
-    const { onboardingCompleted, fullName, loading: profileLoading } = useUserProfile();
+    const { user } = useAuth();
+    const { fullName, onboardingCompleted } = useUserProfile();
+    const { accessToken } = useSecondaryShell();
     const [, navigate] = useLocation();
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [data, setData] = useState<SecondaryDashboardResponse | null>(null);
     // The dashboard payload already carries the daily window, so only the
     // weekly one is fetched — once, then cached for the rest of the visit.
     const [usagePeriod, setUsagePeriod] = useState<UsagePeriod>("daily");
@@ -33,41 +35,29 @@ export default function SecondaryDashboard() {
     const userName = fullName || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "there";
     const firstName = userName.split(" ")[0];
 
-    const loadDashboard = async (isRetry = false) => {
-        if (!session) return;
-        if (!isRetry) setLoading(true);
-        setError(null);
-        try {
-            const dashboardData = await fetchSecondaryDashboard(session.access_token);
-            setData(dashboardData);
-            setLoading(false);
-        } catch (err) {
-            if (!isRetry) {
-                setTimeout(() => loadDashboard(true), 800);
-                return;
-            }
-            console.error(err);
-            setError("Unable to load dashboard");
-            setLoading(false);
-        }
-    };
+    // Cached: returning Home shows the last dashboard instantly and refreshes
+    // it behind the scenes instead of blanking to a loading state every visit.
+    const { data, isPending, isError, refetch } = useQuery<SecondaryDashboardResponse>({
+        queryKey: secondaryKeys.dashboard(),
+        queryFn: () => fetchSecondaryDashboard(accessToken),
+        enabled: onboardingCompleted,
+        staleTime: 30_000,
+        gcTime: 30 * 60_000,
+        refetchOnMount: "always",
+        retry: 1,
+        retryDelay: 800,
+    });
 
     useEffect(() => {
-        if (!authLoading && !session) {
-            navigate("/login");
-            return;
-        }
-        if (session && !profileLoading && onboardingCompleted) {
-            loadDashboard();
-        }
-    }, [session, authLoading, navigate, profileLoading, onboardingCompleted]);
+        document.title = "Home | TECHCESS";
+    }, []);
 
     const handlePeriodChange = async (period: UsagePeriod) => {
         setUsagePeriod(period);
-        if (period !== "weekly" || weeklyUsage || !session) return;
+        if (period !== "weekly" || weeklyUsage) return;
         setUsageLoading(true);
         try {
-            setWeeklyUsage(await fetchSecondaryUsageGraph("weekly", session.access_token));
+            setWeeklyUsage(await fetchSecondaryUsageGraph("weekly", accessToken));
         } catch (err) {
             console.error(err);
             setUsagePeriod("daily");
@@ -76,50 +66,25 @@ export default function SecondaryDashboard() {
         }
     };
 
-    const handleSignOut = async () => {
-        await supabaseSignOut();
-        navigate("/login");
-    };
+    if (isPending && !data) return <TechcessLoader />;
 
-    if (authLoading || loading) {
+    if (isError && !data) {
         return (
-            <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
-                <AnimatedGradientBg />
-                <AppSidebar variant="secondary" userName={userName || "Loading..."} activeItem="home" onSignOut={handleSignOut} />
-                <div className="flex-1 overflow-y-auto relative">
-                    <div className="max-w-5xl mx-auto p-6 md:p-10 space-y-8 animate-pulse">
-                        <div className="h-8 w-64 bg-muted rounded-lg"></div>
-                        <div className="h-40 bg-card rounded-3xl w-full border border-border"></div>
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <div className="h-32 bg-card rounded-2xl border border-border"></div>
-                            <div className="h-32 bg-card rounded-2xl border border-border"></div>
-                        </div>
-                    </div>
+            <div className="min-h-[60vh] flex items-center justify-center p-8">
+                <div className="glass-panel rounded-2xl p-8 max-w-sm w-full text-center">
+                    <h2 className="text-xl font-semibold mb-2">Unable to load dashboard</h2>
+                    <p className="text-muted-foreground text-sm mb-6">There was a problem fetching your data.</p>
+                    <button
+                        onClick={() => refetch()}
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-xl font-medium transition-colors"
+                    >
+                        Retry
+                    </button>
                 </div>
             </div>
         );
     }
-
-    if (error || !data) {
-        return (
-            <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
-                <AnimatedGradientBg />
-                <AppSidebar variant="secondary" userName={userName} activeItem="home" onSignOut={handleSignOut} />
-                <div className="flex-1 flex items-center justify-center p-8 relative">
-                    <div className="glass-panel rounded-2xl p-8 max-w-sm w-full text-center">
-                        <h2 className="text-xl font-semibold mb-2">Unable to load dashboard</h2>
-                        <p className="text-muted-foreground text-sm mb-6">There was a problem fetching your data.</p>
-                        <button
-                            onClick={() => loadDashboard()}
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-xl font-medium transition-colors"
-                        >
-                            Retry
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    if (!data) return <TechcessLoader />;
 
     const {
         continue_learning, chapter_rings, streak, usage_graph, strengths, weaknesses,
@@ -127,11 +92,8 @@ export default function SecondaryDashboard() {
     } = data;
 
     return (
-        <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
-            <AnimatedGradientBg />
-            <AppSidebar variant="secondary" userName={userName} activeItem="home" onSignOut={handleSignOut} />
-
-            <div className="flex-1 overflow-y-auto relative">
+        <>
+            <div>
                 <main className="max-w-5xl mx-auto p-6 md:p-10 space-y-8">
 
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -161,11 +123,25 @@ export default function SecondaryDashboard() {
                                             {continue_learning.subsection_title}
                                         </h2>
                                         <p className="text-muted-foreground text-sm">{continue_learning.chapter_title}</p>
+                                        <button
+                                            onClick={() => navigate(`/secondary/subsections/${continue_learning.subsection_id}`)}
+                                            className="mt-5 min-h-[48px] px-6 rounded-full bg-primary text-primary-foreground font-medium"
+                                            data-testid="button-continue-learning"
+                                        >
+                                            Continue →
+                                        </button>
                                     </>
                                 ) : (
                                     <>
                                         <h2 className="text-2xl font-semibold mb-2">Start with Chapter 0</h2>
                                         <p className="text-muted-foreground">Mental Models is free and always unlocked — a great place to begin.</p>
+                                        <button
+                                            onClick={() => navigate("/secondary/start")}
+                                            className="mt-5 min-h-[48px] px-6 rounded-full bg-primary text-primary-foreground font-medium"
+                                            data-testid="button-start-learning"
+                                        >
+                                            Start learning →
+                                        </button>
                                     </>
                                 )}
                             </div>
@@ -274,6 +250,6 @@ export default function SecondaryDashboard() {
 
                 </main>
             </div>
-        </div>
+        </>
     );
 }

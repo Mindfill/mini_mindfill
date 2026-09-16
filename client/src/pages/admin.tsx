@@ -9,13 +9,22 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import {
     Loader2, School, Ticket, UserPlus, Power, Upload, FileSpreadsheet,
-    CheckCircle2, AlertTriangle, XCircle,
+    CheckCircle2, AlertTriangle, XCircle, GraduationCap,
 } from "lucide-react";
 import {
     fetchAdminSchools,
     createAdminSchool,
     fetchSchoolAdmins,
     assignSchoolAdmin,
+    fetchSchoolAdminInvites,
+    cancelSchoolAdminInvite,
+    type AdminSchoolInvite,
+    fetchSchoolStudents,
+    enrolSchoolStudent,
+    linkSuggestedStudents,
+    unenrolSchoolStudent,
+    type AdminSchoolStudent,
+    type AdminSuggestedStudent,
     fetchAdminPromoCodes,
     createAdminPromoCode,
     toggleAdminPromoCode,
@@ -26,6 +35,7 @@ import {
     type ContentImportReport,
     type ImportIssue,
 } from "@/lib/api";
+import CurriculumVisualsPanel from "@/components/admin/CurriculumVisualsPanel";
 
 const PLAN_TYPES = [
     "secondary_individual_monthly",
@@ -52,6 +62,7 @@ function SchoolsPanel({ accessToken }: { accessToken: string }) {
     const [adminsLoading, setAdminsLoading] = useState(false);
     const [assignEmail, setAssignEmail] = useState("");
     const [assigning, setAssigning] = useState(false);
+    const [invites, setInvites] = useState<AdminSchoolInvite[]>([]);
 
     const loadSchools = async () => {
         setLoading(true);
@@ -73,13 +84,37 @@ function SchoolsPanel({ accessToken }: { accessToken: string }) {
     const loadAdmins = async (schoolId: string) => {
         setSelectedSchoolId(schoolId);
         setAdminsLoading(true);
+        // Settled, not all: pending invites are a side panel, so if that call
+        // fails (e.g. the invites migration hasn't been run yet) the assigned
+        // admins still load instead of the whole section erroring out.
+        const [linked, pending] = await Promise.allSettled([
+            fetchSchoolAdmins(schoolId, accessToken),
+            fetchSchoolAdminInvites(schoolId, accessToken),
+        ]);
+        if (linked.status === "fulfilled") {
+            setAdmins(linked.value);
+        } else {
+            console.error(linked.reason);
+            toast({ variant: "destructive", title: "Couldn't load school admins" });
+        }
+        if (pending.status === "fulfilled") {
+            setInvites(pending.value);
+        } else {
+            console.error("Couldn't load pending invites:", pending.reason);
+            setInvites([]);
+        }
+        setAdminsLoading(false);
+    };
+
+    const handleCancelInvite = async (inviteId: string) => {
+        if (!selectedSchoolId) return;
         try {
-            setAdmins(await fetchSchoolAdmins(schoolId, accessToken));
+            await cancelSchoolAdminInvite(selectedSchoolId, inviteId, accessToken);
+            toast({ title: "Invite cancelled" });
+            loadAdmins(selectedSchoolId);
         } catch (err) {
             console.error(err);
-            toast({ variant: "destructive", title: "Couldn't load school admins" });
-        } finally {
-            setAdminsLoading(false);
+            toast({ variant: "destructive", title: "Couldn't cancel the invite" });
         }
     };
 
@@ -111,17 +146,17 @@ function SchoolsPanel({ accessToken }: { accessToken: string }) {
         if (!selectedSchoolId || !assignEmail.trim() || assigning) return;
         setAssigning(true);
         try {
-            await assignSchoolAdmin(selectedSchoolId, assignEmail.trim(), accessToken);
-            toast({ title: "School admin assigned" });
+            const res = await assignSchoolAdmin(selectedSchoolId, assignEmail.trim(), accessToken);
+            toast(
+                res.status === "invited"
+                    ? { title: "Invite sent", description: "They'll get school access as soon as they sign up with that email." }
+                    : { title: "School admin assigned", description: "They'll see the school dashboard after signing out and back in." }
+            );
             setAssignEmail("");
             loadAdmins(selectedSchoolId);
         } catch (err: any) {
             console.error(err);
-            toast({
-                variant: "destructive",
-                title: "Couldn't assign admin",
-                description: err?.message?.includes("404") ? "No account found with that email — they must sign up first." : "Please try again.",
-            });
+            toast({ variant: "destructive", title: "Couldn't assign admin", description: "Please try again." });
         } finally {
             setAssigning(false);
         }
@@ -198,7 +233,29 @@ function SchoolsPanel({ accessToken }: { accessToken: string }) {
                                                 Assign
                                             </GlassButton>
                                         </form>
-                                        <p className="text-xs text-muted-foreground">The admin must already have a Techcess account — ask them to sign up first.</p>
+                                        {invites.length > 0 && (
+                                            <div className="space-y-1">
+                                                <p className="text-xs font-medium text-muted-foreground">Invited, not signed up yet</p>
+                                                <ul className="space-y-1">
+                                                    {invites.map((inv) => (
+                                                        <li key={inv.id} className="flex items-center justify-between gap-2 text-sm">
+                                                            <span className="text-muted-foreground truncate">{inv.email}</span>
+                                                            <button
+                                                                onClick={() => handleCancelInvite(inv.id)}
+                                                                className="text-xs text-muted-foreground hover:text-red-500 shrink-0 min-h-[32px] px-2"
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                        <p className="text-xs text-muted-foreground">
+                                            No account yet? They'll be emailed an invite and get school access the moment they sign up with that address.
+                                        </p>
+
+                                        <SchoolStudents schoolId={s.id} accessToken={accessToken} />
                                     </div>
                                 )}
                             </div>
@@ -206,6 +263,178 @@ function SchoolsPanel({ accessToken }: { accessToken: string }) {
                     </div>
                 )}
             </div>
+        </div>
+    );
+}
+
+/**
+ * Enrolled students for one school — the `school_students` rows the school
+ * dashboard reads. Also surfaces students who typed this school's name during
+ * onboarding but were never linked (their school didn't exist yet, or they
+ * typed it slightly differently), for an admin to confirm.
+ */
+function SchoolStudents({ schoolId, accessToken }: { schoolId: string; accessToken: string }) {
+    const { toast } = useToast();
+    const [students, setStudents] = useState<AdminSchoolStudent[]>([]);
+    const [suggested, setSuggested] = useState<AdminSuggestedStudent[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [email, setEmail] = useState("");
+    const [enrolling, setEnrolling] = useState(false);
+    const [picked, setPicked] = useState<string[]>([]);
+    const [linking, setLinking] = useState(false);
+
+    const load = async () => {
+        setLoading(true);
+        try {
+            const res = await fetchSchoolStudents(schoolId, accessToken);
+            setStudents(res.students);
+            setSuggested(res.suggested);
+            setPicked(res.suggested.map((s) => s.student_id));
+        } catch (err) {
+            console.error(err);
+            toast({ variant: "destructive", title: "Couldn't load students" });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        load();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [schoolId]);
+
+    const handleEnrol = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!email.trim() || enrolling) return;
+        setEnrolling(true);
+        try {
+            const res = await enrolSchoolStudent(schoolId, email.trim(), accessToken);
+            toast({ title: res.status === "unchanged" ? "Already enrolled" : "Student enrolled", description: res.full_name || undefined });
+            setEmail("");
+            load();
+        } catch (err: any) {
+            const message = String(err?.message || "");
+            toast({
+                variant: "destructive",
+                title: "Couldn't enrol student",
+                description: message.includes("404")
+                    ? "No account with that email — they must sign up first."
+                    : message.includes("422")
+                        ? "That account isn't a secondary student."
+                        : "Please try again.",
+            });
+        } finally {
+            setEnrolling(false);
+        }
+    };
+
+    const handleLink = async () => {
+        if (picked.length === 0 || linking) return;
+        setLinking(true);
+        try {
+            const res = await linkSuggestedStudents(schoolId, picked, accessToken);
+            toast({ title: `${res.linked} student${res.linked === 1 ? "" : "s"} linked` });
+            load();
+        } catch (err: any) {
+            console.error(err);
+            toast({
+                variant: "destructive",
+                title: "Couldn't link students",
+                description: String(err?.message || "").includes("409") ? "The list is out of date — reloading." : "Please try again.",
+            });
+            load();
+        } finally {
+            setLinking(false);
+        }
+    };
+
+    const handleRemove = async (studentId: string) => {
+        try {
+            await unenrolSchoolStudent(schoolId, studentId, accessToken);
+            toast({ title: "Student removed" });
+            load();
+        } catch (err) {
+            console.error(err);
+            toast({ variant: "destructive", title: "Couldn't remove student" });
+        }
+    };
+
+    const active = students.filter((s) => s.is_active);
+
+    return (
+        <div className="pt-3 mt-1 border-t border-border/60 space-y-3">
+            <h4 className="text-sm font-semibold flex items-center gap-2">
+                <GraduationCap className="w-4 h-4" /> Students
+                {!loading && <span className="text-xs font-normal text-muted-foreground">({active.length} enrolled)</span>}
+            </h4>
+
+            {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+            ) : active.length > 0 ? (
+                <ul className="text-sm space-y-1 max-h-48 overflow-y-auto">
+                    {active.map((s) => (
+                        <li key={s.student_id} className="flex items-center justify-between gap-2">
+                            <span className="text-muted-foreground truncate">
+                                {s.full_name || s.student_id} <span className="text-xs">· {s.class_level}</span>
+                            </span>
+                            <button
+                                onClick={() => handleRemove(s.student_id)}
+                                className="text-xs text-muted-foreground hover:text-red-500 shrink-0 min-h-[32px] px-2"
+                            >
+                                Remove
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p className="text-muted-foreground text-sm">No students enrolled yet.</p>
+            )}
+
+            <form onSubmit={handleEnrol} className="flex gap-2">
+                <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="student@email.com"
+                    className="flex-1"
+                />
+                <GlassButton type="submit" size="sm" disabled={enrolling || !email.trim()} contentClassName="flex items-center gap-1.5">
+                    {enrolling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
+                    Enrol
+                </GlassButton>
+            </form>
+
+            {suggested.length > 0 && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
+                    <p className="text-xs font-medium">
+                        {suggested.length} student{suggested.length === 1 ? "" : "s"} typed this school's name during signup but
+                        {suggested.length === 1 ? " isn't" : " aren't"} linked yet.
+                    </p>
+                    <ul className="space-y-1">
+                        {suggested.map((s) => (
+                            <li key={s.student_id} className="flex items-center gap-2 text-sm">
+                                <input
+                                    type="checkbox"
+                                    id={`link-${s.student_id}`}
+                                    checked={picked.includes(s.student_id)}
+                                    onChange={(e) =>
+                                        setPicked((p) => (e.target.checked ? [...p, s.student_id] : p.filter((id) => id !== s.student_id)))
+                                    }
+                                    className="accent-primary w-4 h-4"
+                                />
+                                <label htmlFor={`link-${s.student_id}`} className="truncate cursor-pointer">
+                                    {s.full_name || s.student_id}
+                                    <span className="text-xs text-muted-foreground"> · typed "{s.typed_school_name}"</span>
+                                </label>
+                            </li>
+                        ))}
+                    </ul>
+                    <GlassButton size="sm" disabled={linking || picked.length === 0} onClick={handleLink} contentClassName="flex items-center gap-1.5">
+                        {linking && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                        Link {picked.length} student{picked.length === 1 ? "" : "s"}
+                    </GlassButton>
+                </div>
+            )}
         </div>
     );
 }
@@ -555,7 +784,7 @@ export default function Admin() {
     const { session, isLoading: authLoading } = useAuth();
     const { role, loading: profileLoading } = useUserProfile();
     const [, navigate] = useLocation();
-    const [tab, setTab] = useState<"schools" | "promo" | "content">("schools");
+    const [tab, setTab] = useState<"schools" | "promo" | "content" | "visuals">("schools");
 
     useEffect(() => {
         if (!authLoading && !session) navigate("/login");
@@ -582,7 +811,7 @@ export default function Admin() {
                     <p className="text-muted-foreground text-sm">Schools, school admins, promo codes, and curriculum content.</p>
                 </div>
 
-                <div className="flex items-center glass-chip rounded-full p-1 w-fit">
+                <div className="flex items-center glass-chip rounded-full p-1 w-fit max-w-full overflow-x-auto">
                     <button
                         onClick={() => setTab("schools")}
                         className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${tab === "schools" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
@@ -601,11 +830,18 @@ export default function Admin() {
                     >
                         Content
                     </button>
+                    <button
+                        onClick={() => setTab("visuals")}
+                        className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${tab === "visuals" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                        Visuals
+                    </button>
                 </div>
 
                 {tab === "schools" && <SchoolsPanel accessToken={session.access_token} />}
                 {tab === "promo" && <PromoCodesPanel accessToken={session.access_token} />}
                 {tab === "content" && <ContentPanel accessToken={session.access_token} />}
+                {tab === "visuals" && <CurriculumVisualsPanel accessToken={session.access_token} />}
             </main>
         </div>
     );

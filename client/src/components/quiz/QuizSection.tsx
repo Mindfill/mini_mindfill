@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { fetchQuestions, fetchTimedBatch, submitAttempt, submitBatchAttempts, fetchStats, fetchExplanation } from "@/lib/quizApi";
 import MarkdownLatex from "@/components/ui/markdown-latex";
+import { stripOptionLabel } from "@/lib/quizOptions";
 import CorrectAnswerBurst from "@/components/quiz/CorrectAnswerBurst";
 import { BookOpen, GraduationCap, Timer as TimerIcon, ChevronRight, CheckCircle, XCircle, Send, Loader2, ArrowLeft, X } from "lucide-react";
 
@@ -536,7 +537,9 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
                                         >
                                             <span className="mr-3 text-muted-foreground font-mono text-sm mt-0.5">{String.fromCharCode(65 + i)}</span>
                                             <div className="flex-1">
-                                                <MarkdownLatex content={opt.text} className="text-foreground" />
+                                                {/* Strip any "(a)" the generator baked into the text — the
+                                                    letter is already shown beside it. */}
+                                                <MarkdownLatex content={stripOptionLabel(opt.text)} className="text-foreground" />
                                             </div>
                                         </button>
                                     );

@@ -93,9 +93,8 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
         try {
             await completeOnboarding(accessToken);
             await refreshProfile();
-            // TODO: route to Ch00 Mental Models once the secondary lesson flow
-            // (Feature 02) and secondary dashboard (Feature 04) exist.
-            navigate("/dashboard");
+            // Straight into the next lesson of the free chapter (Ch00).
+            navigate("/secondary/start");
         } catch (err) {
             console.error("Failed to complete onboarding:", err);
             setPayingOrSkipping(false);

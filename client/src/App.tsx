@@ -1,5 +1,7 @@
 import { Suspense, lazy } from "react";
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
+import TechcessLoader from "@/components/brand/TechcessLoader";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { ThemeProvider } from "next-themes";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -15,7 +17,6 @@ const Waitlist = lazy(() => import("@/pages/waitlist"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 const Login = lazy(() => import("@/pages/login"));
 const Dashboard = lazy(() => import("@/pages/dashboard"));
-const SecondaryDashboard = lazy(() => import("@/pages/dashboard-secondary"));
 const ParentDashboard = lazy(() => import("@/pages/dashboard-parent"));
 const SchoolDashboard = lazy(() => import("@/pages/dashboard-school"));
 const Admin = lazy(() => import("@/pages/admin"));
@@ -32,17 +33,18 @@ const Terms = lazy(() => import("@/pages/terms"));
 const ResetPassword = lazy(() => import("@/pages/reset-password"));
 const Onboarding = lazy(() => import("@/pages/onboarding"));
 const InviteAccept = lazy(() => import("@/pages/invite-accept"));
+// Every /secondary/* page renders inside one persistent layout (sidebar,
+// background, guards), which owns its own nested routes.
+const SecondaryLayout = lazy(() => import("@/components/secondary/SecondaryLayout"));
 
 function RouteFallback() {
-  return (
-    <div className="h-[100dvh] w-full flex items-center justify-center bg-background">
-      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+  return <TechcessLoader fullScreen />;
 }
 
 function Router() {
+  const [location] = useLocation();
   return (
+    <ErrorBoundary fullScreen resetKey={location.startsWith("/secondary/") ? "/secondary" : location}>
     <Suspense fallback={<RouteFallback />}>
       <Switch>
         <Route path="/" component={Home} />
@@ -51,7 +53,7 @@ function Router() {
         <Route path="/onboarding" component={Onboarding} />
         <Route path="/invite/accept" component={InviteAccept} />
         <Route path="/dashboard" component={Dashboard} />
-        <Route path="/secondary/dashboard" component={SecondaryDashboard} />
+        <Route path="/secondary/*" component={SecondaryLayout} />
         <Route path="/parent/dashboard" component={ParentDashboard} />
         <Route path="/school/dashboard" component={SchoolDashboard} />
         <Route path="/admin" component={Admin} />
@@ -69,6 +71,7 @@ function Router() {
         <Route component={NotFound} />
       </Switch>
     </Suspense>
+    </ErrorBoundary>
   );
 }
 

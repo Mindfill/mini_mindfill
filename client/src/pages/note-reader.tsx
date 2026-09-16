@@ -3,6 +3,7 @@ import { useLocation, useParams } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import AppSidebar from "@/components/sidebar/AppSidebar";
+import TechcessLoader from "@/components/brand/TechcessLoader";
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import PdfViewer from "@/components/notes/PdfViewer";
 import { ArrowLeft, ExternalLink, MessageSquare, X } from "lucide-react";
@@ -105,11 +106,8 @@ export default function NoteReader() {
             <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
                 <AnimatedGradientBg />
                 <AppSidebar userName={userName || "Loading..."} activeItem="notes" onSignOut={handleSignOut} />
-                <div className="flex-1 flex flex-col items-center justify-center bg-background/0 relative">
-                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-                    <p className="text-xs font-bold tracking-[0.2em] uppercase text-muted-foreground animate-pulse">
-                        Loading Note...
-                    </p>
+                <div className="flex-1 relative">
+                    <TechcessLoader label="Loading your note" />
                 </div>
             </div>
         );

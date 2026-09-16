@@ -9,57 +9,34 @@ import { GlassButton } from "@/components/ui/glass-button";
 import WelcomeHeader from "@/components/dashboard/WelcomeHeader";
 import StreakBadge from "@/components/dashboard/StreakBadge";
 import UsageGraphCard from "@/components/dashboard/UsageGraphCard";
+import TechcessLoader from "@/components/brand/TechcessLoader";
+import PageFade from "@/components/ui/page-fade";
 import { BookOpen, Clock, Play, ArrowRight, FileText } from "lucide-react";
-import { fetchDashboard, DashboardResponse } from "@/lib/api";
+import { useUniDashboard } from "@/lib/appQueries";
 
 export default function UniversityDashboard() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
     const { onboardingCompleted, fullName, loading: profileLoading } = useUserProfile();
     const [, navigate] = useLocation();
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [data, setData] = useState<DashboardResponse | null>(null);
-
     const userName = fullName || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "there";
     const firstName = userName.split(" ")[0];
 
-    const loadDashboard = async (isRetry = false) => {
-        if (!session) return;
-
-        if (!isRetry) setLoading(true);
-        setError(null);
-        try {
-            const dashboardData = await fetchDashboard(session.access_token);
-            setData(dashboardData);
-            setLoading(false);
-        } catch (err) {
-            if (!isRetry) {
-                // A brief failure right after finishing onboarding (or any
-                // other transient hiccup) resolves itself on a silent retry —
-                // most users never see this at all, no manual refresh needed.
-                setTimeout(() => loadDashboard(true), 800);
-                return;
-            }
-            console.error(err);
-            setError("Unable to load dashboard");
-            setLoading(false);
-        }
-    };
+    // Cached (see lib/appQueries.ts): coming back to the dashboard shows the
+    // last one instantly and refreshes behind it. `enabled` waits for
+    // onboarding status, so a not-yet-onboarded user sees the redirect rather
+    // than an error flash from a gated endpoint. The single retry replaces
+    // the old hand-rolled one.
+    const { data, isPending, isError, refetch } = useUniDashboard(
+        session?.access_token ?? "",
+        !!session && !profileLoading && onboardingCompleted,
+    );
+    const loading = isPending && !data;
+    const error = isError && !data ? "Unable to load dashboard" : null;
+    const loadDashboard = () => refetch();
 
     useEffect(() => {
-        if (!authLoading && !session) {
-            navigate("/login");
-            return;
-        }
-
-        // Wait for onboarding status to resolve before hitting a gated
-        // endpoint — otherwise a not-yet-onboarded user (or the moment right
-        // after completing onboarding) can see an error flash instead of the
-        // redirect UserProfileProvider is about to perform.
-        if (session && !profileLoading && onboardingCompleted) {
-            loadDashboard();
-        }
-    }, [session, authLoading, navigate, profileLoading, onboardingCompleted]);
+        if (!authLoading && !session) navigate("/login");
+    }, [session, authLoading, navigate]);
 
     const handleSignOut = async () => {
         await supabaseSignOut();
@@ -88,14 +65,7 @@ export default function UniversityDashboard() {
                 <AnimatedGradientBg />
                 <AppSidebar userName={userName || "Loading..."} activeItem="home" onSignOut={handleSignOut} />
                 <div className="flex-1 overflow-y-auto relative">
-                    <div className="max-w-5xl mx-auto p-6 md:p-10 space-y-8 animate-pulse">
-                        <div className="h-8 w-64 bg-muted rounded-lg"></div>
-                        <div className="h-48 bg-card rounded-3xl w-full border border-border"></div>
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <div className="h-32 bg-card rounded-2xl border border-border"></div>
-                            <div className="h-32 bg-card rounded-2xl border border-border"></div>
-                        </div>
-                    </div>
+                    <TechcessLoader />
                 </div>
             </div>
         );
@@ -134,6 +104,7 @@ export default function UniversityDashboard() {
             <AppSidebar userName={userName} activeItem="home" onSignOut={handleSignOut} />
 
             <div className="flex-1 overflow-y-auto relative">
+                <PageFade>
                 <main className="max-w-5xl mx-auto p-6 md:p-10 space-y-8">
 
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -301,6 +272,7 @@ export default function UniversityDashboard() {
                     </section>
 
                 </main>
+                </PageFade>
             </div>
         </div>
     );

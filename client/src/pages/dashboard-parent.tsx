@@ -5,8 +5,11 @@ import { useUserProfile } from "@/hooks/use-user-profile";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import WelcomeHeader from "@/components/dashboard/WelcomeHeader";
+import TechcessLoader from "@/components/brand/TechcessLoader";
+import PageFade from "@/components/ui/page-fade";
 import { Flame, TrendingUp, TrendingDown, Users, Sparkles, ArrowUpCircle } from "lucide-react";
-import { fetchParentDashboard, ParentDashboardResponse, StudentSummary } from "@/lib/api";
+import { StudentSummary } from "@/lib/api";
+import { useParentDashboard } from "@/lib/appQueries";
 
 function StudentCard({ student }: { student: StudentSummary }) {
     const isUp = student.study_minutes_change_percent > 0;
@@ -94,41 +97,22 @@ export default function ParentDashboard() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
     const { onboardingCompleted, fullName, loading: profileLoading } = useUserProfile();
     const [, navigate] = useLocation();
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [data, setData] = useState<ParentDashboardResponse | null>(null);
-
     const userName = fullName || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "there";
     const firstName = userName.split(" ")[0];
 
-    const loadDashboard = async (isRetry = false) => {
-        if (!session) return;
-        if (!isRetry) setLoading(true);
-        setError(null);
-        try {
-            const dashboardData = await fetchParentDashboard(session.access_token);
-            setData(dashboardData);
-            setLoading(false);
-        } catch (err) {
-            if (!isRetry) {
-                setTimeout(() => loadDashboard(true), 800);
-                return;
-            }
-            console.error(err);
-            setError("Unable to load dashboard");
-            setLoading(false);
-        }
-    };
+    // Cached like every other section (lib/appQueries.ts) — returning shows
+    // the last dashboard instantly and refreshes behind it.
+    const { data, isPending, isError, refetch } = useParentDashboard(
+        session?.access_token ?? "",
+        !!session && !profileLoading && onboardingCompleted,
+    );
+    const loading = isPending && !data;
+    const error = isError && !data ? "Unable to load dashboard" : null;
+    const loadDashboard = () => refetch();
 
     useEffect(() => {
-        if (!authLoading && !session) {
-            navigate("/login");
-            return;
-        }
-        if (session && !profileLoading && onboardingCompleted) {
-            loadDashboard();
-        }
-    }, [session, authLoading, navigate, profileLoading, onboardingCompleted]);
+        if (!authLoading && !session) navigate("/login");
+    }, [session, authLoading, navigate]);
 
     const handleSignOut = async () => {
         await supabaseSignOut();
@@ -141,13 +125,7 @@ export default function ParentDashboard() {
                 <AnimatedGradientBg />
                 <AppSidebar variant="parent" userName={userName || "Loading..."} activeItem="home" onSignOut={handleSignOut} />
                 <div className="flex-1 overflow-y-auto relative">
-                    <div className="max-w-5xl mx-auto p-6 md:p-10 space-y-8 animate-pulse">
-                        <div className="h-8 w-64 bg-muted rounded-lg"></div>
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <div className="h-56 bg-card rounded-2xl border border-border"></div>
-                            <div className="h-56 bg-card rounded-2xl border border-border"></div>
-                        </div>
-                    </div>
+                    <TechcessLoader />
                 </div>
             </div>
         );
@@ -180,6 +158,7 @@ export default function ParentDashboard() {
             <AppSidebar variant="parent" userName={userName} activeItem="home" onSignOut={handleSignOut} />
 
             <div className="flex-1 overflow-y-auto relative">
+                <PageFade>
                 <main className="max-w-5xl mx-auto p-6 md:p-10 space-y-8">
                     <WelcomeHeader
                         name={firstName}
@@ -202,6 +181,7 @@ export default function ParentDashboard() {
                         </section>
                     )}
                 </main>
+                </PageFade>
             </div>
         </div>
     );

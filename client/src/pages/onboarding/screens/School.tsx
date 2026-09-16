@@ -7,6 +7,10 @@ import { ADVANCE_DELAY_MS, ScreenProps } from "../utils";
 
 export default function School({ accessToken, screenNumber, collected, onNext, onBack }: ScreenProps) {
     const [schoolName, setSchoolName] = useState(collected.schoolName || "");
+    // Set only while the text still matches the school that was picked. It's
+    // what enrols the student into that school's dashboard — typing again
+    // clears it, so we never attach someone to a school they edited away from.
+    const [schoolId, setSchoolId] = useState<string | null>(null);
     const [suggestions, setSuggestions] = useState<SchoolResult[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -34,7 +38,10 @@ export default function School({ accessToken, screenNumber, collected, onNext, o
         const trimmed = schoolName.trim();
         if (!trimmed || submitting) return;
         setSubmitting(true);
-        saveSecondaryOnboarding({ screen: screenNumber, school_name: trimmed }, accessToken).catch((err) => {
+        saveSecondaryOnboarding(
+            { screen: screenNumber, school_name: trimmed, school_id: schoolId ?? undefined },
+            accessToken,
+        ).catch((err) => {
             console.error("Failed to save school:", err);
         });
         setTimeout(() => onNext({ schoolName: trimmed }), ADVANCE_DELAY_MS);
@@ -52,6 +59,7 @@ export default function School({ accessToken, screenNumber, collected, onNext, o
                     value={schoolName}
                     onChange={(e) => {
                         setSchoolName(e.target.value);
+                        setSchoolId(null);
                         setShowSuggestions(true);
                     }}
                     onFocus={() => setShowSuggestions(true)}
@@ -68,6 +76,7 @@ export default function School({ accessToken, screenNumber, collected, onNext, o
                                 type="button"
                                 onClick={() => {
                                     setSchoolName(s.school_name);
+                                    setSchoolId(s.id);
                                     setShowSuggestions(false);
                                 }}
                                 className="w-full text-left px-4 py-2.5 hover-elevate"

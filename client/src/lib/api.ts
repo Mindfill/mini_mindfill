@@ -5,14 +5,14 @@
 
 import { getDeviceToken } from "./device";
 
-const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "https://mindfill-api.onrender.com").trim().replace(/[`'"]/g, "");
+export const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "https://mindfill-api.onrender.com").trim().replace(/[`'"]/g, "");
 
 /**
  * Single place every authenticated request builds its headers — attaches the
  * Supabase bearer token and, when one is registered, the device token used
  * for the multi-device limit (Feature 01).
  */
-function authHeaders(accessToken?: string, json = false): Record<string, string> {
+export function authHeaders(accessToken?: string, json = false): Record<string, string> {
     const headers: Record<string, string> = {};
     if (json) headers["Content-Type"] = "application/json";
     if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
@@ -116,12 +116,36 @@ export function extractStreamingContent(acc: string): string | null {
     return out;
 }
 
-async function readAccumulatedSSE(res: Response, handlers?: StreamHandlers): Promise<string> {
+/**
+ * Server-authoritative fields sent just before [DONE] as `data: [FINAL] {json}`.
+ * `content` has the server-assigned [VIZ:N] numbers (the streamed JSON holds
+ * the model's own, which can collide with earlier visuals); `session_id` isn't
+ * in the model's JSON at all.
+ */
+interface StreamFinal {
+    content?: string;
+    session_id?: string;
+}
+
+function applyFinal(response: NoteChatResponse, final: StreamFinal | null): NoteChatResponse {
+    if (!final) return response;
+    return {
+        ...response,
+        ...(typeof final.content === "string" ? { content: final.content } : {}),
+        ...(final.session_id ? { session_id: final.session_id } : {}),
+    };
+}
+
+async function readAccumulatedSSE(
+    res: Response,
+    handlers?: StreamHandlers
+): Promise<{ text: string; final: StreamFinal | null }> {
     if (!res.body) throw new Error("No response body to stream");
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
     let accumulated = "";
+    let final: StreamFinal | null = null;
     let done = false;
 
     const handleEvent = (rawEvent: string) => {
@@ -132,6 +156,14 @@ async function readAccumulatedSSE(res: Response, handlers?: StreamHandlers): Pro
         // Control events must be checked before appending to content.
         if (data === "[DONE]") {
             done = true;
+            return;
+        }
+        if (data.startsWith("[FINAL]")) {
+            try {
+                final = JSON.parse(data.slice(7).trim()) as StreamFinal;
+            } catch {
+                // fall back to the streamed JSON
+            }
             return;
         }
         if (data.startsWith("[ERROR]")) {
@@ -161,7 +193,7 @@ async function readAccumulatedSSE(res: Response, handlers?: StreamHandlers): Pro
             if (done) break;
         }
     }
-    return accumulated;
+    return { text: accumulated, final };
 }
 
 export async function submitLessonMessage(
@@ -184,16 +216,16 @@ export async function submitLessonMessage(
 
     // Streams SSE like the notes chat. Parse the full JSON (content, session_id,
     // visualizations, …); fall back to plain text if it isn't JSON.
-    const accumulated = await readAccumulatedSSE(res, handlers);
+    const { text: accumulated, final } = await readAccumulatedSSE(res, handlers);
     try {
         const parsed = JSON.parse(accumulated);
         if (parsed && typeof parsed === "object" && typeof parsed.content === "string") {
-            return parsed as NoteChatResponse;
+            return applyFinal(parsed as NoteChatResponse, final);
         }
     } catch {
         // plain-text stream
     }
-    return { content: accumulated };
+    return applyFinal({ content: accumulated }, final);
 }
 
 export interface StreakData {
@@ -723,9 +755,9 @@ export async function sendNoteChatMessage(
         throw new Error(`Failed to send message: ${res.status} — ${text}`);
     }
 
-    const accumulated = await readAccumulatedSSE(res, handlers);
+    const { text: accumulated, final } = await readAccumulatedSSE(res, handlers);
     try {
-        return JSON.parse(accumulated) as NoteChatResponse;
+        return applyFinal(JSON.parse(accumulated) as NoteChatResponse, final);
     } catch {
         throw new Error("Streamed response was malformed.");
     }
@@ -1178,6 +1210,9 @@ export interface SecondaryOnboardingInput {
     date_of_birth?: string;
     secondary_class_level?: "SS1" | "SS2" | "SS3";
     school_name?: string;
+    /** Set when the student picked a school from the search results — this is
+     * what enrols them into that school's dashboard. */
+    school_id?: string;
     life_goals?: string[];
     education_sentiment?: string;
     notification_prefs?: NotificationPrefs;
@@ -1579,6 +1614,102 @@ export async function importCurriculumContent(
     return res.json();
 }
 
+// ── ADMIN — curriculum static visuals (Feature 02) ──────────────────────────
+
+export const SCENE_TYPES = [
+    "SHAPE_DIAGRAM",
+    "GRAPH_PLOT",
+    "NUMBER_LINE",
+    "FORMULA_BREAKDOWN",
+    "SPATIAL_DIAGRAM",
+] as const;
+export type SceneType = (typeof SCENE_TYPES)[number];
+
+export type VisualApprovalStatus = "pending" | "rendered" | "approved";
+
+/** One authored manim prompt on a curriculum subsection. */
+export interface CurriculumVisual {
+    subsection_id: string;
+    subsection_slug: string | null;
+    subsection_title: string | null;
+    subsection_status: string | null;
+    chapter_id: string | null;
+    chapter_title: string | null;
+    chapter_number: number | null;
+    section_label: string | null;
+    section_number: number | null;
+    display_order: number | null;
+    index: number;
+    prompt: string;
+    position: string | null;
+    approval_status: VisualApprovalStatus;
+    storage_url: string | null;
+    scene_type: SceneType | null;
+    /** null = never rendered (or reset by a prompt edit). */
+    render_status: "rendering" | "success" | "failed" | null;
+    render_error: string | null;
+    render_attempts: number;
+    last_rendered_at: string | null;
+}
+
+/** GET /admin/curriculum/visuals — every authored visual, in lesson order. */
+export async function fetchCurriculumVisuals(accessToken: string): Promise<CurriculumVisual[]> {
+    const res = await fetch(`${BACKEND_URL}/admin/curriculum/visuals`, {
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to load visuals: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    const data = await res.json();
+    return Array.isArray(data?.visuals) ? data.visuals : [];
+}
+
+/** GET /admin/curriculum/visuals/status — poll while render_status is "rendering". */
+export async function fetchCurriculumVisualStatus(
+    subsectionId: string,
+    index: number,
+    accessToken: string,
+): Promise<CurriculumVisual> {
+    const qs = new URLSearchParams({ subsection_id: subsectionId, index: String(index) });
+    const res = await fetch(`${BACKEND_URL}/admin/curriculum/visuals/status?${qs.toString()}`, {
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to check render: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+async function postCurriculumVisual(path: string, method: "POST" | "PUT", body: object, accessToken: string, action: string) {
+    const res = await fetch(`${BACKEND_URL}/admin/curriculum/visuals/${path}`, {
+        method,
+        headers: authHeaders(accessToken, true),
+        body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+        throw new Error(`${action}: ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+/** Starts a fresh render. Returns once the render is queued. */
+export function renderCurriculumVisual(subsectionId: string, index: number, sceneType: SceneType, accessToken: string) {
+    return postCurriculumVisual("render", "POST", { subsection_id: subsectionId, index, scene_type: sceneType }, accessToken, "Couldn't start render");
+}
+
+/** Saves an edited prompt. Discards the current render and resets approval. */
+export function editCurriculumVisualPrompt(subsectionId: string, index: number, prompt: string, accessToken: string) {
+    return postCurriculumVisual("prompt", "PUT", { subsection_id: subsectionId, index, prompt }, accessToken, "Couldn't save prompt");
+}
+
+export function approveCurriculumVisual(subsectionId: string, index: number, accessToken: string) {
+    return postCurriculumVisual("approve", "POST", { subsection_id: subsectionId, index }, accessToken, "Couldn't approve");
+}
+
+export function unapproveCurriculumVisual(subsectionId: string, index: number, accessToken: string) {
+    return postCurriculumVisual("unapprove", "POST", { subsection_id: subsectionId, index }, accessToken, "Couldn't unapprove");
+}
+
 export interface AdminSchoolCreateInput {
     school_name: string;
     city?: string;
@@ -1616,11 +1747,46 @@ export async function fetchSchoolAdmins(schoolId: string, accessToken: string): 
     return res.json();
 }
 
+export interface AdminSchoolInvite {
+    id: string;
+    email: string;
+    created_at: string;
+}
+
+/** Pending invites — people invited to manage a school who haven't signed up
+ * yet. The row clears itself when they create their account. */
+export async function fetchSchoolAdminInvites(schoolId: string, accessToken: string): Promise<AdminSchoolInvite[]> {
+    const res = await fetch(`${BACKEND_URL}/admin/schools/${schoolId}/admin-invites`, {
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to fetch invites: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+export async function cancelSchoolAdminInvite(
+    schoolId: string,
+    inviteId: string,
+    accessToken: string
+): Promise<{ status: string }> {
+    const res = await fetch(`${BACKEND_URL}/admin/schools/${schoolId}/admin-invites/${inviteId}`, {
+        method: "DELETE",
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        throw new Error(`${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+/** Assigns the school admin when the person already has an account, and sends
+ * an invite when they don't — `status` says which happened. */
 export async function assignSchoolAdmin(
     schoolId: string,
     email: string,
     accessToken: string
-): Promise<{ status: string; user_id: string }> {
+): Promise<{ status: "assigned" | "invited"; user_id?: string; email?: string }> {
     const res = await fetch(`${BACKEND_URL}/admin/schools/${schoolId}/admins`, {
         method: "POST",
         headers: authHeaders(accessToken, true),
@@ -1628,6 +1794,129 @@ export async function assignSchoolAdmin(
     });
     if (!res.ok) {
         throw new Error(`Failed to assign school admin: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+// ── School students (enrolment) ─────────────────────────────────────────────
+
+// ── School: one student's detail (school admin drill-down) ─────────────────
+
+export interface SchoolStudentStruggle {
+    subsection_title: string;
+    chapter_title: string;
+    comprehension_depth: string | null;
+    struggle_points: string[];
+    created_at: string;
+}
+
+export interface SchoolStudentDetail {
+    student_id: string;
+    student_name: string;
+    class_level: string;
+    status: StudentRow["status"];
+    current_chapter: string | null;
+    current_subsection: string | null;
+    current_chapter_progress_percent: number;
+    chapter_rings: { chapter_id: string; chapter_title: string; percent_complete: number; is_complete: boolean }[];
+    streak: { current_streak: number; longest_streak: number; last_active_date: string | null };
+    /** The snapshot's own weekly rollup (minutes), not the graph payload. */
+    usage_week: { current_sum: number; previous_sum?: number; change_percent?: number };
+    sessions_this_week: number;
+    sessions_change_percent: number;
+    days_since_last_session: number | null;
+    last_active_date: string | null;
+    strengths: string[];
+    weaknesses: string[];
+    resolved_weaknesses: string[];
+    recent_struggles: SchoolStudentStruggle[];
+    generated_at: string;
+}
+
+export async function fetchSchoolStudentDetail(studentId: string, accessToken: string): Promise<SchoolStudentDetail> {
+    const res = await fetch(`${BACKEND_URL}/school/students/${studentId}`, {
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to load student: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+export interface AdminSchoolStudent {
+    student_id: string;
+    full_name: string | null;
+    class_level: string;
+    is_active: boolean;
+    enrolled_at: string;
+}
+
+/** A student whose typed school name matches this school but who was never
+ * linked — an admin confirms these before they're enrolled. */
+export interface AdminSuggestedStudent {
+    student_id: string;
+    full_name: string | null;
+    typed_school_name: string | null;
+    class_level: string | null;
+}
+
+export async function fetchSchoolStudents(
+    schoolId: string,
+    accessToken: string
+): Promise<{ students: AdminSchoolStudent[]; suggested: AdminSuggestedStudent[] }> {
+    const res = await fetch(`${BACKEND_URL}/admin/schools/${schoolId}/students`, {
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to fetch students: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+export async function enrolSchoolStudent(
+    schoolId: string,
+    email: string,
+    accessToken: string,
+    classLevel?: string
+): Promise<{ status: string; student_id: string; full_name: string | null }> {
+    const res = await fetch(`${BACKEND_URL}/admin/schools/${schoolId}/students`, {
+        method: "POST",
+        headers: authHeaders(accessToken, true),
+        body: JSON.stringify({ email, class_level: classLevel }),
+    });
+    if (!res.ok) {
+        throw new Error(`${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+export async function linkSuggestedStudents(
+    schoolId: string,
+    studentIds: string[],
+    accessToken: string
+): Promise<{ linked: number; requested: number }> {
+    const res = await fetch(`${BACKEND_URL}/admin/schools/${schoolId}/students/link`, {
+        method: "POST",
+        headers: authHeaders(accessToken, true),
+        body: JSON.stringify({ student_ids: studentIds }),
+    });
+    if (!res.ok) {
+        throw new Error(`${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+export async function unenrolSchoolStudent(
+    schoolId: string,
+    studentId: string,
+    accessToken: string
+): Promise<{ status: string }> {
+    const res = await fetch(`${BACKEND_URL}/admin/schools/${schoolId}/students/${studentId}`, {
+        method: "DELETE",
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        throw new Error(`${res.status} — ${await parseErrorDetail(res)}`);
     }
     return res.json();
 }
