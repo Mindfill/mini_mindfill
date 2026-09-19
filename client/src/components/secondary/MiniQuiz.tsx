@@ -19,10 +19,10 @@ import {
 type Indicator = { symbol: string; label: string; className: string };
 
 function indicatorFor(q: QuizQuestionState): Indicator {
-    if (q.passed) return { symbol: "✓", label: "Passed", className: "text-emerald-600 dark:text-emerald-400 border-emerald-500/50 bg-emerald-500/10" };
-    if (q.seen_solution) return { symbol: "●", label: "Saw solution", className: "text-sky-600 dark:text-sky-400 border-sky-500/50 bg-sky-500/10" };
+    if (q.passed) return { symbol: "✓", label: "Passed", className: "text-emerald-700 dark:text-emerald-400 border-emerald-500/50 bg-emerald-500/10" };
+    if (q.seen_solution) return { symbol: "●", label: "Saw solution", className: "text-sky-700 dark:text-sky-400 border-sky-500/50 bg-sky-500/10" };
     if (q.last_result === "partial" || q.last_result === "fail")
-        return { symbol: "◐", label: q.last_result === "partial" ? "Partly right" : "Not yet", className: "text-amber-600 dark:text-amber-400 border-amber-500/50 bg-amber-500/10" };
+        return { symbol: "◐", label: q.last_result === "partial" ? "Partly right" : "Not yet", className: "text-amber-700 dark:text-amber-400 border-amber-500/50 bg-amber-500/10" };
     return { symbol: "○", label: "Not attempted", className: "text-muted-foreground border-border" };
 }
 
@@ -63,13 +63,13 @@ export default function MiniQuiz({
 
     const doneCount = useMemo(() => (questions ?? []).filter(isDone).length, [questions]);
 
-    if (loadError) return <p className="text-sm text-red-600 dark:text-red-400" role="alert">Couldn't load the quiz. Refresh to try again.</p>;
+    if (loadError) return <p className="text-sm text-red-700 dark:text-red-400" role="alert">Couldn't load the quiz. Refresh to try again.</p>;
     if (!questions) return <Loader2 className="w-5 h-5 animate-spin text-muted-foreground mx-auto" />;
 
     // An authored quiz with no active questions yet must not block the student.
     if (questions.length === 0) {
         return (
-            <div className="glass-panel rounded-3xl p-8 text-center space-y-4">
+            <div className="glass-panel rounded-3xl p-6 md:p-8 text-center space-y-4">
                 <p className="text-muted-foreground">There are no questions here yet.</p>
                 <button
                     onClick={async () => {
@@ -87,7 +87,7 @@ export default function MiniQuiz({
                 >
                     {busy === "empty" && <Loader2 className="w-4 h-4 animate-spin" />} Continue
                 </button>
-                {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+                {error && <p className="text-sm text-red-700 dark:text-red-400">{error}</p>}
             </div>
         );
     }
@@ -245,11 +245,11 @@ export default function MiniQuiz({
                         }`}
                     >
                         {resultTone === "pass" ? (
-                            <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                            <CheckCircle2 className="w-5 h-5 text-emerald-700 dark:text-emerald-400 shrink-0 mt-0.5" />
                         ) : resultTone === "partial" ? (
-                            <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                            <AlertCircle className="w-5 h-5 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
                         ) : (
-                            <XCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                            <XCircle className="w-5 h-5 text-red-700 dark:text-red-400 shrink-0 mt-0.5" />
                         )}
                         <div className="space-y-1">
                             <p className="font-semibold">
@@ -295,7 +295,7 @@ export default function MiniQuiz({
                     </div>
                 )}
 
-                {error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
+                {error && <p className="text-sm text-red-700 dark:text-red-400" role="alert">{error}</p>}
 
                 {isDone(q) && (nextOpen !== -1 || (anyOpen !== -1 && anyOpen !== current)) && (
                     <button

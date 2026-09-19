@@ -7,20 +7,33 @@ import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import WelcomeHeader from "@/components/dashboard/WelcomeHeader";
 import TechcessLoader from "@/components/brand/TechcessLoader";
 import PageFade from "@/components/ui/page-fade";
-import { Flame, TrendingUp, TrendingDown, Users, Sparkles, ArrowUpCircle } from "lucide-react";
-import { StudentSummary } from "@/lib/api";
+import { Flame, TrendingUp, TrendingDown, Users, Sparkles, ArrowUpCircle, ChevronRight } from "lucide-react";
+import StudentDetailSheet from "@/components/dashboard/StudentDetailSheet";
+import { fetchParentStudentDetail, StudentSummary } from "@/lib/api";
 import { useParentDashboard } from "@/lib/appQueries";
 
-function StudentCard({ student }: { student: StudentSummary }) {
+function StudentCard({ student, onOpen }: { student: StudentSummary; onOpen: () => void }) {
     const isUp = student.study_minutes_change_percent > 0;
     return (
-        <div className="glass-panel rounded-2xl p-6 space-y-4">
+        <div
+            onClick={onOpen}
+            role="button"
+            tabIndex={0}
+            aria-label={`View ${student.student_name}'s details`}
+            onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onOpen();
+                }
+            }}
+            className="glass-panel rounded-2xl p-6 space-y-4 text-left cursor-pointer hover:brightness-110 focus-visible:ring-2 focus-visible:ring-primary outline-none transition"
+        >
             <div className="flex items-center justify-between">
                 <div>
                     <h3 className="text-lg font-semibold">{student.student_name}</h3>
                     <p className="text-muted-foreground text-xs">{student.class_level}</p>
                 </div>
-                <div className="flex items-center gap-1.5 text-orange-500">
+                <div className="flex items-center gap-1.5 text-orange-700 dark:text-orange-400">
                     <Flame className="w-5 h-5 fill-orange-500/20" />
                     <span className="font-bold">{student.current_streak}</span>
                 </div>
@@ -40,7 +53,7 @@ function StudentCard({ student }: { student: StudentSummary }) {
             <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">{student.study_minutes_this_week} min this week</span>
                 {student.study_minutes_change_percent !== 0 && (
-                    <span className={`flex items-center gap-1 text-xs font-medium ${isUp ? "text-emerald-500" : "text-muted-foreground"}`}>
+                    <span className={`flex items-center gap-1 text-xs font-medium ${isUp ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}`}>
                         {isUp ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
                         {Math.abs(student.study_minutes_change_percent)}%
                     </span>
@@ -54,7 +67,7 @@ function StudentCard({ student }: { student: StudentSummary }) {
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                         {student.top_strengths.map((s) => (
-                            <span key={s} className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded-full">
+                            <span key={s} className="text-xs bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded-full">
                                 {s}
                             </span>
                         ))}
@@ -67,7 +80,7 @@ function StudentCard({ student }: { student: StudentSummary }) {
                     <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5">Could use support with</p>
                     <div className="flex flex-wrap gap-1.5">
                         {student.top_weaknesses.map((w) => (
-                            <span key={w} className="text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-1 rounded-full">
+                            <span key={w} className="text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2 py-1 rounded-full">
                                 {w}
                             </span>
                         ))}
@@ -89,6 +102,10 @@ function StudentCard({ student }: { student: StudentSummary }) {
                     </div>
                 </div>
             )}
+
+            <p className="flex items-center gap-1 text-xs font-medium text-primary pt-1">
+                See full progress <ChevronRight className="w-3.5 h-3.5" />
+            </p>
         </div>
     );
 }
@@ -97,6 +114,7 @@ export default function ParentDashboard() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
     const { onboardingCompleted, fullName, loading: profileLoading } = useUserProfile();
     const [, navigate] = useLocation();
+    const [openStudentId, setOpenStudentId] = useState<string | null>(null);
     const userName = fullName || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "there";
     const firstName = userName.split(" ")[0];
 
@@ -124,7 +142,7 @@ export default function ParentDashboard() {
             <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
                 <AnimatedGradientBg />
                 <AppSidebar variant="parent" userName={userName || "Loading..."} activeItem="home" onSignOut={handleSignOut} />
-                <div className="flex-1 overflow-y-auto relative">
+                <div className="flex-1 min-w-0 overflow-y-auto relative">
                     <TechcessLoader />
                 </div>
             </div>
@@ -157,7 +175,7 @@ export default function ParentDashboard() {
             <AnimatedGradientBg />
             <AppSidebar variant="parent" userName={userName} activeItem="home" onSignOut={handleSignOut} />
 
-            <div className="flex-1 overflow-y-auto relative">
+            <div className="flex-1 min-w-0 overflow-y-auto relative">
                 <PageFade>
                 <main className="max-w-5xl mx-auto p-6 md:p-10 space-y-8">
                     <WelcomeHeader
@@ -166,9 +184,13 @@ export default function ParentDashboard() {
                     />
 
                     {data.students.length > 0 ? (
-                        <section className="grid md:grid-cols-2 gap-4 pb-10">
+                        <section className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-10">
                             {data.students.map((student) => (
-                                <StudentCard key={student.student_id} student={student} />
+                                <StudentCard
+                                    key={student.student_id}
+                                    student={student}
+                                    onOpen={() => setOpenStudentId(student.student_id)}
+                                />
                             ))}
                         </section>
                     ) : (
@@ -183,6 +205,14 @@ export default function ParentDashboard() {
                 </main>
                 </PageFade>
             </div>
+
+            <StudentDetailSheet
+                studentId={openStudentId}
+                accessToken={session?.access_token ?? ""}
+                onClose={() => setOpenStudentId(null)}
+                scope="parent"
+                fetchDetail={fetchParentStudentDetail}
+            />
         </div>
     );
 }

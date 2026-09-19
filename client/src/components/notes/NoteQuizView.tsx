@@ -268,7 +268,7 @@ export default function NoteQuizView({
                     </div>
                 ) : sectionsError ? (
                     <div className="text-center bg-red-500/10 border border-red-500/20 rounded-2xl p-6">
-                        <p className="text-red-400/90 text-sm">{sectionsError}</p>
+                        <p className="text-red-700 dark:text-red-400/90 text-sm">{sectionsError}</p>
                     </div>
                 ) : sectionOptions.length === 0 ? (
                     <div className="text-center bg-card border border-border rounded-2xl p-6">
@@ -407,11 +407,11 @@ export default function NoteQuizView({
                                         />
                                     </div>
                                     {correct ? (
-                                        <span className="flex-shrink-0 flex items-center gap-1 text-emerald-500 font-medium text-sm bg-emerald-500/10 px-3 py-1 rounded-full">
+                                        <span className="flex-shrink-0 flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-medium text-sm bg-emerald-500/10 px-3 py-1 rounded-full">
                                             <CheckCircle className="w-4 h-4" /> Correct
                                         </span>
                                     ) : (
-                                        <span className="flex-shrink-0 flex items-center gap-1 text-red-500 font-medium text-sm bg-red-500/10 px-3 py-1 rounded-full">
+                                        <span className="flex-shrink-0 flex items-center gap-1 text-red-700 dark:text-red-400 font-medium text-sm bg-red-500/10 px-3 py-1 rounded-full">
                                             <XCircle className="w-4 h-4" /> Incorrect
                                         </span>
                                     )}
@@ -422,7 +422,7 @@ export default function NoteQuizView({
                                         <span className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
                                             Your Answer
                                         </span>
-                                        <MarkdownLatex content={ans ?? "Unanswered"} className={`text-sm font-medium ${correct ? "text-emerald-500" : "text-red-500"}`} />
+                                        <MarkdownLatex content={ans ?? "Unanswered"} className={`text-sm font-medium ${correct ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`} />
                                     </div>
                                     {!correct && (
                                         <div className="flex flex-col">
@@ -517,9 +517,9 @@ export default function NoteQuizView({
 
                         if (submitted) {
                             if (isCorrectOpt) {
-                                btnClass = "border-emerald-500/50 bg-emerald-500/10 text-emerald-400";
+                                btnClass = "border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400";
                             } else if (isSelected) {
-                                btnClass = "border-red-500/50 bg-red-500/10 text-red-400";
+                                btnClass = "border-red-500/50 bg-red-500/10 text-red-700 dark:text-red-400";
                             } else {
                                 btnClass = "border-border opacity-50 text-muted-foreground";
                             }
@@ -559,7 +559,7 @@ export default function NoteQuizView({
                         {answeredCorrect && <CorrectAnswerBurst triggerKey={currentIndex} />}
                         <h4
                             className={`flex items-center gap-2 font-bold mb-3 ${
-                                answeredCorrect ? "text-emerald-400" : "text-red-400"
+                                answeredCorrect ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"
                             }`}
                         >
                             <div ref={answeredCorrect ? feedbackIconRef : undefined}>

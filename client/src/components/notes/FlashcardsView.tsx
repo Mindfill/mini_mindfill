@@ -162,7 +162,7 @@ export default function FlashcardsView({ noteId, accessToken }: FlashcardsViewPr
                     </div>
                 ) : sectionsError ? (
                     <div className="text-center bg-red-500/10 border border-red-500/20 rounded-2xl p-6">
-                        <p className="text-red-400/90 text-sm">{sectionsError}</p>
+                        <p className="text-red-700 dark:text-red-400/90 text-sm">{sectionsError}</p>
                     </div>
                 ) : sectionOptions.length === 0 ? (
                     <div className="text-center bg-card border border-border rounded-2xl p-6">
@@ -209,7 +209,7 @@ export default function FlashcardsView({ noteId, accessToken }: FlashcardsViewPr
                         </div>
 
                         {error && (
-                            <p className="text-red-400/90 text-sm bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4 text-center">
+                            <p className="text-red-700 dark:text-red-400/90 text-sm bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4 text-center">
                                 {error}
                             </p>
                         )}

@@ -24,7 +24,10 @@ const Courses = lazy(() => import("@/pages/courses"));
 const LessonChat = lazy(() => import("@/pages/lesson-chat"));
 const Notes = lazy(() => import("@/pages/notes"));
 const CourseNotes = lazy(() => import("@/pages/course-notes"));
-const NoteChat = lazy(() => import("@/pages/note-chat"));
+// Uni notes: board of sections → one lesson per section (NOTES_LESSON_UI_SPEC).
+// pages/note-chat.tsx (the old whole-note chat) is no longer routed.
+const NoteBoard = lazy(() => import("@/pages/note-board"));
+const NoteLesson = lazy(() => import("@/pages/note-lesson"));
 const NoteReader = lazy(() => import("@/pages/note-reader"));
 const Profile = lazy(() => import("@/pages/profile"));
 const Upgrade = lazy(() => import("@/pages/upgrade"));
@@ -62,7 +65,8 @@ function Router() {
         <Route path="/notes" component={Notes} />
         <Route path="/notes/course/:courseId" component={CourseNotes} />
         <Route path="/notes/:noteId/read" component={NoteReader} />
-        <Route path="/notes/:noteId" component={NoteChat} />
+        <Route path="/notes/:noteId/sections/:sectionIndex" component={NoteLesson} />
+        <Route path="/notes/:noteId" component={NoteBoard} />
         <Route path="/profile" component={Profile} />
         <Route path="/upgrade" component={Upgrade} />
         <Route path="/privacy" component={Privacy} />

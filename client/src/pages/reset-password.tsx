@@ -62,7 +62,7 @@ export default function ResetPassword() {
                     .
                 </p>
             ) : done ? (
-                <p className="text-sm text-green-500">Password updated — taking you to your dashboard.</p>
+                <p className="text-sm text-green-700 dark:text-green-400">Password updated — taking you to your dashboard.</p>
             ) : (
                 <form onSubmit={handleSubmit} className="space-y-4 text-left">
                     <div className="space-y-1.5">

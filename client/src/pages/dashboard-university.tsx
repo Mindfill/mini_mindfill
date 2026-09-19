@@ -64,7 +64,7 @@ export default function UniversityDashboard() {
             <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
                 <AnimatedGradientBg />
                 <AppSidebar userName={userName || "Loading..."} activeItem="home" onSignOut={handleSignOut} />
-                <div className="flex-1 overflow-y-auto relative">
+                <div className="flex-1 min-w-0 overflow-y-auto relative">
                     <TechcessLoader />
                 </div>
             </div>
@@ -103,7 +103,7 @@ export default function UniversityDashboard() {
             <AnimatedGradientBg />
             <AppSidebar userName={userName} activeItem="home" onSignOut={handleSignOut} />
 
-            <div className="flex-1 overflow-y-auto relative">
+            <div className="flex-1 min-w-0 overflow-y-auto relative">
                 <PageFade>
                 <main className="max-w-5xl mx-auto p-6 md:p-10 space-y-8">
 
@@ -157,7 +157,7 @@ export default function UniversityDashboard() {
                     </section>
 
                     {/* Usage graph + Progress */}
-                    <section className="grid md:grid-cols-2 gap-4">
+                    <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <UsageGraphCard usage={usage_graph} />
                         <div className="glass-panel rounded-2xl p-6">
                             <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Your Progress</h3>
@@ -196,16 +196,16 @@ export default function UniversityDashboard() {
                     <section>
                         <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Recent Sessions</h3>
                         {recent_sessions.length > 0 ? (
-                            <div className="grid gap-3">
+                            <div className="grid grid-cols-1 gap-3">
                                 {recent_sessions.slice(0, 5).map((session, i) => (
-                                    <div key={session.session_id || i} className="group flex items-center justify-between p-4 rounded-xl glass-panel hover:brightness-105 transition-all">
-                                        <div>
-                                            <h4 className="font-medium mb-1">{session.lesson_title}</h4>
+                                    <div key={session.session_id || i} className="group flex items-center justify-between gap-3 p-4 rounded-xl glass-panel hover:brightness-105 transition-all">
+                                        <div className="min-w-0">
+                                            <h4 className="font-medium mb-1 [overflow-wrap:anywhere]">{session.lesson_title}</h4>
                                             <p className="text-muted-foreground text-xs">Last chatted {formatRelativeTime(session.last_activity_at)}</p>
                                         </div>
                                         <button
                                             onClick={() => navigate(`/lessons/${session.lesson_slug}?session=${session.session_id}`)}
-                                            className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                                            className="flex-shrink-0 text-sm font-medium text-muted-foreground hover:text-primary transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
                                         >
                                             [Resume]
                                         </button>
@@ -224,19 +224,22 @@ export default function UniversityDashboard() {
                     {recent_notes.length > 0 && (
                         <section>
                             <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Recent Notes</h3>
-                            <div className="grid gap-3">
+                            <div className="grid grid-cols-1 gap-3">
                                 {recent_notes.map((note) => (
-                                    <div key={note.note_id} className="group flex items-center justify-between p-4 rounded-xl glass-panel hover:brightness-105 transition-all">
-                                        <div className="flex items-center gap-3">
+                                    <div key={note.note_id} className="group flex items-center justify-between gap-3 p-4 rounded-xl glass-panel hover:brightness-105 transition-all">
+                                        {/* min-w-0 + overflow-wrap:anywhere: uploaded file titles like
+                                            "EEE_208_-_Lecture_II__Sections_01" have no spaces to break at,
+                                            and pushed [Open] off a phone screen. */}
+                                        <div className="flex items-center gap-3 min-w-0">
                                             <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                                            <div>
-                                                <h4 className="font-medium mb-0.5">{note.title}</h4>
+                                            <div className="min-w-0">
+                                                <h4 className="font-medium mb-0.5 [overflow-wrap:anywhere]">{note.title}</h4>
                                                 <p className="text-muted-foreground text-xs">Last chatted {formatRelativeTime(note.last_opened_at)}</p>
                                             </div>
                                         </div>
                                         <button
                                             onClick={() => navigate(`/notes/${note.note_id}`)}
-                                            className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                                            className="flex-shrink-0 text-sm font-medium text-muted-foreground hover:text-primary transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
                                         >
                                             [Open]
                                         </button>

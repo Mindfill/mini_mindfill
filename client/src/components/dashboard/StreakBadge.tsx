@@ -42,7 +42,7 @@ export default function StreakBadge({ currentStreak, longestStreak }: StreakBadg
 
     return (
         <div className="flex items-center gap-3 glass-panel rounded-2xl px-5 py-4">
-            <div ref={iconRef} className="text-orange-500 flex-shrink-0">
+            <div ref={iconRef} className="text-orange-700 dark:text-orange-400 flex-shrink-0">
                 <Flame className="w-8 h-8 fill-orange-500/20" />
             </div>
             <div>

@@ -187,7 +187,7 @@ export default function SecondaryDashboard() {
                     <section className="grid md:grid-cols-2 gap-4">
                         <div className="glass-panel rounded-2xl p-6">
                             <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
-                                <TrendingUp className="w-4 h-4 text-emerald-500" /> Strengths
+                                <TrendingUp className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /> Strengths
                             </h3>
                             {strengths.length > 0 ? (
                                 <ul className="space-y-2">
@@ -201,7 +201,7 @@ export default function SecondaryDashboard() {
                         </div>
                         <div className="glass-panel rounded-2xl p-6">
                             <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
-                                <TrendingDown className="w-4 h-4 text-amber-500" /> Needs Work
+                                <TrendingDown className="w-4 h-4 text-amber-700 dark:text-amber-400" /> Needs Work
                             </h3>
                             {weaknesses.length > 0 ? (
                                 <ul className="space-y-2">
@@ -217,7 +217,7 @@ export default function SecondaryDashboard() {
 
                     {most_pressing && (
                         <section className="rounded-2xl p-5 glass-panel border border-amber-500/30 flex items-center gap-3">
-                            <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                            <AlertTriangle className="w-5 h-5 text-amber-700 dark:text-amber-400 flex-shrink-0" />
                             <p className="text-sm">
                                 <span className="font-semibold">{most_pressing.chapter_title}</span> is worth revisiting — it's a
                                 foundation for what's coming up next.

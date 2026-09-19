@@ -1,11 +1,35 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import SecondaryShell, { AccessErrorState, PageSkeleton } from "@/components/secondary/SecondaryShell";
 import { ProgressBar } from "@/components/secondary/ProgressBar";
+import CircuitBoard from "@/components/secondary/CircuitBoard";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { CheckCircle2, Circle, Lock, PlayCircle, ChevronLeft } from "lucide-react";
+import { CheckCircle2, Circle, Lock, PlayCircle, ChevronLeft, CircuitBoard as BoardIcon, List } from "lucide-react";
 import { SUBSECTION_TYPE_LABEL, type TocSubsection } from "@/lib/secondaryApi";
 import { useChapterToc } from "@/lib/secondaryQueries";
+
+/** Which chapter navigation to show. Remembered per browser so a student who
+ *  picks one isn't switched back on every visit; defaults to the new board. */
+const VIEW_KEY = "techcess.chapterView";
+
+function useChapterView() {
+    const [view, setView] = useState<"board" | "list">(() => {
+        try {
+            return localStorage.getItem(VIEW_KEY) === "list" ? "list" : "board";
+        } catch {
+            return "board";
+        }
+    });
+    const choose = (next: "board" | "list") => {
+        setView(next);
+        try {
+            localStorage.setItem(VIEW_KEY, next);
+        } catch {
+            /* private mode — the choice just won't persist */
+        }
+    };
+    return [view, choose] as const;
+}
 
 export default function ChapterPage() {
     const { chapterId } = useParams<{ chapterId: string }>();
@@ -19,6 +43,7 @@ export default function ChapterPage() {
 function ChapterToc({ chapterId, accessToken }: { chapterId: string; accessToken: string }) {
     const [, navigate] = useLocation();
     const { data, error, refetch } = useChapterToc(chapterId, accessToken);
+    const [view, setView] = useChapterView();
 
     useEffect(() => {
         if (data) document.title = `${data.chapter.chapter_title} | TECHCESS`;
@@ -80,13 +105,42 @@ function ChapterToc({ chapterId, accessToken }: { chapterId: string; accessToken
                 )}
             </header>
 
+            <div className="flex items-center justify-end">
+                <div className="inline-flex glass-chip rounded-full p-1" role="group" aria-label="Chapter view">
+                    {([
+                        { id: "board" as const, label: "Board", Icon: BoardIcon },
+                        { id: "list" as const, label: "List", Icon: List },
+                    ]).map(({ id, label, Icon }) => (
+                        <button
+                            key={id}
+                            type="button"
+                            onClick={() => setView(id)}
+                            aria-pressed={view === id}
+                            className={`min-h-[36px] px-3 rounded-full text-xs font-medium inline-flex items-center gap-1.5 transition-colors ${
+                                view === id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                            <Icon className="w-3.5 h-3.5" />
+                            {label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {view === "board" ? (
+                <CircuitBoard
+                    sections={sections}
+                    currentId={resume?.subsection_id}
+                    onOpen={(id) => navigate(`/secondary/subsections/${id}`)}
+                />
+            ) : (
             <Accordion type="multiple" defaultValue={defaultOpen ? [defaultOpen] : []} className="space-y-3">
                 {sections.map((sec) => (
                     <AccordionItem key={sec.section_id} value={sec.section_id} className="glass-panel rounded-2xl border-0 px-4 md:px-5">
                         <AccordionTrigger className="hover:no-underline py-4 min-h-[56px]">
                             <div className="flex items-center gap-3 text-left">
                                 {sec.is_complete ? (
-                                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" aria-label="Section complete" />
+                                    <CheckCircle2 className="w-5 h-5 text-emerald-700 dark:text-emerald-400 shrink-0" aria-label="Section complete" />
                                 ) : (
                                     <span className="w-5 h-5 rounded-full border-2 border-muted-foreground/40 text-[10px] font-semibold flex items-center justify-center shrink-0">
                                         {sec.section_number}
@@ -112,6 +166,7 @@ function ChapterToc({ chapterId, accessToken }: { chapterId: string; accessToken
                     </AccordionItem>
                 ))}
             </Accordion>
+            )}
         </main>
     );
 }
@@ -119,7 +174,7 @@ function ChapterToc({ chapterId, accessToken }: { chapterId: string; accessToken
 function SubsectionRow({ sub, onOpen }: { sub: TocSubsection; onOpen: () => void }) {
     const icon =
         sub.status === "completed" ? (
-            <CheckCircle2 className="w-5 h-5 text-emerald-500" aria-label="Complete" />
+            <CheckCircle2 className="w-5 h-5 text-emerald-700 dark:text-emerald-400" aria-label="Complete" />
         ) : !sub.available ? (
             <Lock className="w-4 h-4 text-muted-foreground" aria-label="Locked" />
         ) : sub.status === "in_progress" ? (

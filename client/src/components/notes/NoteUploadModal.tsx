@@ -1,12 +1,21 @@
 import { useState, useRef, useEffect } from "react";
+import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { uploadNote, fetchCourses, createCourse, Course } from "@/lib/api";
+import { uploadNote, fetchCourses, createCourse, Course, DuplicateNoteError } from "@/lib/api";
 import UploadProgressFrames from "@/components/notes/UploadProgressFrames";
-import { X, Upload, FileText, CheckCircle2, Loader2, Plus } from "lucide-react";
+import { X, Upload, FileText, ImageIcon, CheckCircle2, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+/** Sprint spec v2 §1.3 — students photograph their notes far more often than
+ *  they scan them. Naming the image types here is also what makes Android's
+ *  chooser offer the gallery and camera instead of opening into Drive. */
+const ACCEPTED_MIME = ["application/pdf", "image/jpeg", "image/png"];
+
+const isImage = (file: File) =>
+    file.type.startsWith("image/") || /\.(jpe?g|png)$/i.test(file.name);
 
 interface NoteUploadModalProps {
     isOpen: boolean;
@@ -18,7 +27,10 @@ interface NoteUploadModalProps {
 
 export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess, defaultCourseId = "" }: NoteUploadModalProps) {
     const { session } = useAuth();
+    const [, navigate] = useLocation();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    /** Set when the file was already uploaded — offers to open that note instead. */
+    const [duplicateOf, setDuplicateOf] = useState<{ id: string; title: string } | null>(null);
 
     const [step, setStep] = useState<"upload" | "processing" | "success">("upload");
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -39,6 +51,7 @@ export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess, defa
         setTitle("");
         setCourseId(defaultCourseId);
         setError(null);
+        setDuplicateOf(null);
         setLoading(false);
         setShowCreateCourse(false);
         setNewCourseName("");
@@ -94,16 +107,22 @@ export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess, defa
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
-            if (file.type !== "application/pdf") {
-                setError("Only PDF files are accepted");
+            // Extension as well as MIME: Android gallery pickers routinely hand
+            // over a photo as "application/octet-stream" or an empty type, and
+            // rejecting those would block the very case this is meant to open
+            // up. The backend checks the file's actual signature regardless.
+            const looksSupported =
+                ACCEPTED_MIME.includes(file.type) || /\.(pdf|jpe?g|png)$/i.test(file.name);
+            if (!looksSupported) {
+                setError("Upload a PDF, JPEG or PNG");
                 return;
             }
             setSelectedFile(file);
             if (!title) {
-                // Set default title from filename without extension
-                setTitle(file.name.replace(/\.pdf$/i, ""));
+                setTitle(file.name.replace(/\.(pdf|jpe?g|png)$/i, ""));
             }
             setError(null);
+            setDuplicateOf(null);
         }
     };
 
@@ -135,6 +154,7 @@ export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess, defa
         });
         setLoading(true);
         setError(null);
+        setDuplicateOf(null);
         setStep("processing");
 
         try {
@@ -152,7 +172,13 @@ export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess, defa
             }, 1500);
         } catch (err: any) {
             console.error("❌ Error uploading note:", err);
-            setError("We couldn't upload your note. Make sure it's a PDF under 20MB and 80 pages, then try again.");
+            if (err instanceof DuplicateNoteError) {
+                setError(`Can't upload duplicate files. ${err.message}`);
+                setDuplicateOf({ id: err.noteId, title: err.noteTitle });
+            } else {
+                // Matches the real limits (MAX_FILE_SIZE / MAX_PAGES on the backend).
+                setError("We couldn't upload your note. Make sure it's a PDF, JPEG or PNG under 30MB and 100 pages, then try again.");
+            }
             setStep("upload");
         } finally {
             setLoading(false);
@@ -268,25 +294,34 @@ export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess, defa
                         <form onSubmit={handleSubmit} className="space-y-5">
                             {/* File Upload */}
                             <div className="space-y-2">
-                                <Label>PDF File</Label>
+                                <Label>Notes file</Label>
                                 <div
                                     onClick={() => fileInputRef.current?.click()}
                                     className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all hover:border-primary/50 ${
                                         selectedFile ? "border-primary/30 bg-primary/5" : "border-border"
                                     }`}
                                 >
+                                    {/* Listing the image types is what makes
+                                        Android offer the gallery and camera at
+                                        all — with only application/pdf the OS
+                                        chooser opens straight into Drive and
+                                        Documents, which is what testers hit. */}
                                     <input
                                         ref={fileInputRef}
                                         type="file"
-                                        accept="application/pdf"
+                                        accept={ACCEPTED_MIME.join(",")}
                                         onChange={handleFileChange}
                                         className="hidden"
                                     />
                                     {selectedFile ? (
                                         <div className="flex flex-col items-center gap-2">
-                                            <FileText className="w-10 h-10 text-primary" />
+                                            {isImage(selectedFile) ? (
+                                                <ImageIcon className="w-10 h-10 text-primary" />
+                                            ) : (
+                                                <FileText className="w-10 h-10 text-primary" />
+                                            )}
                                             <div>
-                                                <p className="font-medium">{selectedFile.name}</p>
+                                                <p className="font-medium break-all">{selectedFile.name}</p>
                                                 <p className="text-muted-foreground text-xs">
                                                     {(selectedFile.size / 1024 / 1024).toFixed(1)} MB
                                                 </p>
@@ -296,9 +331,9 @@ export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess, defa
                                         <div className="flex flex-col items-center gap-2">
                                             <Upload className="w-10 h-10 text-muted-foreground" />
                                             <div>
-                                                <p className="font-medium text-muted-foreground">Click to upload PDF</p>
-                                                <p className="text-muted-foreground text-xs">or drag and drop</p>
-                                                <p className="text-muted-foreground/70 text-xs mt-1">Max 80 pages · 20MB</p>
+                                                <p className="font-medium text-muted-foreground">Upload or photograph your notes</p>
+                                                <p className="text-muted-foreground text-xs">PDF, JPEG or PNG</p>
+                                                <p className="text-muted-foreground/70 text-xs mt-1">Max 80 pages · 30MB</p>
                                             </div>
                                         </div>
                                     )}
@@ -349,8 +384,21 @@ export default function NoteUploadModal({ isOpen, onClose, onUploadSuccess, defa
                             </div>
 
                             {error && (
-                                <div className="p-4 rounded-xl bg-destructive/10 text-destructive text-sm">
-                                    {error}
+                                <div className="p-4 rounded-xl bg-destructive/10 text-destructive text-sm space-y-2">
+                                    <p>{error}</p>
+                                    {duplicateOf && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const id = duplicateOf.id;
+                                                handleClose();
+                                                navigate(`/notes/${id}`);
+                                            }}
+                                            className="font-semibold underline underline-offset-2 hover:no-underline"
+                                        >
+                                            Open that note →
+                                        </button>
+                                    )}
                                 </div>
                             )}
 

@@ -4,7 +4,14 @@ import { useAuth } from "@/hooks/use-auth";
 import AppSidebar, { deriveVariant } from "@/components/sidebar/AppSidebar";
 import TechcessLoader from "@/components/brand/TechcessLoader";
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
-import { fetchProfile, updateProfile, cancelSubscription, linkParent } from "@/lib/api";
+import {
+    fetchProfile,
+    updateProfile,
+    cancelSubscription,
+    linkParent,
+    fetchMySubscription,
+    type MySubscription,
+} from "@/lib/api";
 import { useCredits } from "@/hooks/use-credits";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { Input } from "@/components/ui/input";
@@ -24,6 +31,43 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2, User as UserIcon, Sparkles, CheckCircle2, UserPlus, Mail } from "lucide-react";
 import FamilyMembersSection from "@/components/billing/FamilyMembersSection";
+import type { Variant } from "@/components/sidebar/AppSidebar";
+
+/**
+ * Which profile sections exist for each account type.
+ *
+ * Previously each section carried its own `userType !== "parent"` ternary,
+ * which meant school admins were shown Plan & billing they have no use for —
+ * and `userType` alone cannot decide it, because a dual-role account (David's
+ * own test account) is user_type=secondary WITH role=school_admin. Keying off
+ * deriveVariant() makes role win, exactly as it does for the sidebar.
+ *
+ * Parent linking is deliberately secondary-only. The parent dashboard can
+ * display university children, and POST /profile/link-parent still accepts
+ * them, so this hides the entry point rather than removing the capability —
+ * existing uni-student parent links keep working.
+ */
+type ProfileCapabilities = {
+    billing: boolean;
+    family: boolean;
+    linkParent: boolean;
+};
+
+const PROFILE_CAPABILITIES: Record<Variant, ProfileCapabilities> = {
+    university: { billing: true, family: false, linkParent: false },
+    secondary: { billing: true, family: true, linkParent: true },
+    parent: { billing: false, family: false, linkParent: false },
+    school_admin: { billing: false, family: false, linkParent: false },
+};
+
+// deriveVariant() folds platform admins into "university" for navigation
+// purposes, so they need naming separately here — an ops account has no plan
+// of its own to manage.
+const ADMIN_CAPABILITIES: ProfileCapabilities = {
+    billing: false,
+    family: false,
+    linkParent: false,
+};
 
 export default function Profile() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
@@ -38,12 +82,14 @@ export default function Profile() {
     const [fullName, setFullName] = useState("");
     const [dob, setDob] = useState("");
     const [cancelling, setCancelling] = useState(false);
+    const [subscription, setSubscription] = useState<MySubscription | null>(null);
 
     const accessToken = session?.access_token || "";
     const { toast } = useToast();
     const { isPaid } = useCredits();
     const { userType, role, fullName: onboardingFullName } = useUserProfile();
     const sidebarVariant = deriveVariant(userType, role);
+    const caps = role === "admin" ? ADMIN_CAPABILITIES : PROFILE_CAPABILITIES[sidebarVariant];
     // Prefer the name saved during onboarding/profile edits — falls back to
     // auth metadata/email only while that hasn't loaded yet, so this never
     // flips to the email-derived name after the page has finished loading.
@@ -113,21 +159,60 @@ export default function Profile() {
         }
     };
 
+    // The billing panel needs to know whether a cancellation is pending, which
+    // neither the profile row nor useCredits knows about.
+    const loadSubscription = async () => {
+        if (!accessToken || !caps.billing) return;
+        try {
+            setSubscription(await fetchMySubscription(accessToken));
+        } catch (err) {
+            console.error("Failed to load subscription state:", err);
+        }
+    };
+
+    useEffect(() => {
+        loadSubscription();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [accessToken, caps.billing]);
+
+    const endsOn = subscription?.current_period_end
+        ? new Date(subscription.current_period_end).toLocaleDateString(undefined, {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+          })
+        : null;
+
     const handleCancelSubscription = async () => {
         if (!session || cancelling) return;
         setCancelling(true);
         try {
-            await cancelSubscription(accessToken);
+            const { access_until } = await cancelSubscription(accessToken);
+            // Name the actual date where we have it — "end of your billing
+            // period" leaves people unsure whether they just lost access.
+            const until = access_until
+                ? new Date(access_until).toLocaleDateString(undefined, {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                  })
+                : null;
             toast({
                 title: "Subscription cancelled",
-                description: "You'll keep Pro access until the end of your billing period.",
+                description: until
+                    ? `You won't be charged again. Your access continues until ${until}.`
+                    : "You won't be charged again. You'll keep access until the end of the period you've paid for.",
             });
+            // Deliberately no credits refresh: access continues until the end
+            // of the paid period, so nothing about their plan changes today.
+            // The panel does need to flip to its "resume" state though.
+            await loadSubscription();
         } catch (err) {
             console.error("Failed to cancel subscription:", err);
             toast({
                 variant: "destructive",
                 title: "Couldn't cancel",
-                description: "Please try again in a moment.",
+                description: err instanceof Error ? err.message : "Please try again in a moment.",
             });
         } finally {
             setCancelling(false);
@@ -198,7 +283,7 @@ export default function Profile() {
             <AnimatedGradientBg />
             <AppSidebar userName={userName} activeItem="profile" onSignOut={handleSignOut} variant={sidebarVariant} />
 
-            <div className="flex-1 overflow-y-auto relative">
+            <div className="flex-1 min-w-0 overflow-y-auto relative">
                 <main className="max-w-2xl mx-auto p-6 md:p-10 space-y-8">
                     {/* Header */}
                     <div className="flex items-center gap-4">
@@ -249,8 +334,8 @@ export default function Profile() {
                         </div>
                     </form>
 
-                    {/* Subscription / plan — parents aren't part of the credit system */}
-                    {userType !== "parent" && (
+                    {/* Subscription / plan — see PROFILE_CAPABILITIES */}
+                    {caps.billing && (
                     <section className="glass-panel rounded-3xl p-6 md:p-8 space-y-5">
                         <div className="flex items-center justify-between gap-4">
                             <div>
@@ -259,17 +344,46 @@ export default function Profile() {
                             </div>
                             <span
                                 className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full ${
-                                    isPaid
-                                        ? "bg-green-500/10 text-green-500"
-                                        : "bg-muted text-muted-foreground"
+                                    isPaid && subscription?.cancel_at_period_end
+                                        ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                                        : isPaid
+                                          ? "bg-green-500/10 text-green-700 dark:text-green-400"
+                                          : "bg-muted text-muted-foreground"
                                 }`}
                             >
-                                {isPaid ? <CheckCircle2 className="w-3.5 h-3.5" /> : null}
-                                {isPaid ? "Pro" : "Free"}
+                                {isPaid && !subscription?.cancel_at_period_end ? (
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                ) : null}
+                                {isPaid
+                                    ? subscription?.cancel_at_period_end
+                                        ? "Pro · ending"
+                                        : "Pro"
+                                    : "Free"}
                             </span>
                         </div>
 
-                        {isPaid ? (
+                        {isPaid && subscription?.cancel_at_period_end ? (
+                            /* Cancelled but still inside the period they paid for:
+                               billing has stopped, access hasn't. */
+                            <div className="space-y-4">
+                                <p className="text-sm text-foreground/90">
+                                    Your plan is set to end{endsOn ? ` on ${endsOn}` : " at the end of this billing period"}.
+                                    You keep full access until then, and you won't be charged again.
+                                </p>
+                                <Button onClick={() => navigate("/upgrade")} className="gap-2">
+                                    <Sparkles className="w-4 h-4" /> Subscribe again
+                                </Button>
+                                {/* Paystack cannot re-enable a disabled subscription
+                                    ("Subscription has been cancelled, and cannot be
+                                    reactivated"), so coming back always means a NEW
+                                    subscription — which starts billing immediately.
+                                    Say so rather than letting them discover it. */}
+                                <p className="text-xs text-muted-foreground">
+                                    Subscribing again starts a new billing period straight away
+                                    {endsOn ? `, replacing the one that runs to ${endsOn}` : ""}.
+                                </p>
+                            </div>
+                        ) : isPaid ? (
                             <div className="space-y-4">
                                 <p className="text-sm text-foreground/90">
                                     You're on <span className="font-semibold">Pro</span> with unlimited access.
@@ -277,7 +391,7 @@ export default function Profile() {
 
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                        <Button variant="outline" className="border-red-500/30 text-red-400 hover:text-red-400 hover:bg-red-500/10">
+                                        <Button variant="outline" className="border-red-500/30 text-red-700 dark:text-red-400 hover:text-red-400 hover:bg-red-500/10">
                                             Cancel subscription
                                         </Button>
                                     </AlertDialogTrigger>
@@ -306,24 +420,37 @@ export default function Profile() {
                         ) : (
                             <div className="space-y-4">
                                 <p className="text-sm text-foreground/90">
-                                    You're on the <span className="font-semibold">Free</span> plan. Upgrade to Pro for
-                                    unlimited chat, quizzes, flashcards and visualizations.
+                                    {subscription?.status === "cancelled" || subscription?.status === "expired" ? (
+                                        <>
+                                            Your Pro plan has ended and you're back on the{" "}
+                                            <span className="font-semibold">Free</span> plan. Pick up where you left
+                                            off whenever you're ready.
+                                        </>
+                                    ) : (
+                                        <>
+                                            You're on the <span className="font-semibold">Free</span> plan. Upgrade to
+                                            Pro for unlimited chat, quizzes, flashcards and visualizations.
+                                        </>
+                                    )}
                                 </p>
                                 <Button onClick={() => navigate("/upgrade")} className="gap-2">
-                                    <Sparkles className="w-4 h-4" /> Upgrade to Pro
+                                    <Sparkles className="w-4 h-4" />
+                                    {subscription?.status === "cancelled" || subscription?.status === "expired"
+                                        ? "Subscribe again"
+                                        : "Upgrade to Pro"}
                                 </Button>
                             </div>
                         )}
                     </section>
                     )}
 
-                    {/* Family plan members (secondary school only — renders nothing if not applicable) */}
-                    {userType === "secondary" && accessToken && (
+                    {/* Family plan members — renders nothing if not applicable */}
+                    {caps.family && accessToken && (
                         <FamilyMembersSection accessToken={accessToken} />
                     )}
 
-                    {/* Parent linking (not applicable to parent accounts themselves) */}
-                    {userType !== "parent" && (
+                    {/* Parent linking — secondary only, see PROFILE_CAPABILITIES */}
+                    {caps.linkParent && (
                         <section className="glass-panel rounded-3xl p-6 md:p-8 space-y-5">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
@@ -338,7 +465,7 @@ export default function Profile() {
                             </div>
 
                             {parentLinkStatus && (
-                                <div className="flex items-center gap-2 text-sm text-green-500 bg-green-500/10 rounded-xl px-4 py-3">
+                                <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400 bg-green-500/10 rounded-xl px-4 py-3">
                                     <Mail className="w-4 h-4 flex-shrink-0" />
                                     {parentLinkStatus === "linked"
                                         ? "Linked — they can see your progress now."

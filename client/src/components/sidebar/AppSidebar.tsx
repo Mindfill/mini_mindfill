@@ -11,7 +11,7 @@ import { CreditsDisplay } from "@/components/CreditsDisplay";
 import mindfillLogo from "@/assets/mindfill.png";
 import type { UserType, UserRole } from "@/lib/api";
 
-type Variant = "university" | "secondary" | "parent" | "school_admin";
+export type Variant = "university" | "secondary" | "parent" | "school_admin";
 
 interface AppSidebarProps {
     userName: string;
@@ -142,10 +142,15 @@ export default function AppSidebar({ userName, activeItem, onSignOut, variant: v
     // billing) page don't apply and are hidden rather than shown with
     // irrelevant content. Their name still shows, and Sign Out stays.
     const showProfile = variant !== "parent" && variant !== "school_admin";
+    // Credits are a university-only mechanic — secondary plans are
+    // subscription-gated by chapter, not metered, so the bar means nothing
+    // there. (useCredits still loads for secondary: it's also where isPaid
+    // comes from.)
+    const showCredits = variant === "university";
 
     const UserSection = () => (
         <div className="flex flex-col gap-2">
-            {showProfile && <CreditsDisplay />}
+            {showCredits && <CreditsDisplay />}
             {showProfile ? (
                 <button
                     onClick={() => goTo("/profile")}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -11,6 +11,26 @@ import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import KeyTermMark from "@/components/notes/KeyTermMark";
 import { buildHighlightMatcher, rehypeHighlightKeyTerms, type KeyTerm } from "@/lib/keywordHighlight";
+
+/**
+ * Escape dollar signs that are currency, not math. "$100 in it … $25, which"
+ * was being read as one inline equation from the first $ to the next,
+ * rendering a whole sentence as unbreakable italic math.
+ *
+ * Currency = `$` + an amount followed by a word or by punctuation — "$100 in",
+ * "$125.", "$25, which". Real math keeps its dollars: "$2x$", "$25$",
+ * "$2 + 3$" and "$5\,\text{kg}$" don't match. Code spans and fences are left
+ * alone, since a `\$` there would show literally.
+ */
+const CURRENCY_RE = /(^|[^\\$\w])\$(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)(?=[.,;:!?)]*(?:\s+[A-Za-z]|\s*$)|[.,;:!?)]+\s)/gm;
+const CODE_RE = /(```[\s\S]*?```|`[^`\n]*`)/;
+
+function escapeCurrency(text: string): string {
+    return text
+        .split(CODE_RE)
+        .map((part, i) => (i % 2 === 1 ? part : part.replace(CURRENCY_RE, (_m, pre, amount) => `${pre}\\$${amount}`)))
+        .join("");
+}
 
 interface MarkdownLatexProps {
     content: string;
@@ -32,11 +52,55 @@ interface MarkdownLatexProps {
 export default function MarkdownLatex({ content, className = "", inline = false, keyTerms }: MarkdownLatexProps) {
     const matcher = useMemo(() => buildHighlightMatcher(keyTerms ?? []), [keyTerms]);
     const [activeTerm, setActiveTerm] = useState<{ term: string; definition: string } | null>(null);
+    const blockRef = useRef<HTMLDivElement>(null);
+
+    // Tag inline math that's wider than the text column so it scrolls instead
+    // of pushing the page sideways (see .katex-wide in index.css). Re-checked
+    // on resize because rotating a phone changes which ones fit.
+    useEffect(() => {
+        const root = blockRef.current;
+        if (!root) return;
+        let frame = 0;
+        const tag = () => {
+            const limit = root.clientWidth;
+            root.querySelectorAll<HTMLElement>(".katex").forEach((el) => {
+                if (el.closest(".katex-display")) return;
+                // Natural width without a remove-then-measure reflow: once
+                // boxed it's scrollWidth; before that the span is inline
+                // (scrollWidth is 0 for inline boxes), so use its rect.
+                const natural = el.classList.contains("katex-wide")
+                    ? el.scrollWidth
+                    : el.getBoundingClientRect().width;
+                const wide = natural > limit + 1;
+                if (wide !== el.classList.contains("katex-wide")) el.classList.toggle("katex-wide", wide);
+            });
+        };
+        // Deferred a frame: tagging changes the block's height, and doing that
+        // inside the observer callback is the "ResizeObserver loop" error.
+        const schedule = () => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(tag);
+        };
+        tag();
+        const ro = new ResizeObserver(schedule);
+        ro.observe(root);
+        // KaTeX's fonts usually arrive after first paint and widen the math
+        // without resizing this block — so re-check when they land too.
+        const fonts = document.fonts;
+        fonts?.ready.then(schedule);
+        fonts?.addEventListener?.("loadingdone", schedule);
+        return () => {
+            cancelAnimationFrame(frame);
+            ro.disconnect();
+            fonts?.removeEventListener?.("loadingdone", schedule);
+        };
+    }, [content]);
     // Normalize LaTeX delimiters. Display math (\[ … \]) gets blank lines around
     // it so remark-math treats it as a block and KaTeX renders it on its own
     // line; inline math (\( … \)) stays inline. This also guards against the
     // model emitting the wrong delimiters.
-    const processedContent = (content ?? "")
+    // Currency first, while every $ still means exactly what the model typed.
+    const processedContent = escapeCurrency(content ?? "")
         .replace(/\\\[/g, () => "\n\n$$")
         .replace(/\\\]/g, () => "$$\n\n")
         .replace(/\\\(/g, () => "$")
@@ -46,6 +110,9 @@ export default function MarkdownLatex({ content, className = "", inline = false,
     // inside chips/labels without breaking flex or truncate layouts. Math still
     // renders via KaTeX; only the paragraph wrapper is flattened.
     if (inline) {
+        // A chip label like "1. International Standards" is a title, not a
+        // list — unescaped, markdown made it a block <ol> inside the chip.
+        const inlineContent = processedContent.replace(/^(\s*\d+)\.(\s)/, "$1\\.$2");
         return (
             <span className={className}>
                 <ReactMarkdown
@@ -57,14 +124,14 @@ export default function MarkdownLatex({ content, className = "", inline = false,
                         em: ({ children }) => <em className="italic text-inherit">{children}</em>,
                     }}
                 >
-                    {processedContent}
+                    {inlineContent}
                 </ReactMarkdown>
             </span>
         );
     }
 
     return (
-        <div className={`prose prose-sm dark:prose-invert max-w-none ${className}`}>
+        <div ref={blockRef} className={`prose prose-sm dark:prose-invert max-w-none ${className}`}>
             <ReactMarkdown
                 remarkPlugins={[remarkMath]}
                 rehypePlugins={[rehypeKatex, [rehypeHighlightKeyTerms, matcher]]}
@@ -99,6 +166,11 @@ export default function MarkdownLatex({ content, className = "", inline = false,
                                         background: "transparent",
                                         fontSize: "13px",
                                         lineHeight: "1.6",
+                                        // PreTag="div" loses the <pre> default scroll, and the
+                                        // wrapper above is overflow-hidden (for the rounded
+                                        // corners) — so without this, long lines are silently
+                                        // clipped on a 360px screen instead of scrolling.
+                                        overflowX: "auto",
                                     }}
                                 >
                                     {String(children).replace(/\n$/, "")}
@@ -122,6 +194,23 @@ export default function MarkdownLatex({ content, className = "", inline = false,
                         <blockquote className="border-l-2 border-primary/30 pl-4 my-3 text-muted-foreground italic">
                             {children}
                         </blockquote>
+                    ),
+                    // A generated comparison table is routinely wider than a
+                    // 360px screen. Give it its own horizontal scroll so it
+                    // never widens the page, and keep cells from wrapping to
+                    // one character per line inside that scroll area.
+                    table: ({ children }) => (
+                        <div className="my-3 -mx-1 px-1 overflow-x-auto">
+                            <table className="w-full text-sm border-collapse">{children}</table>
+                        </div>
+                    ),
+                    th: ({ children }) => (
+                        <th className="border border-border px-3 py-1.5 text-left font-semibold align-top min-w-[7rem]">
+                            {children}
+                        </th>
+                    ),
+                    td: ({ children }) => (
+                        <td className="border border-border px-3 py-1.5 align-top min-w-[7rem]">{children}</td>
                     ),
                 }}
             >

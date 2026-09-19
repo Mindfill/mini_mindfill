@@ -560,7 +560,7 @@ function PromoCodesPanel({ accessToken }: { accessToken: string }) {
                                         <td className="px-6 py-3 text-muted-foreground">{c.plan_type}</td>
                                         <td className="px-6 py-3 text-muted-foreground">{c.uses_count}{c.max_uses ? ` / ${c.max_uses}` : ""}</td>
                                         <td className="px-6 py-3">
-                                            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${c.is_active ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>
+                                            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${c.is_active ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>
                                                 {c.is_active ? "Active" : "Inactive"}
                                             </span>
                                         </td>
@@ -589,7 +589,7 @@ const ENTITY_LABEL: Record<string, string> = {
 
 function IssueList({ title, issues, tone }: { title: string; issues: ImportIssue[]; tone: "reject" | "skip" }) {
     if (issues.length === 0) return null;
-    const colour = tone === "reject" ? "text-red-600 dark:text-red-400" : "text-muted-foreground";
+    const colour = tone === "reject" ? "text-red-700 dark:text-red-400" : "text-muted-foreground";
     return (
         <div>
             <h4 className={`text-xs font-semibold uppercase tracking-wider mb-2 ${colour}`}>
@@ -707,9 +707,9 @@ function ContentPanel({ accessToken }: { accessToken: string }) {
                 <div className="glass-panel rounded-2xl p-6 space-y-5">
                     <div className="flex items-center gap-2">
                         {report.dry_run ? (
-                            <AlertTriangle className="w-4 h-4 text-amber-500" />
+                            <AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-400" />
                         ) : (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                            <CheckCircle2 className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
                         )}
                         <h3 className="font-semibold">
                             {report.dry_run ? "Checked — this is what Import will do" : "Imported"}
@@ -736,7 +736,7 @@ function ContentPanel({ accessToken }: { accessToken: string }) {
                                 <p className="text-xs text-muted-foreground">
                                     {c.skipped > 0 ? `${c.skipped} to author` : "all rows read"}
                                     {c.rejected > 0 && (
-                                        <span className="text-red-600 dark:text-red-400"> · {c.rejected} rejected</span>
+                                        <span className="text-red-700 dark:text-red-400"> · {c.rejected} rejected</span>
                                     )}
                                 </p>
                             </div>
@@ -745,13 +745,13 @@ function ContentPanel({ accessToken }: { accessToken: string }) {
 
                     {report.warnings.length > 0 && (
                         <div>
-                            <h4 className="text-xs font-semibold uppercase tracking-wider mb-2 text-amber-600 dark:text-amber-400">
+                            <h4 className="text-xs font-semibold uppercase tracking-wider mb-2 text-amber-700 dark:text-amber-400">
                                 Warnings ({report.warnings.length})
                             </h4>
                             <ul className="space-y-1.5">
                                 {report.warnings.map((w, i) => (
                                     <li key={i} className="text-xs text-muted-foreground flex gap-2">
-                                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+                                        <AlertTriangle className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                                         {w}
                                     </li>
                                 ))}

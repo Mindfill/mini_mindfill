@@ -77,7 +77,7 @@ export default function Courses() {
             />
 
             {/* Main content */}
-            <div className="flex-1 flex flex-col h-full relative overflow-y-auto">
+            <div className="flex-1 min-w-0 flex flex-col h-full relative overflow-y-auto">
                 {/* Top header */}
                 <header className="sticky top-0 z-20 glass-chip border-b border-border/50">
                     <div className="px-8 py-6">

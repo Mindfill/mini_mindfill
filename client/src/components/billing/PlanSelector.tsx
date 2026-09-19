@@ -1,46 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import { initiatePayment, type PaymentPlan } from "@/lib/api";
+import { plansFor } from "@/lib/plans";
 import { Check, Loader2, Sparkles } from "lucide-react";
-
-/**
- * Plan catalogue. Prices are display-only — the payment provider is the source
- * of truth for what's actually charged. EDIT THESE to match your live plans.
- */
-interface PlanInfo {
-    id: PaymentPlan;
-    name: string;
-    price: string;
-    cadence: string;
-    /** Optional str/badge, e.g. savings vs monthly. */
-    badge?: string;
-    subtitle?: string;
-}
-
-const PLANS: PlanInfo[] = [
-    {
-        id: "pro_monthly",
-        name: "Pro Monthly",
-        price: "₦15,000",
-        cadence: "per month",
-        subtitle: "Billed monthly. Cancel anytime.",
-    },
-    {
-        id: "pro_yearly",
-        name: "Pro Yearly",
-        price: "₦120,000",
-        cadence: "per year",
-        badge: "Save 33%",
-        subtitle: "Billed once a year. Best value.",
-    },
-];
-
-const PRO_PERKS = [
-    "Unlimited AI chat & explanations",
-    "Unlimited quizzes & flashcards",
-    "Concept visualizations",
-    "No credit limits",
-];
 
 interface PlanSelectorProps {
     /** Called after a successful initiate, right before redirecting away. */
@@ -50,31 +13,72 @@ interface PlanSelectorProps {
 export default function PlanSelector({ onRedirect }: PlanSelectorProps) {
     const { session } = useAuth();
     const accessToken = session?.access_token || "";
+    // Which catalogue to show depends on the account type — secondary
+    // students must never be offered (or able to buy) the uni Pro plans.
+    const { userType, loading: profileLoading } = useUserProfile();
+    const { plans, perks, defaultPlan } = plansFor(userType);
 
-    const [selected, setSelected] = useState<PaymentPlan>("pro_yearly");
+    const [picked, setPicked] = useState<PaymentPlan | null>(null);
+    // Fall back to the default until the user picks — and if the catalogue
+    // changed under them (profile resolved late), don't keep a plan that
+    // isn't on screen.
+    const selected = picked && plans.some((p) => p.id === picked) ? picked : defaultPlan;
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // See Paywall.tsx: lets a stuck or accidental checkout be cancelled, and
+    // resets if the page is restored from the back/forward cache.
+    const attemptRef = useRef(0);
+    const redirectingRef = useRef(false);
+
+    useEffect(() => {
+        const onPageShow = (e: PageTransitionEvent) => {
+            if (e.persisted) {
+                attemptRef.current += 1;
+                redirectingRef.current = false;
+                setSubmitting(false);
+            }
+        };
+        window.addEventListener("pageshow", onPageShow);
+        return () => window.removeEventListener("pageshow", onPageShow);
+    }, []);
 
     const handleContinue = async () => {
         if (submitting || !accessToken) return;
+        const attempt = ++attemptRef.current;
         setSubmitting(true);
         setError(null);
         try {
             const { payment_url } = await initiatePayment(selected, accessToken);
+            if (attempt !== attemptRef.current) return; // cancelled meanwhile
             onRedirect?.();
+            redirectingRef.current = true;
             window.location.href = payment_url;
         } catch (err) {
+            if (attempt !== attemptRef.current) return;
             console.error("Failed to start checkout:", err);
             setError("Couldn't start checkout. Please try again.");
             setSubmitting(false);
         }
     };
 
+    const handleCancel = () => {
+        attemptRef.current += 1;
+        if (redirectingRef.current) window.stop();
+        redirectingRef.current = false;
+        setSubmitting(false);
+    };
+
+    // Don't guess the catalogue while the profile is loading — showing Pro
+    // prices to a secondary student, even briefly, is the bug this fixes.
+    if (profileLoading && !userType) {
+        return <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />;
+    }
+
     return (
         <div className="space-y-6">
             {/* Perks */}
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {PRO_PERKS.map((perk) => (
+                {perks.map((perk) => (
                     <li key={perk} className="flex items-center gap-2 text-sm text-foreground/90">
                         <span className="w-5 h-5 rounded-full bg-primary/15 text-primary flex items-center justify-center flex-shrink-0">
                             <Check className="w-3.5 h-3.5" />
@@ -86,14 +90,15 @@ export default function PlanSelector({ onRedirect }: PlanSelectorProps) {
 
             {/* Plan cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {PLANS.map((plan) => {
+                {plans.map((plan) => {
                     const active = selected === plan.id;
                     return (
                         <button
                             key={plan.id}
                             type="button"
-                            onClick={() => setSelected(plan.id)}
-                            className={`relative text-left p-5 rounded-2xl border transition-all ${
+                            onClick={() => setPicked(plan.id)}
+                            disabled={submitting}
+                            className={`relative text-left p-5 rounded-2xl border transition-all disabled:opacity-60 ${
                                 active
                                     ? "border-primary bg-primary/5 ring-1 ring-primary"
                                     : "border-border bg-card hover:border-muted-foreground/40"
@@ -127,7 +132,7 @@ export default function PlanSelector({ onRedirect }: PlanSelectorProps) {
             </div>
 
             {error && (
-                <p className="text-red-400/90 text-sm bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-center">
+                <p className="text-red-700 dark:text-red-400/90 text-sm bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-center">
                     {error}
                 </p>
             )}
@@ -147,6 +152,16 @@ export default function PlanSelector({ onRedirect }: PlanSelectorProps) {
                     </>
                 )}
             </button>
+
+            {submitting && (
+                <button
+                    type="button"
+                    onClick={handleCancel}
+                    className="block w-full text-sm text-muted-foreground hover:text-foreground"
+                >
+                    Cancel
+                </button>
+            )}
 
             <p className="text-center text-xs text-muted-foreground">
                 You'll be redirected to a secure payment page. Cancel anytime from your profile.

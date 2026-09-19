@@ -229,7 +229,7 @@ export default function TutorChat({
             )}
 
             {error && (
-                <div role="alert" className="flex flex-wrap items-center justify-center gap-3 text-sm text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2">
+                <div role="alert" className="flex flex-wrap items-center justify-center gap-3 text-sm text-red-700 dark:text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2">
                     {error.message}
                     {error.retry && (
                         <button onClick={() => send(error.retry!)} className="underline font-medium min-h-[44px]">

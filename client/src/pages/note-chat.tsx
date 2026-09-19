@@ -5,6 +5,7 @@ import { useActivityHeartbeat } from "@/hooks/use-activity-heartbeat";
 import { supabase } from "@/lib/supabase";
 import {
     fetchNoteHistory,
+    fetchNoteFigures,
     sendNoteChatMessage,
     onboardNote,
     generateNoteQuiz,
@@ -12,6 +13,7 @@ import {
     OutOfCreditsError,
     type NoteChatMessage,
     type NoteChatRequest,
+    type NoteFigure,
     type NoteLessonPlanResponse,
     type QuizQuestion
 } from "@/lib/api";
@@ -109,6 +111,24 @@ export default function NoteChat() {
     const [quizSessionId, setQuizSessionId] = useState<string | null>(null);
     const [quizType, setQuizType] = useState<"objective" | "theory">("objective");
     const [generatingQuiz, setGeneratingQuiz] = useState(false);
+    // §2.3 — the note's own figures, drawn inline wherever the tutor writes
+    // [FIGURE:n]. Fetched per visit rather than cached: it's one small request
+    // and the URLs are the only thing that could ever change.
+    const [figures, setFigures] = useState<Record<number, NoteFigure>>({});
+
+    useEffect(() => {
+        if (!noteId || !session?.access_token) return;
+        let cancelled = false;
+        fetchNoteFigures(noteId, session.access_token)
+            .then((list) => {
+                if (!cancelled) setFigures(Object.fromEntries(list.map((f) => [f.number, f])));
+            })
+            // Best-effort: without figures the chat still works, the tokens just render nothing.
+            .catch((err) => console.warn("Could not load note figures:", err));
+        return () => {
+            cancelled = true;
+        };
+    }, [noteId, session?.access_token]);
 
     const userName = user?.user_metadata?.full_name || user?.email || "User";
     const accessToken = session?.access_token || "";
@@ -416,7 +436,7 @@ export default function NoteChat() {
                 <AppSidebar userName={userName} activeItem="notes" onSignOut={handleSignOut} />
                 <div className="flex-1 flex flex-col items-center justify-center bg-background p-6 text-center">
                     <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mb-6">
-                        <X className="w-8 h-8 text-red-500" />
+                        <X className="w-8 h-8 text-red-700 dark:text-red-400" />
                     </div>
                     <h2 className="text-xl font-bold text-foreground mb-2">Connection Error</h2>
                     <p className="text-muted-foreground max-w-sm mb-8 leading-relaxed">
@@ -451,8 +471,11 @@ export default function NoteChat() {
 
             <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-background">
                 {/* Header */}
-                <header className="bg-background/40 backdrop-blur-xl border-b border-border px-4 md:px-6 py-4 flex justify-between items-center gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
+                {/* On phones this wraps to two rows — title + actions, then the
+                    Chat/Quiz/Cards switch full width. In one row at 360px the
+                    title was squeezed to 0px and the logo overlapped refresh. */}
+                <header className="bg-background/40 backdrop-blur-xl border-b border-border px-4 md:px-6 py-3 sm:py-4 flex flex-wrap sm:flex-nowrap justify-between items-center gap-x-3 gap-y-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
                         <button
                             onClick={() => navigate("/notes")}
                             className="text-muted-foreground hover:text-foreground transition-all flex items-center gap-1 flex-shrink-0"
@@ -465,13 +488,13 @@ export default function NoteChat() {
                         <img
                             src={mindfillIcon}
                             alt="TECHCESS"
-                            className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
+                            className="hidden sm:block w-8 h-8 rounded-lg object-cover flex-shrink-0"
                         />
                         <h1 className="text-sm font-bold text-foreground tracking-tight truncate min-w-0">
                             {noteTitle}
                         </h1>
                         {lessonCompleted ? (
-                            <span className="flex-shrink-0 hidden sm:flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5">
+                            <span className="flex-shrink-0 hidden sm:flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5">
                                 <CheckCircle className="w-3 h-3" /> Complete
                             </span>
                         ) : phaseTwo ? (
@@ -501,22 +524,25 @@ export default function NoteChat() {
                                 <FileText className="w-4 h-4" />
                             </button>
                         )}
+                    </div>
+
+                    <div className="order-last sm:order-none w-full sm:w-auto flex-shrink-0">
                         <div className="flex items-center bg-muted rounded-full p-1 border border-border">
                             <button
                                 onClick={() => setActiveTab("chat")}
-                                className={`px-3 md:px-5 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "chat" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
+                                className={`flex-1 sm:flex-none px-3 md:px-5 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "chat" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
                             >
                                 Chat
                             </button>
                             <button
                                 onClick={() => setActiveTab("quiz")}
-                                className={`px-3 md:px-5 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "quiz" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
+                                className={`flex-1 sm:flex-none px-3 md:px-5 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "quiz" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
                             >
                                 {generatingQuiz ? "…" : "Quiz"}
                             </button>
                             <button
                                 onClick={() => setActiveTab("flashcards")}
-                                className={`px-3 md:px-5 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "flashcards" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
+                                className={`flex-1 sm:flex-none px-3 md:px-5 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "flashcards" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
                             >
                                 Cards
                             </button>
@@ -589,19 +615,20 @@ export default function NoteChat() {
                                     sessionId={msg.session_id ?? chatSessionId ?? undefined}
                                     isHistory={idx < historyCount}
                                     keyTerms={keyTerms}
+                                    figures={figures}
                                 />
                             ))}
 
                             {/* Live assistant bubble, building up as content streams */}
                             {streamingContent ? (
-                                <ChatBubble role="assistant" content={streamingContent} />
+                                <ChatBubble role="assistant" content={streamingContent} figures={figures} />
                             ) : null}
 
                             {sending && !streamingContent && <TypingIndicator />}
 
                             {error && !sending && (
                                 <div className="flex justify-center">
-                                    <div className="flex items-center gap-3 text-red-400/90 text-sm bg-red-500/10 px-4 py-2 rounded-lg border border-red-500/20">
+                                    <div className="flex items-center gap-3 text-red-700 dark:text-red-400/90 text-sm bg-red-500/10 px-4 py-2 rounded-lg border border-red-500/20">
                                         <span>{error}</span>
                                         {retryContent && (
                                             <button
@@ -623,7 +650,7 @@ export default function NoteChat() {
                         <div className="px-4 pb-2">
                             <button
                                 onClick={promptUpgrade}
-                                className="max-w-3xl w-full mx-auto block text-center text-sm text-red-400/90 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2 hover:bg-red-500/20 transition-colors"
+                                className="max-w-3xl w-full mx-auto block text-center text-sm text-red-700 dark:text-red-400/90 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2 hover:bg-red-500/20 transition-colors"
                             >
                                 You've run out of credits. Upgrade to Pro →
                             </button>

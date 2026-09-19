@@ -13,6 +13,7 @@ export default function School({ accessToken, screenNumber, collected, onNext, o
     const [schoolId, setSchoolId] = useState<string | null>(null);
     const [suggestions, setSuggestions] = useState<SchoolResult[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [activeIndex, setActiveIndex] = useState(-1);
     const [submitting, setSubmitting] = useState(false);
     const debounceRef = useRef<number>();
 
@@ -32,6 +33,33 @@ export default function School({ accessToken, screenNumber, collected, onNext, o
         }, 250);
         return () => window.clearTimeout(debounceRef.current);
     }, [schoolName, accessToken]);
+
+    useEffect(() => setActiveIndex(-1), [suggestions]);
+
+    const pickSuggestion = (s: SchoolResult) => {
+        setSchoolName(s.school_name);
+        setSchoolId(s.id);
+        setShowSuggestions(false);
+    };
+
+    const dropdownOpen = showSuggestions && suggestions.length > 0;
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (!dropdownOpen) return;
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setActiveIndex((i) => (i + 1) % suggestions.length);
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setActiveIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
+        } else if (e.key === "Enter" && activeIndex >= 0) {
+            // Pick the highlighted school instead of submitting the form.
+            e.preventDefault();
+            pickSuggestion(suggestions[activeIndex]);
+        } else if (e.key === "Escape") {
+            setShowSuggestions(false);
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -63,23 +91,38 @@ export default function School({ accessToken, screenNumber, collected, onNext, o
                         setShowSuggestions(true);
                     }}
                     onFocus={() => setShowSuggestions(true)}
-                    onBlur={() => window.setTimeout(() => setShowSuggestions(false), 150)}
+                    onBlur={() => setShowSuggestions(false)}
+                    onKeyDown={handleKeyDown}
                     placeholder="School name"
                     className="text-lg h-12"
                     disabled={submitting}
+                    role="combobox"
+                    aria-expanded={dropdownOpen}
+                    aria-controls="school-suggestions"
+                    aria-autocomplete="list"
                 />
-                {showSuggestions && suggestions.length > 0 && (
-                    <div className="absolute z-10 mt-2 w-full rounded-xl border border-border bg-popover shadow-lg overflow-hidden">
-                        {suggestions.map((s) => (
+                {dropdownOpen && (
+                    <div
+                        id="school-suggestions"
+                        role="listbox"
+                        className="absolute z-10 mt-2 w-full rounded-xl border border-border bg-popover shadow-lg overflow-hidden"
+                    >
+                        {suggestions.map((s, i) => (
                             <button
                                 key={s.id}
                                 type="button"
-                                onClick={() => {
-                                    setSchoolName(s.school_name);
-                                    setSchoolId(s.id);
-                                    setShowSuggestions(false);
+                                role="option"
+                                aria-selected={i === activeIndex}
+                                // onMouseDown, not onClick: the input's blur fires
+                                // between mousedown and click and hid the list
+                                // before the click could land. preventDefault
+                                // stops the blur entirely, so focus stays put.
+                                onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    pickSuggestion(s);
                                 }}
-                                className="w-full text-left px-4 py-2.5 hover-elevate"
+                                onMouseEnter={() => setActiveIndex(i)}
+                                className={`w-full text-left px-4 py-2.5 hover-elevate ${i === activeIndex ? "bg-muted" : ""}`}
                             >
                                 <p className="text-sm font-medium">{s.school_name}</p>
                                 {(s.city || s.state) && (

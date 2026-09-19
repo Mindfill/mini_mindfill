@@ -40,7 +40,7 @@ export default function UsageGraphCard({
                 </h3>
                 <div className="flex items-center gap-3">
                     {usage.change_direction !== "same" && (
-                        <div className={`flex items-center gap-1 text-xs font-medium ${isUp ? "text-emerald-500" : "text-muted-foreground"}`}>
+                        <div className={`flex items-center gap-1 text-xs font-medium ${isUp ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}`}>
                             {isUp ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
                             {Math.abs(usage.change_percent)}% {comparisonLabel}
                         </div>

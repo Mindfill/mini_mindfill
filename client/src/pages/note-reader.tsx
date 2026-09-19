@@ -33,6 +33,7 @@ export default function NoteReader() {
     const [hasLoaded, setHasLoaded] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [noteTitle, setNoteTitle] = useState("Note");
+    const [isImageNote, setIsImageNote] = useState(false);
     const [fileUrl, setFileUrl] = useState<string | null>(null);
 
     const userName = user?.user_metadata?.full_name || user?.email || "User";
@@ -44,12 +45,16 @@ export default function NoteReader() {
         try {
             const { data, error: noteError } = await supabase
                 .from("notes")
-                .select("title, file_url")
+                .select("title, file_url, file_name")
                 .eq("id", noteId)
                 .single();
 
             if (noteError) throw noteError;
             setNoteTitle(data.title);
+            // Notes can now be photographs as well as PDFs (spec v2 §1.3).
+            // pdf.js throws on a JPEG, so the reader has to branch — checked on
+            // the stored filename, which is what the upload preserved.
+            setIsImageNote(/\.(jpe?g|png)$/i.test(data.file_name || ""));
 
             // The stored file_url is a /object/public/ link, which fails for a
             // private bucket. Mint a short-lived signed URL with the logged-in
@@ -120,7 +125,7 @@ export default function NoteReader() {
                 <AppSidebar userName={userName} activeItem="notes" onSignOut={handleSignOut} />
                 <div className="flex-1 flex flex-col items-center justify-center bg-background/0 relative p-6 text-center">
                     <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mb-6">
-                        <X className="w-8 h-8 text-red-500" />
+                        <X className="w-8 h-8 text-red-700 dark:text-red-400" />
                     </div>
                     <h2 className="text-xl font-bold text-foreground mb-2">Can't open this note</h2>
                     <p className="text-muted-foreground max-w-sm mb-8 leading-relaxed">
@@ -188,9 +193,20 @@ export default function NoteReader() {
                     </div>
                 </header>
 
-                {/* PDF viewer (pdf.js — renders on mobile too) */}
+                {/* PDF viewer (pdf.js — renders on mobile too), or the photo
+                    itself when the note was uploaded as an image. */}
                 <div className="flex-1 min-h-0 bg-muted/30">
-                    <PdfViewer url={fileUrl} />
+                    {isImageNote ? (
+                        <div className="h-full overflow-auto p-4">
+                            <img
+                                src={fileUrl}
+                                alt={noteTitle}
+                                className="mx-auto max-w-full h-auto rounded-xl shadow-sm"
+                            />
+                        </div>
+                    ) : (
+                        <PdfViewer url={fileUrl} />
+                    )}
                 </div>
             </div>
         </div>

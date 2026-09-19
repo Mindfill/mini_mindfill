@@ -60,7 +60,7 @@ export default function InviteAccept() {
                 )}
                 {status === "accepted" && (
                     <>
-                        <CheckCircle2 className="w-10 h-10 mx-auto text-green-500" />
+                        <CheckCircle2 className="w-10 h-10 mx-auto text-green-700 dark:text-green-400" />
                         <h1 className="text-lg font-semibold">You're in</h1>
                         <p className="text-muted-foreground text-sm">Taking you to your dashboard...</p>
                     </>

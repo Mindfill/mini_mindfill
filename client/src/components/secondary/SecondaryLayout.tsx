@@ -82,7 +82,7 @@ export default function SecondaryLayout() {
                 activeItem={location.startsWith("/secondary/dashboard") ? "home" : "learn"}
                 onSignOut={handleSignOut}
             />
-            <div ref={scrollRef} className="flex-1 overflow-y-auto relative">
+            <div ref={scrollRef} className="flex-1 min-w-0 overflow-y-auto relative">
                 {ready ? (
                     <ShellContext.Provider value={shell}>
                         <ErrorBoundary resetKey={location}>

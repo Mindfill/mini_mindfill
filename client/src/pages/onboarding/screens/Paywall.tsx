@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -12,22 +12,8 @@ import {
     PaymentPlan,
 } from "@/lib/api";
 import { useUserProfile } from "@/hooks/use-user-profile";
+import { SECONDARY_PLANS as PLANS } from "@/lib/plans";
 import { ScreenProps } from "../utils";
-
-interface PlanInfo {
-    id: PaymentPlan;
-    name: string;
-    price: string;
-    cadence: string;
-    badge?: string;
-}
-
-const PLANS: PlanInfo[] = [
-    { id: "secondary_individual_monthly", name: "Individual", price: "₦5,000", cadence: "per month" },
-    { id: "secondary_individual_yearly", name: "Individual", price: "₦40,000", cadence: "per year", badge: "Save 33%" },
-    { id: "secondary_family_monthly", name: "Family", price: "₦10,000", cadence: "per month" },
-    { id: "secondary_family_yearly", name: "Family", price: "₦80,000", cadence: "per year", badge: "Save 33%" },
-];
 
 export default function Paywall({ accessToken, collected }: ScreenProps) {
     const [, navigate] = useLocation();
@@ -37,7 +23,14 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
     const [ownerName, setOwnerName] = useState<string | null>(null);
 
     const [selectedPlan, setSelectedPlan] = useState<PaymentPlan>("secondary_individual_yearly");
-    const [payingOrSkipping, setPayingOrSkipping] = useState(false);
+    // Which action is in flight, if any. Only that action's button spins; the
+    // others are blocked so two can't race, but "pay" can always be cancelled.
+    const [pending, setPending] = useState<"pay" | "free" | "member" | null>(null);
+    const payingOrSkipping = pending !== null;
+    // Bumped on cancel, so a checkout request that resolves afterwards knows
+    // it was abandoned and doesn't redirect.
+    const payAttemptRef = useRef(0);
+    const redirectingRef = useRef(false);
     const [payError, setPayError] = useState<string | null>(null);
 
     const [promoOpen, setPromoOpen] = useState(false);
@@ -55,22 +48,38 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
             .finally(() => setCheckingMembership(false));
     }, [accessToken]);
 
+    // Coming back from Paystack with the browser's Back button can restore
+    // this page from the back/forward cache with the spinner still frozen
+    // mid-redirect. Start clean instead.
+    useEffect(() => {
+        const onPageShow = (e: PageTransitionEvent) => {
+            if (e.persisted) {
+                payAttemptRef.current += 1;
+                redirectingRef.current = false;
+                setPending(null);
+            }
+        };
+        window.addEventListener("pageshow", onPageShow);
+        return () => window.removeEventListener("pageshow", onPageShow);
+    }, []);
+
     const handleMemberContinue = async () => {
         if (payingOrSkipping) return;
-        setPayingOrSkipping(true);
+        setPending("member");
         try {
             await completeOnboarding(accessToken);
             await refreshProfile();
             navigate("/dashboard");
         } catch (err) {
             console.error("Failed to complete onboarding:", err);
-            setPayingOrSkipping(false);
+            setPending(null);
         }
     };
 
     const handlePay = async () => {
         if (payingOrSkipping) return;
-        setPayingOrSkipping(true);
+        const attempt = ++payAttemptRef.current;
+        setPending("pay");
         setPayError(null);
         try {
             // Must run before initiatePayment: the onboarding_gate middleware
@@ -79,17 +88,29 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
             // action — independent of payment outcome.
             await completeOnboarding(accessToken);
             const { payment_url } = await initiatePayment(selectedPlan, accessToken);
+            if (attempt !== payAttemptRef.current) return; // cancelled meanwhile
+            redirectingRef.current = true;
             window.location.href = payment_url;
         } catch (err) {
+            if (attempt !== payAttemptRef.current) return;
             console.error("Failed to start checkout:", err);
             setPayError("Couldn't start checkout. Please try again.");
-            setPayingOrSkipping(false);
+            setPending(null);
         }
+    };
+
+    const handleCancelPay = () => {
+        payAttemptRef.current += 1;
+        // If the redirect has already been kicked off, abort it too. Only
+        // then — window.stop() also kills any other in-flight requests.
+        if (redirectingRef.current) window.stop();
+        redirectingRef.current = false;
+        setPending(null);
     };
 
     const handleFreeChapter = async () => {
         if (payingOrSkipping) return;
-        setPayingOrSkipping(true);
+        setPending("free");
         try {
             await completeOnboarding(accessToken);
             await refreshProfile();
@@ -97,7 +118,7 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
             navigate("/secondary/start");
         } catch (err) {
             console.error("Failed to complete onboarding:", err);
-            setPayingOrSkipping(false);
+            setPending(null);
         }
     };
 
@@ -133,7 +154,7 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
                     You're all set{ownerName ? ` — ${ownerName} has got you covered.` : "."}
                 </h1>
                 <Button size="lg" onClick={handleMemberContinue} disabled={payingOrSkipping} className="w-full gap-2">
-                    {payingOrSkipping && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {pending === "member" && <Loader2 className="w-4 h-4 animate-spin" />}
                     Let's go →
                 </Button>
             </div>
@@ -153,7 +174,8 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
                         <button
                             key={plan.id}
                             onClick={() => setSelectedPlan(plan.id)}
-                            className={`text-left p-4 rounded-2xl border transition-all ${
+                            disabled={payingOrSkipping}
+                            className={`text-left p-4 rounded-2xl border transition-all disabled:opacity-60 ${
                                 active ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border bg-card"
                             }`}
                         >
@@ -178,23 +200,43 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
                                 <span className="text-lg font-bold">{plan.price}</span>
                                 <span className="text-[11px] text-muted-foreground">{plan.cadence}</span>
                             </div>
+                            {plan.subtitle && (
+                                <p className="text-[11px] text-muted-foreground mt-1 leading-snug">{plan.subtitle}</p>
+                            )}
                         </button>
                     );
                 })}
             </div>
 
-            {payError && <p className="text-sm text-red-400">{payError}</p>}
+            {payError && <p className="text-sm text-red-700 dark:text-red-400">{payError}</p>}
 
             <Button size="lg" onClick={handlePay} disabled={payingOrSkipping} className="w-full gap-2">
-                {payingOrSkipping && <Loader2 className="w-4 h-4 animate-spin" />}
-                <Sparkles className="w-4 h-4" /> Continue to payment
+                {pending === "pay" ? (
+                    <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> Opening secure checkout…
+                    </>
+                ) : (
+                    <>
+                        <Sparkles className="w-4 h-4" /> Continue to payment
+                    </>
+                )}
             </Button>
+            {pending === "pay" && (
+                <button
+                    type="button"
+                    onClick={handleCancelPay}
+                    className="block w-full text-sm text-muted-foreground hover:text-foreground"
+                >
+                    Cancel — pick a different option
+                </button>
+            )}
 
             <div className="space-y-3 pt-2 border-t border-border">
                 {!promoOpen ? (
                     <button
                         onClick={() => setPromoOpen(true)}
-                        className="text-sm text-muted-foreground hover:text-foreground pt-3"
+                        disabled={payingOrSkipping}
+                        className="text-sm text-muted-foreground hover:text-foreground pt-3 disabled:opacity-50"
                     >
                         Have a school code?
                     </button>
@@ -213,13 +255,14 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
                         </Button>
                     </form>
                 )}
-                {promoError && <p className="text-sm text-red-400">{promoError}</p>}
+                {promoError && <p className="text-sm text-red-700 dark:text-red-400">{promoError}</p>}
 
                 <button
                     onClick={handleFreeChapter}
                     disabled={payingOrSkipping}
-                    className="block w-full text-sm text-muted-foreground hover:text-foreground"
+                    className="flex items-center justify-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
                 >
+                    {pending === "free" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                     Start with the free chapter first →
                 </button>
             </div>

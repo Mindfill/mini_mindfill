@@ -66,7 +66,7 @@ export default function Dob({ accessToken, screenNumber, collected, onNext, onBa
             )}
 
             {response && <p className="text-primary font-medium fade-in">{response}</p>}
-            {error && <p className="text-sm text-red-400">{error}</p>}
+            {error && <p className="text-sm text-red-700 dark:text-red-400">{error}</p>}
 
             <Button type="submit" size="lg" disabled={!dob || submitting || !!response} className="w-full gap-2">
                 {submitting && <Loader2 className="w-4 h-4 animate-spin" />}

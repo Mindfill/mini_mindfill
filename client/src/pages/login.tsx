@@ -124,7 +124,7 @@ export default function Login() {
                 )}
 
                 {error && <p className="text-sm text-destructive">{error}</p>}
-                {checkEmailMessage && <p className="text-sm text-green-500">{checkEmailMessage}</p>}
+                {checkEmailMessage && <p className="text-sm text-green-700 dark:text-green-400">{checkEmailMessage}</p>}
 
                 <Button type="submit" size="lg" disabled={submitting} className="w-full gap-2">
                     {submitting && <Loader2 className="w-4 h-4 animate-spin" />}

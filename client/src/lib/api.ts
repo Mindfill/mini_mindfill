@@ -72,6 +72,8 @@ export interface StreamHandlers {
     onProgress?: (pct: number) => void;
     /** The `content` field value extracted progressively as the JSON streams. */
     onContent?: (content: string) => void;
+    /** Every model chunk as it arrives, accumulated — for fields other than content. */
+    onRaw?: (accumulated: string) => void;
 }
 
 /**
@@ -136,7 +138,7 @@ function applyFinal(response: NoteChatResponse, final: StreamFinal | null): Note
     };
 }
 
-async function readAccumulatedSSE(
+export async function readAccumulatedSSE(
     res: Response,
     handlers?: StreamHandlers
 ): Promise<{ text: string; final: StreamFinal | null }> {
@@ -175,6 +177,7 @@ async function readAccumulatedSSE(
             return;
         }
         accumulated += data;
+        handlers?.onRaw?.(accumulated);
         if (handlers?.onContent) {
             const c = extractStreamingContent(accumulated);
             if (c !== null) handlers.onContent(c);
@@ -672,6 +675,14 @@ export async function fetchQuizSections(
  * Upload a PDF note
  * POST /notes/upload
  */
+/** The same file was already uploaded — carries the existing note so the UI can open it. */
+export class DuplicateNoteError extends Error {
+    constructor(message: string, public noteId: string, public noteTitle: string) {
+        super(message);
+        this.name = "DuplicateNoteError";
+    }
+}
+
 export async function uploadNote(
     file: File,
     title: string,
@@ -702,6 +713,16 @@ export async function uploadNote(
     if (!res.ok) {
         const text = (await res.text()) || res.statusText;
         console.error("❌ Upload API error:", res.status, text);
+        if (res.status === 409) {
+            try {
+                const detail = JSON.parse(text).detail;
+                if (detail?.code === "duplicate_note") {
+                    throw new DuplicateNoteError(detail.message, detail.note_id, detail.title);
+                }
+            } catch (e) {
+                if (e instanceof DuplicateNoteError) throw e;
+            }
+        }
         throw new Error(`Failed to upload note: ${res.status} — ${text}`);
     }
 
@@ -780,6 +801,28 @@ export async function fetchNoteHistory(
         throw new Error(`Failed to fetch history: ${res.status} — ${text}`);
     }
 
+    return res.json();
+}
+
+/** §2.3 — a real figure from the student's notes, shown inline by [FIGURE:n]. */
+export interface NoteFigure {
+    number: number;
+    url: string;
+    page: number;
+    label: string | null;
+    description: string | null;
+    section_index: number;
+    section_title: string | null;
+}
+
+export async function fetchNoteFigures(noteId: string, accessToken: string): Promise<NoteFigure[]> {
+    const res = await fetch(`${BACKEND_URL}/notes/${noteId}/figures`, {
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to fetch figures: ${res.status} — ${text}`);
+    }
     return res.json();
 }
 
@@ -949,16 +992,39 @@ export async function initiatePayment(
  * Cancel the active subscription.
  * DELETE /subscriptions/cancel
  */
-export async function cancelSubscription(accessToken: string): Promise<void> {
+export interface MySubscription {
+    status: "active" | "lapsed" | "cancelled" | "expired" | null;
+    plan_type: string | null;
+    current_period_end: string | null;
+    /** Cancelled, but still inside the period they paid for. */
+    cancel_at_period_end: boolean;
+    has_access: boolean;
+}
+
+/** GET /subscriptions/me — drives the billing panel's Cancel / Resume / Subscribe. */
+export async function fetchMySubscription(accessToken: string): Promise<MySubscription> {
+    const res = await fetch(`${BACKEND_URL}/subscriptions/me`, {
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) throw new Error(await parseErrorDetail(res));
+    return res.json();
+}
+
+export async function cancelSubscription(
+    accessToken: string,
+): Promise<{ message: string; access_until: string | null }> {
     const res = await fetch(`${BACKEND_URL}/subscriptions/cancel`, {
         method: "DELETE",
         headers: authHeaders(accessToken),
     });
 
     if (!res.ok) {
-        const text = (await res.text()) || res.statusText;
-        throw new Error(`Failed to cancel subscription: ${res.status} — ${text}`);
+        // The backend now returns a usable reason (already cancelled, provider
+        // unreachable, and so on) rather than one opaque 502.
+        throw new Error(await parseErrorDetail(res));
     }
+
+    return res.json();
 }
 
 /**
@@ -1507,9 +1573,15 @@ export async function fetchPaywallStatus(accessToken: string): Promise<PaywallSt
 }
 
 /** Thrown when a promo code is invalid, inactive, or past its uses/expiry. */
+const PROMO_CODE_MESSAGES = {
+    promo_code_invalid: "That code isn't valid.",
+    promo_code_expired: "This code has expired or reached its limit.",
+    promo_code_already_redeemed: "You've already used this code.",
+} as const;
+
 export class PromoCodeError extends Error {
-    constructor(public code: "promo_code_invalid" | "promo_code_expired") {
-        super(code === "promo_code_expired" ? "This code has expired or reached its limit." : "That code isn't valid.");
+    constructor(public code: keyof typeof PROMO_CODE_MESSAGES) {
+        super(PROMO_CODE_MESSAGES[code]);
         this.name = "PromoCodeError";
     }
 }
@@ -1530,6 +1602,9 @@ export async function redeemPromoCode(
 
     if (res.status === 404) throw new PromoCodeError("promo_code_invalid");
     if (res.status === 410) throw new PromoCodeError("promo_code_expired");
+    // 409 = this account already redeemed this code. Used to surface as a 500
+    // from the unique constraint, so the student just saw "something went wrong".
+    if (res.status === 409) throw new PromoCodeError("promo_code_already_redeemed");
     if (!res.ok) {
         throw new Error(`Failed to redeem promo code: ${res.status} — ${await parseErrorDetail(res)}`);
     }
@@ -1835,6 +1910,18 @@ export interface SchoolStudentDetail {
 
 export async function fetchSchoolStudentDetail(studentId: string, accessToken: string): Promise<SchoolStudentDetail> {
     const res = await fetch(`${BACKEND_URL}/school/students/${studentId}`, {
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to load student: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+/** The same drill-down, for a student linked to the signed-in parent. Uni
+ * students come back in the same shape with chapter/struggle fields empty. */
+export async function fetchParentStudentDetail(studentId: string, accessToken: string): Promise<SchoolStudentDetail> {
+    const res = await fetch(`${BACKEND_URL}/parent/students/${studentId}`, {
         headers: authHeaders(accessToken),
     });
     if (!res.ok) {

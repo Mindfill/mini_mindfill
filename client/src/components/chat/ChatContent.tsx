@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { fetchVisualizationsStatus, extractStreamingContent, type VizStatus } from "@/lib/api";
+import { fetchVisualizationsStatus, extractStreamingContent, type NoteFigure, type VizStatus } from "@/lib/api";
 import MarkdownLatex from "@/components/ui/markdown-latex";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { KeyTerm } from "@/lib/keywordHighlight";
 import { Loader2, RefreshCw } from "lucide-react";
 
@@ -47,20 +48,26 @@ interface ChatContentProps {
     className?: string;
     /** Feature 05 — omit for the live-streaming bubble; only committed messages get highlighted. */
     keyTerms?: KeyTerm[];
+    /** §2.3 — the note's own figures by number, for [FIGURE:n] tokens (notes chat only). */
+    figures?: Record<number, NoteFigure>;
 }
 
-type Segment = { type: "text"; text: string } | { type: "viz"; index: number };
+type Segment =
+    | { type: "text"; text: string }
+    | { type: "viz"; index: number }
+    | { type: "figure"; number: number };
 
-const VIZ_RE = /\[VIZ:(\d+)\]/g;
+const TOKEN_RE = /\[(VIZ|FIGURE):(\d+)\]/g;
 
 function parseSegments(content: string): Segment[] {
     const segs: Segment[] = [];
     let last = 0;
     let m: RegExpExecArray | null;
-    VIZ_RE.lastIndex = 0;
-    while ((m = VIZ_RE.exec(content)) !== null) {
+    TOKEN_RE.lastIndex = 0;
+    while ((m = TOKEN_RE.exec(content)) !== null) {
         if (m.index > last) segs.push({ type: "text", text: content.slice(last, m.index) });
-        segs.push({ type: "viz", index: parseInt(m[1], 10) });
+        const n = parseInt(m[2], 10);
+        segs.push(m[1] === "VIZ" ? { type: "viz", index: n } : { type: "figure", number: n });
         last = m.index + m[0].length;
     }
     if (last < content.length) segs.push({ type: "text", text: content.slice(last) });
@@ -79,19 +86,57 @@ const isTerminal = (s?: VizStatus) => isReady(s) || isPermanentFail(s);
  * /visualizations/status (every 5s while in view) and reflects the render state:
  * loading → retrying → video, or a permanent-failure state.
  */
-export default function ChatContent({ content, sessionId, className, keyTerms }: ChatContentProps) {
+export default function ChatContent({ content, sessionId, className, keyTerms, figures }: ChatContentProps) {
     const segments = useMemo(() => parseSegments(normalizeContent(content)), [content]);
 
     return (
         <div className={className}>
-            {segments.map((seg, i) =>
-                seg.type === "text" ? (
-                    seg.text.trim() ? <MarkdownLatex key={i} content={seg.text} keyTerms={keyTerms} /> : null
-                ) : (
-                    <VizSlot key={i} index={seg.index} sessionId={sessionId} />
-                )
-            )}
+            {segments.map((seg, i) => {
+                if (seg.type === "text") {
+                    return seg.text.trim() ? <MarkdownLatex key={i} content={seg.text} keyTerms={keyTerms} /> : null;
+                }
+                if (seg.type === "viz") {
+                    return <VizSlot key={i} index={seg.index} sessionId={sessionId} />;
+                }
+                // Unknown number (or figures not loaded yet) → nothing, never a broken image.
+                const figure = figures?.[seg.number];
+                return figure ? <FigureSlot key={i} figure={figure} /> : null;
+            })}
         </div>
+    );
+}
+
+/** One of the student's own figures, inline. Tap to see it full size —
+ * textbook diagrams carry small labels a chat-width image can't show. */
+function FigureSlot({ figure }: { figure: NoteFigure }) {
+    const [open, setOpen] = useState(false);
+    const name = figure.label || `Figure ${figure.number}`;
+    const alt = figure.description ? `${name}: ${figure.description}` : name;
+
+    return (
+        <figure className="my-4">
+            <button
+                type="button"
+                onClick={() => setOpen(true)}
+                aria-label={`Enlarge ${name}`}
+                // White ground: textbook figures are drawn for paper, and many
+                // PNGs are transparent — on a dark card their black lines vanish.
+                className="block w-full rounded-2xl overflow-hidden border border-border bg-white cursor-zoom-in focus-visible:ring-2 focus-visible:ring-primary outline-none"
+            >
+                <img src={figure.url} alt={alt} loading="lazy" className="w-full max-h-[420px] object-contain" />
+            </button>
+            <figcaption className="mt-2 text-xs text-muted-foreground">
+                <span className="font-semibold text-foreground/80">{name}</span> · from your notes, page {figure.page}
+            </figcaption>
+            <Dialog open={open} onOpenChange={setOpen}>
+                <DialogContent className="max-w-4xl w-[calc(100vw-2rem)] p-3">
+                    <DialogTitle className="text-sm font-semibold pr-8">{name}</DialogTitle>
+                    <div className="rounded-xl overflow-hidden bg-white">
+                        <img src={figure.url} alt={alt} className="w-full h-auto max-h-[80dvh] object-contain" />
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </figure>
     );
 }
 

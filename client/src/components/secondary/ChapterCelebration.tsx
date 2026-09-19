@@ -37,10 +37,10 @@ export default function ChapterCelebration({ progression, onContinue }: { progre
         >
             <div className="text-center max-w-md space-y-6">
                 <div ref={iconRef} className="w-24 h-24 mx-auto rounded-full bg-emerald-500/15 flex items-center justify-center">
-                    <CheckCircle2 className="w-14 h-14 text-emerald-500" />
+                    <CheckCircle2 className="w-14 h-14 text-emerald-700 dark:text-emerald-400" />
                 </div>
                 <div ref={textRef} className="space-y-2">
-                    <p className="text-xs uppercase tracking-widest text-emerald-600 dark:text-emerald-400 font-semibold">
+                    <p className="text-xs uppercase tracking-widest text-emerald-700 dark:text-emerald-400 font-semibold">
                         {progression.subject_completed ? "Subject complete" : "Chapter complete"}
                     </p>
                     <h2 id="chapter-complete-title" className="text-3xl md:text-4xl font-semibold tracking-tight">

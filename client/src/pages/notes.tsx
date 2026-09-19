@@ -195,7 +195,7 @@ export default function NotesDashboard() {
             <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
                 <AnimatedGradientBg />
                 <AppSidebar userName={userName || "Loading..."} activeItem="home" onSignOut={handleSignOut} />
-                <div className="flex-1 overflow-y-auto relative">
+                <div className="flex-1 min-w-0 overflow-y-auto relative">
                     <TechcessLoader label="Loading your notes" />
                 </div>
             </div>
@@ -235,7 +235,7 @@ export default function NotesDashboard() {
                 onSignOut={handleSignOut}
             />
 
-            <div className="flex-1 overflow-y-auto relative">
+            <div className="flex-1 min-w-0 overflow-y-auto relative">
                 <main className="max-w-4xl mx-auto p-6 md:p-10 space-y-10">
 
                     {/* Header */}
@@ -288,7 +288,7 @@ export default function NotesDashboard() {
                                     <h2 className="text-xs font-bold tracking-widest uppercase text-muted-foreground">
                                         Courses
                                     </h2>
-                                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                                         {courses.map((c) => (
                                             <NoteCourseCard
                                                 key={c.id}
@@ -312,7 +312,7 @@ export default function NotesDashboard() {
                                             Uncategorized Notes
                                         </h2>
                                     )}
-                                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                                         {looseNotes.map((note) => (
                                             <NoteCard
                                                 key={note.id}

@@ -84,7 +84,7 @@ function ProblemTutorSheet({
                     )}
                     {streaming ? <ChatBubble role="assistant" content={streaming} /> : sending && <TypingIndicator />}
                     {error && (
-                        <div role="alert" className="text-sm text-red-600 dark:text-red-400 text-center">
+                        <div role="alert" className="text-sm text-red-700 dark:text-red-400 text-center">
                             {error.message}{" "}
                             {error.retry && (
                                 <button className="underline font-medium min-h-[44px]" onClick={() => send(error.retry!)}>Send again</button>
@@ -130,12 +130,12 @@ export default function EndOfChapter({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [chapterId, accessToken]);
 
-    if (loadError) return <p className="text-sm text-red-600 dark:text-red-400" role="alert">Couldn't load the problems. Refresh to try again.</p>;
+    if (loadError) return <p className="text-sm text-red-700 dark:text-red-400" role="alert">Couldn't load the problems. Refresh to try again.</p>;
     if (!problems) return <Loader2 className="w-5 h-5 animate-spin text-muted-foreground mx-auto" />;
 
     if (problems.length === 0) {
         return (
-            <div className="glass-panel rounded-3xl p-8 text-center space-y-4">
+            <div className="glass-panel rounded-3xl p-6 md:p-8 text-center space-y-4">
                 <p className="text-muted-foreground">No chapter problems yet.</p>
                 <button
                     onClick={async () => {
@@ -153,7 +153,7 @@ export default function EndOfChapter({
                 >
                     {busy === "empty" && <Loader2 className="w-4 h-4 animate-spin" />} Continue
                 </button>
-                {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+                {error && <p className="text-sm text-red-700 dark:text-red-400">{error}</p>}
             </div>
         );
     }
@@ -324,7 +324,7 @@ export default function EndOfChapter({
                         </div>
                     </div>
                 )}
-                {error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
+                {error && <p className="text-sm text-red-700 dark:text-red-400" role="alert">{error}</p>}
             </div>
 
             {p.tutor_available && (

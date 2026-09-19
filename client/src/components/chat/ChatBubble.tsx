@@ -1,5 +1,6 @@
 import ChatContent from "@/components/chat/ChatContent";
 import type { KeyTerm } from "@/lib/keywordHighlight";
+import type { NoteFigure } from "@/lib/api";
 import mindfillIcon from "@/assets/mindfill.png";
 
 interface ChatBubbleProps {
@@ -11,9 +12,11 @@ interface ChatBubbleProps {
     isHistory?: boolean;
     /** Feature 05 — omit for the live-streaming bubble; only committed messages get highlighted. */
     keyTerms?: KeyTerm[];
+    /** §2.3 — the note's figures, for inline [FIGURE:n] (notes chat only). */
+    figures?: Record<number, NoteFigure>;
 }
 
-export default function ChatBubble({ role, content, sessionId, isHistory, keyTerms }: ChatBubbleProps) {
+export default function ChatBubble({ role, content, sessionId, isHistory, keyTerms, figures }: ChatBubbleProps) {
     const isUser = role === "user";
 
     return (
@@ -33,17 +36,23 @@ export default function ChatBubble({ role, content, sessionId, isHistory, keyTer
                     `}
                 />
 
-                {/* Message bubble */}
+                {/* Message bubble. min-w-0: as a flex item it would otherwise
+                    refuse to shrink below its widest child — one long code
+                    line or equation widened the bubble past the screen and
+                    gave the whole chat a sideways scroll. With it, that
+                    content scrolls inside its own box instead. */}
                 <div
                     className={`
-                        rounded-2xl px-5 py-4 text-[15px] leading-relaxed
+                        min-w-0 rounded-2xl px-4 sm:px-5 py-4 text-[15px] leading-relaxed
                         ${isUser
                             ? "bg-muted border border-border text-foreground rounded-tr-sm"
                             : "bg-card border border-border text-foreground rounded-tl-sm backdrop-blur-sm"
                         }
                     `}
                 >
-                    <ChatContent content={content} sessionId={sessionId} isHistory={isHistory} keyTerms={role === "assistant" ? keyTerms : undefined} />
+                    <ChatContent content={content} sessionId={sessionId} isHistory={isHistory} keyTerms={role === "assistant" ? keyTerms : undefined}
+                        figures={role === "assistant" ? figures : undefined}
+                    />
                 </div>
             </div>
         </div>

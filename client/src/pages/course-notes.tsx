@@ -207,7 +207,7 @@ export default function CourseNotes() {
             <AnimatedGradientBg />
             <AppSidebar userName={userName} activeItem="notes" onSignOut={handleSignOut} />
 
-            <div className="flex-1 overflow-y-auto relative">
+            <div className="flex-1 min-w-0 overflow-y-auto relative">
                 <main className="max-w-4xl mx-auto p-6 md:p-10 space-y-10">
                     {/* Header */}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -274,7 +274,7 @@ export default function CourseNotes() {
 
                     {/* Notes grid */}
                     {notes.length > 0 ? (
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                             {notes.map((note) => (
                                 <NoteCard
                                     key={note.id}

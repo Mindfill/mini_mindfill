@@ -67,7 +67,7 @@ function SubjectList({ accessToken }: { accessToken: string }) {
                         >
                             <div className="flex items-start justify-between gap-3">
                                 <h2 className="text-xl font-semibold">{s.title}</h2>
-                                {s.is_complete ? <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" aria-label="Complete" /> : <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />}
+                                {s.is_complete ? <CheckCircle2 className="w-5 h-5 text-emerald-700 dark:text-emerald-400 shrink-0" aria-label="Complete" /> : <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />}
                             </div>
                             {s.description && <p className="text-sm text-muted-foreground line-clamp-2">{s.description}</p>}
                             <ProgressBar value={s.percent_complete} complete={s.is_complete} label={`${s.completed_subsections} of ${s.total_subsections} lessons`} />
@@ -124,7 +124,7 @@ function ChapterCard({ chapter: c, index, onOpen }: { chapter: ChapterSummary; i
 
     let stateLabel: React.ReactNode;
     if (c.coming_soon) stateLabel = <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Coming soon</span>;
-    else if (c.is_complete) stateLabel = <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400"><CheckCircle2 className="w-3.5 h-3.5" /> Complete</span>;
+    else if (c.is_complete) stateLabel = <span className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400"><CheckCircle2 className="w-3.5 h-3.5" /> Complete</span>;
     else if (c.requires_subscription) stateLabel = <span className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5" /> Subscribe to unlock</span>;
     else if (c.locked) stateLabel = <span className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5" /> Finish the previous chapter</span>;
     else if (c.completed_subsections > 0) stateLabel = <span className="text-primary">In progress</span>;
