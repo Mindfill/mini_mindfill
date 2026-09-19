@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
-import { Note, Course, fetchCourses, deleteCourse } from "@/lib/api";
+import { Note, Course, fetchCourses, deleteCourse, deleteNote } from "@/lib/api";
 import { invalidateNotesCache } from "@/pages/notes";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import TechcessLoader from "@/components/brand/TechcessLoader";
@@ -153,6 +153,19 @@ export default function CourseNotes() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [session, authLoading, navigate, courseId]);
 
+    const handleDeleteNote = async (noteId: string) => {
+        if (!session) return;
+        try {
+            await deleteNote(noteId, session.access_token);
+            toast({ title: "Note deleted" });
+            invalidateNotesCache(); // the main Notes page still lists it otherwise
+            loadData();
+        } catch (err) {
+            console.error("Failed to delete note:", err);
+            toast({ variant: "destructive", title: "Couldn't delete note", description: "Please try again." });
+        }
+    };
+
     const handleSignOut = async () => {
         await supabaseSignOut();
         navigate("/login");
@@ -280,6 +293,7 @@ export default function CourseNotes() {
                                     key={note.id}
                                     note={note}
                                     onRemoveFromCourse={() => removeNoteFromCourse(note.id)}
+                                    onDelete={() => handleDeleteNote(note.id)}
                                 />
                             ))}
                         </div>

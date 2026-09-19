@@ -11,9 +11,11 @@ import { Flame, TrendingUp, TrendingDown, Users, Sparkles, ArrowUpCircle, Chevro
 import StudentDetailSheet from "@/components/dashboard/StudentDetailSheet";
 import { fetchParentStudentDetail, StudentSummary } from "@/lib/api";
 import { useParentDashboard } from "@/lib/appQueries";
+import { formatMinutesChange } from "@/lib/studyTime";
 
 function StudentCard({ student, onOpen }: { student: StudentSummary; onOpen: () => void }) {
-    const isUp = student.study_minutes_change_percent > 0;
+    const change = student.study_minutes_change ?? 0;
+    const isUp = change > 0;
     return (
         <div
             onClick={onOpen}
@@ -52,10 +54,13 @@ function StudentCard({ student, onOpen }: { student: StudentSummary; onOpen: () 
 
             <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">{student.study_minutes_this_week} min this week</span>
-                {student.study_minutes_change_percent !== 0 && (
-                    <span className={`flex items-center gap-1 text-xs font-medium ${isUp ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}`}>
+                {change !== 0 && (
+                    <span
+                        className={`flex items-center gap-1 text-xs font-medium ${isUp ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}`}
+                        title="Compared with last week"
+                    >
                         {isUp ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                        {Math.abs(student.study_minutes_change_percent)}%
+                        {formatMinutesChange(change)} vs last week
                     </span>
                 )}
             </div>

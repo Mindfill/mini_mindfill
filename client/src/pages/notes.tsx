@@ -6,7 +6,7 @@ import TechcessLoader from "@/components/brand/TechcessLoader";
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import { GlassButton } from "@/components/ui/glass-button";
 import { supabase } from "@/lib/supabase";
-import { Note, Course, fetchCourses, deleteCourse } from "@/lib/api";
+import { Note, Course, fetchCourses, deleteCourse, deleteNote } from "@/lib/api";
 import { Plus, FileSearch, FolderPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import NoteUploadModal from "@/components/notes/NoteUploadModal";
@@ -185,6 +185,18 @@ export default function NotesDashboard() {
         }
     };
 
+    const handleDeleteNote = async (noteId: string) => {
+        if (!session) return;
+        try {
+            await deleteNote(noteId, session.access_token);
+            toast({ title: "Note deleted" });
+            loadNotes();
+        } catch (err) {
+            console.error("Failed to delete note:", err);
+            toast({ variant: "destructive", title: "Couldn't delete note", description: "Please try again." });
+        }
+    };
+
     const handleSignOut = async () => {
         await supabaseSignOut();
         navigate("/login");
@@ -319,6 +331,7 @@ export default function NotesDashboard() {
                                                 note={note}
                                                 courses={courses}
                                                 onAssign={(courseId) => assignNoteToCourse(note.id, courseId)}
+                                                onDelete={() => handleDeleteNote(note.id)}
                                             />
                                         ))}
                                     </div>

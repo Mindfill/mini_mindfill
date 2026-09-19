@@ -68,6 +68,17 @@ export const SECONDARY_PERKS = [
     "Family plan: up to 3 users on one subscription",
 ];
 
+/**
+ * The short name of the plan someone is on — "Pro", "Individual", "Family" —
+ * for the profile's Plan & billing card. Falls back by account type when the
+ * plan id isn't known (e.g. a family member, whose row may not carry one).
+ */
+export function planDisplayName(planType: string | null | undefined, userType: UserType | null): string {
+    const plan = [...UNIVERSITY_PLANS, ...SECONDARY_PLANS].find((p) => p.id === planType);
+    if (plan) return plan.id.startsWith("pro_") ? "Pro" : plan.name;
+    return userType === "secondary" ? "Paid" : "Pro";
+}
+
 /** Secondary accounts get secondary plans; everyone else sees Pro. */
 export function plansFor(userType: UserType | null): {
     plans: PlanInfo[];

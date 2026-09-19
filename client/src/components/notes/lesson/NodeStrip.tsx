@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Check, Lock } from "lucide-react";
+import { Check } from "lucide-react";
 import type { BoardSection } from "@/lib/noteLessonApi";
 
 /**
@@ -28,31 +28,24 @@ export default function NodeStrip({
             <ol className="flex gap-1.5 w-max py-0.5">
                 {sections.map((s, i) => {
                     const active = s.section_index === activeIndex;
-                    const locked = s.state === "locked";
+                    // No locked state: every section opens, in any order (David).
                     const tone = active
                         ? "bg-primary/10 text-primary border-primary/50"
                         : s.state === "done"
                           ? "bg-primary/5 text-foreground border-primary/25"
-                          : locked
-                            ? "bg-muted text-muted-foreground border-border opacity-30"
-                            : "bg-muted text-muted-foreground border-border";
+                          : "bg-muted text-muted-foreground border-border";
                     return (
                         <li key={s.section_index}>
                             <button
                                 ref={active ? activeRef : undefined}
                                 type="button"
-                                // Locked does nothing — no error state (spec §3.2).
-                                onClick={() => !locked && !active && onSelect(s.section_index)}
-                                aria-disabled={locked}
+                                onClick={() => !active && onSelect(s.section_index)}
                                 aria-current={active ? "step" : undefined}
                                 title={s.title}
-                                aria-label={`Section ${i + 1}: ${s.title}${s.state === "done" ? " (complete)" : locked ? " (locked)" : ""}`}
-                                className={`h-8 min-w-[44px] px-3 rounded-full border text-[11px] font-semibold tabular-nums inline-flex items-center gap-1 ${tone} ${
-                                    locked ? "cursor-default" : "hover:border-primary/60"
-                                }`}
+                                aria-label={`Section ${i + 1}: ${s.title}${s.state === "done" ? " (complete)" : ""}`}
+                                className={`h-8 min-w-[44px] px-3 rounded-full border text-[11px] font-semibold tabular-nums inline-flex items-center gap-1 hover:border-primary/60 ${tone}`}
                             >
                                 {s.state === "done" && !active && <Check className="w-3 h-3 text-primary" aria-hidden="true" />}
-                                {locked && <Lock className="w-2.5 h-2.5" aria-hidden="true" />}
                                 S{i + 1}
                                 {active && <span aria-hidden="true">●</span>}
                             </button>

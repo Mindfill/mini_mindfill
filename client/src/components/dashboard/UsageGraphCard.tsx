@@ -1,9 +1,10 @@
 import { BarChart, Bar, XAxis, ResponsiveContainer, Tooltip, Cell } from "recharts";
 import { TrendingUp, TrendingDown, Loader2 } from "lucide-react";
 import type { UsageDay, UsagePeriod } from "@/lib/api";
+import { formatMinutesChange } from "@/lib/studyTime";
 
 interface UsageGraphCardProps {
-    usage: { days: UsageDay[]; change_percent: number; change_direction: string };
+    usage: { days: UsageDay[]; change_minutes?: number; change_direction: string };
     title?: string;
     /** Omit to render without a toggle (uni/parent dashboards — 7-day only). */
     period?: UsagePeriod;
@@ -42,7 +43,7 @@ export default function UsageGraphCard({
                     {usage.change_direction !== "same" && (
                         <div className={`flex items-center gap-1 text-xs font-medium ${isUp ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}`}>
                             {isUp ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                            {Math.abs(usage.change_percent)}% {comparisonLabel}
+                            {formatMinutesChange(usage.change_minutes ?? 0)} {comparisonLabel}
                         </div>
                     )}
                     {period && onPeriodChange && (

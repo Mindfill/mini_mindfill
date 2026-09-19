@@ -16,10 +16,10 @@ import StudentMessage from "@/components/notes/lesson/StudentMessage";
 import ChipRow from "@/components/notes/lesson/ChipRow";
 import LessonInput from "@/components/notes/lesson/LessonInput";
 import NotesDrawer from "@/components/notes/lesson/NotesDrawer";
+import LessonPreparing from "@/components/notes/lesson/LessonPreparing";
 import { OutOfCreditsError, fetchNoteFigures, type NoteFigure } from "@/lib/api";
 import { extractKeyTerms, type KeyTerm } from "@/lib/keywordHighlight";
 import {
-    ensureLessonPlan,
     fetchNoteBoard,
     fetchSectionState,
     openSection,
@@ -122,20 +122,7 @@ export default function NoteLesson() {
             setNoteTitle(board.title);
             setSections(board.sections);
 
-            if (initial.state === "locked") {
-                navigate(`/notes/${noteId}`, { replace: true });
-                return;
-            }
-
-            let state = initial;
-            if (!state.plan_ready) {
-                // No "Start Learning" step any more — prepare it here if the
-                // board hadn't finished doing so.
-                await ensureLessonPlan(noteId, accessToken);
-                state = await fetchSectionState(noteId, sectionIndex, accessToken);
-                if (stale()) return;
-            }
-
+            const state = initial;
             setSectionTitle(state.title);
             setNextSection(state.next_section);
             setKeyTerms(extractKeyTerms(state.key_terms));
@@ -146,6 +133,9 @@ export default function NoteLesson() {
             setLoading(false);
 
             if (state.needs_opening) {
+                // The screen is already up; the text loop covers the few
+                // seconds while the tutor (and, first time, the section's
+                // plan) is prepared.
                 setOpening(true);
                 try {
                     const opened = await openSection(noteId, sectionIndex, accessToken);
@@ -153,6 +143,7 @@ export default function NoteLesson() {
                     setSessionId(opened.session_id);
                     setMessages(opened.messages);
                     setPhase(opened.phase ?? 1);
+                    if (opened.key_terms) setKeyTerms(extractKeyTerms(opened.key_terms));
                 } catch (err) {
                     if (!stale()) handleError(err, "Couldn't start this lesson");
                 } finally {
@@ -166,7 +157,7 @@ export default function NoteLesson() {
             setLoadError("Couldn't load this lesson.");
             setLoading(false);
         }
-    }, [accessToken, noteId, sectionIndex, navigate, handleError, promptUpgrade]);
+    }, [accessToken, noteId, sectionIndex, handleError, promptUpgrade]);
 
     useEffect(() => {
         load();
@@ -216,15 +207,9 @@ export default function NoteLesson() {
             setPhase(reply.phase);
             if (reply.section_complete) {
                 setCompletion({ next: reply.next_section, noteComplete: reply.note_complete });
-                // Light the strip without a refetch: this node done, the next one open.
+                // Tick this node on the strip without a refetch.
                 setSections((prev) =>
-                    prev.map((s) =>
-                        s.section_index === sectionIndex
-                            ? { ...s, state: "done" }
-                            : s.section_index === reply.next_section && s.state === "locked"
-                              ? { ...s, state: "available" }
-                              : s,
-                    ),
+                    prev.map((s) => (s.section_index === sectionIndex ? { ...s, state: "done" } : s)),
                 );
             }
         } catch (err) {
@@ -358,7 +343,8 @@ export default function NoteLesson() {
                     {showChips && last.chip_set && <ChipRow chipSet={last.chip_set} onPick={(t) => send(t)} disabled={outOfCredits} />}
 
                     {streaming ? <TutorMessage content={streaming} figures={figures} /> : null}
-                    {(opening || (sending && !streaming)) && (
+                    {opening && <LessonPreparing review={messages.length === 0 && readOnly} />}
+                    {sending && !streaming && (
                         <div>
                             <TutorLabel />
                             <TypingIndicator />
@@ -388,10 +374,6 @@ export default function NoteLesson() {
                             justCompleted={!!completion}
                             noteComplete={completion?.noteComplete ?? false}
                             next={completion ? completion.next : nextSection}
-                            nextOpen={
-                                (completion ? completion.next : nextSection) !== null &&
-                                sections.find((s) => s.section_index === (completion ? completion.next : nextSection))?.state !== "locked"
-                            }
                             onNext={(idx) => navigate(`/notes/${noteId}/sections/${idx}`)}
                             onBoard={() => navigate(`/notes/${noteId}`)}
                             onReview={reviewAgain}
@@ -458,7 +440,6 @@ function SectionDone({
     justCompleted,
     noteComplete,
     next,
-    nextOpen,
     onNext,
     onBoard,
     onReview,
@@ -467,7 +448,6 @@ function SectionDone({
     justCompleted: boolean;
     noteComplete: boolean;
     next: number | null;
-    nextOpen: boolean;
     onNext: (idx: number) => void;
     onBoard: () => void;
     onReview: () => void;
@@ -484,7 +464,7 @@ function SectionDone({
                       : "You've completed this section."}
             </p>
             <div className="flex flex-wrap gap-2">
-                {next !== null && nextOpen && (
+                {next !== null && (
                     <button
                         onClick={() => onNext(next)}
                         className="min-h-[44px] px-5 rounded-full bg-primary text-primary-foreground text-sm font-semibold inline-flex items-center gap-1.5"

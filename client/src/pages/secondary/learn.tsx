@@ -1,14 +1,14 @@
 import { useEffect } from "react";
-import { useLocation, useParams } from "wouter";
+import { useLocation, useParams, useSearch } from "wouter";
 import { motion } from "motion/react";
 import SecondaryShell, { AccessErrorState, PageSkeleton } from "@/components/secondary/SecondaryShell";
 import { ProgressBar } from "@/components/secondary/ProgressBar";
 import { Lock, CheckCircle2, Sparkles, ChevronRight, Clock } from "lucide-react";
-import { type ChapterSummary, type SubjectSummary } from "@/lib/secondaryApi";
+import { CLASS_LEVELS, type ChapterSummary, type ClassLevel, type SubjectSummary } from "@/lib/secondaryApi";
 import { useChapters, useSubjects } from "@/lib/secondaryQueries";
 
 /**
- * /secondary/learn            → subject list (skipped straight to chapters when there's one subject)
+ * /secondary/learn[?class=SS2] → SS1/SS2/SS3 tabs → that class's subjects
  * /secondary/learn/:subjectId → chapter grid
  */
 export default function Learn() {
@@ -26,35 +26,71 @@ export default function Learn() {
     );
 }
 
+/**
+ * Every student can browse every class (David, 2026-09-19): SS1 / SS2 / SS3
+ * tabs, each listing that class's subjects. The tab lives in the URL
+ * (?class=SS2) so Back from a subject returns to the same class. With no
+ * ?class the server answers for the student's own class.
+ *
+ * The old version skipped straight to the chapter grid when there was only
+ * one subject — with tabs that would have hidden the other classes, so it's gone.
+ */
 function SubjectList({ accessToken }: { accessToken: string }) {
     const [, navigate] = useLocation();
-    const { data, error, refetch } = useSubjects(accessToken);
+    const search = useSearch();
+    const requested = new URLSearchParams(search).get("class");
+    const selected = CLASS_LEVELS.includes(requested as ClassLevel) ? (requested as ClassLevel) : null;
+
+    const { data, error, refetch, isPlaceholderData } = useSubjects(accessToken, selected);
     const subjects: SubjectSummary[] | null = data?.subjects ?? null;
-    const onlySubject = subjects?.length === 1 ? subjects[0].subject_id : null;
+    const activeClass = selected ?? data?.class_level ?? null;
+    const ownClass = data?.student_class_level ?? null;
 
     useEffect(() => {
         document.title = "Learn | TECHCESS";
     }, []);
 
-    useEffect(() => {
-        if (onlySubject) navigate(`/secondary/learn/${onlySubject}`, { replace: true });
-    }, [onlySubject, navigate]);
-
     if (error && !data) return <AccessErrorState error={error} onRetry={() => refetch()} />;
-    if (!subjects || onlySubject) return <PageSkeleton />;
+    if (!subjects) return <PageSkeleton />;
 
     return (
         <main className="max-w-4xl mx-auto px-4 py-8 md:p-10 space-y-8">
-            <header>
-                <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">Your subjects</h1>
-                <p className="text-muted-foreground mt-2">Pick up where you left off, or start something new.</p>
+            <header className="space-y-5">
+                <div>
+                    <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">Subjects</h1>
+                    <p className="text-muted-foreground mt-2">Pick a class, then a subject.</p>
+                </div>
+                <div className="inline-flex glass-chip rounded-full p-1" role="tablist" aria-label="Class">
+                    {CLASS_LEVELS.map((level) => (
+                        <button
+                            key={level}
+                            type="button"
+                            role="tab"
+                            aria-selected={activeClass === level}
+                            onClick={() => navigate(`/secondary/learn?class=${level}`, { replace: true })}
+                            className={`min-h-[40px] min-w-[64px] px-4 rounded-full text-sm font-medium transition-colors ${
+                                activeClass === level ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                            {level}
+                            {level === ownClass && <span className="sr-only"> (your class)</span>}
+                        </button>
+                    ))}
+                </div>
             </header>
             {subjects.length === 0 ? (
-                <div className="glass-panel rounded-2xl p-8 text-center text-muted-foreground">
-                    Your lessons aren't ready yet — check back soon.
+                <div className={`glass-panel rounded-2xl p-8 text-center space-y-4 ${isPlaceholderData ? "opacity-60" : ""}`}>
+                    <p className="text-muted-foreground">{activeClass ?? "These"} lessons are on the way — check back soon.</p>
+                    {/* Mental Models is free for every class — never leave someone with nothing to do. */}
+                    <button
+                        onClick={() => navigate("/secondary/start")}
+                        className="min-h-[44px] px-5 rounded-full bg-primary text-primary-foreground text-sm font-medium"
+                    >
+                        Start with Mental Models (free) →
+                    </button>
                 </div>
             ) : (
-                <div className="grid sm:grid-cols-2 gap-4">
+                <div className={`grid sm:grid-cols-2 gap-4 ${isPlaceholderData ? "opacity-60" : ""}`} aria-busy={isPlaceholderData}>
                     {subjects.map((s, i) => (
                         <motion.button
                             key={s.subject_id}

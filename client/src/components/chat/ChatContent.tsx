@@ -7,7 +7,7 @@ import type { KeyTerm } from "@/lib/keywordHighlight";
 import { Loader2, RefreshCw } from "lucide-react";
 
 const POLL_MS = 5000;
-const SLOW_POLL_MS = 15000; // after SLOW_AFTER_MS a render is in the retry cycle (backend retries every 5 min)
+const SLOW_POLL_MS = 15000; // after SLOW_AFTER_MS a render is in the backend's retry cycle — poll less often
 const SLOW_AFTER_MS = 2 * 60 * 1000;
 const MAX_RETRIES = 2; // matches the backend retry job
 // The backend creates a visual's row before the reply finishes streaming, so

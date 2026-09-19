@@ -212,8 +212,17 @@ export interface Progression {
 
 // ── Navigation ─────────────────────────────────────────────────────────────
 
-export const fetchSubjects = (t: string) =>
-    getJson<{ class_level: string | null; subjects: SubjectSummary[] }>("/secondary/subjects", t, "Couldn't load subjects");
+export type ClassLevel = "SS1" | "SS2" | "SS3";
+export const CLASS_LEVELS: ClassLevel[] = ["SS1", "SS2", "SS3"];
+
+/** Any class's subjects — students can browse every class. Omit `classLevel`
+ *  for the student's own class. */
+export const fetchSubjects = (t: string, classLevel?: ClassLevel | null) =>
+    getJson<{ class_level: ClassLevel | null; student_class_level: ClassLevel | null; subjects: SubjectSummary[] }>(
+        classLevel ? `/secondary/subjects?class_level=${classLevel}` : "/secondary/subjects",
+        t,
+        "Couldn't load subjects",
+    );
 
 export const fetchChapters = (subjectId: string, t: string) =>
     getJson<{ subject: { subject_id: string; title: string }; has_subscription: boolean; chapters: ChapterSummary[] }>(

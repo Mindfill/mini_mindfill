@@ -10,8 +10,10 @@ import {
     cancelSubscription,
     linkParent,
     fetchMySubscription,
+    setTrainingConsent as setTrainingConsentApi,
     type MySubscription,
 } from "@/lib/api";
+import { Switch } from "@/components/ui/switch";
 import { useCredits } from "@/hooks/use-credits";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { Input } from "@/components/ui/input";
@@ -32,6 +34,7 @@ import {
 import { Loader2, User as UserIcon, Sparkles, CheckCircle2, UserPlus, Mail } from "lucide-react";
 import FamilyMembersSection from "@/components/billing/FamilyMembersSection";
 import type { Variant } from "@/components/sidebar/AppSidebar";
+import { planDisplayName } from "@/lib/plans";
 
 /**
  * Which profile sections exist for each account type.
@@ -90,10 +93,35 @@ export default function Profile() {
     const { userType, role, fullName: onboardingFullName } = useUserProfile();
     const sidebarVariant = deriveVariant(userType, role);
     const caps = role === "admin" ? ADMIN_CAPABILITIES : PROFILE_CAPABILITIES[sidebarVariant];
+    // Secondary plans are Individual / Family, not Pro — name the one they're on.
+    const isSecondary = userType === "secondary";
+    const planName = planDisplayName(subscription?.plan_type, userType);
     // Prefer the name saved during onboarding/profile edits — falls back to
     // auth metadata/email only while that hasn't loaded yet, so this never
     // flips to the email-derived name after the page has finished loading.
     const userName = fullName || onboardingFullName || user?.user_metadata?.full_name || user?.email || "User";
+
+    // Training opt-in: adults only (server decides eligibility from date of birth).
+    const [trainingEligible, setTrainingEligible] = useState(false);
+    const [trainingConsent, setTrainingConsent] = useState(false);
+    const [savingConsent, setSavingConsent] = useState(false);
+
+    const handleTrainingConsent = async (next: boolean) => {
+        if (savingConsent) return;
+        setSavingConsent(true);
+        const prev = trainingConsent;
+        setTrainingConsent(next);
+        try {
+            await setTrainingConsentApi(next, accessToken);
+            toast({ title: next ? "Thanks — you've opted in" : "You've opted out" });
+        } catch (err) {
+            console.error("Failed to save training consent:", err);
+            setTrainingConsent(prev);
+            toast({ variant: "destructive", title: "Couldn't save that", description: "Please try again." });
+        } finally {
+            setSavingConsent(false);
+        }
+    };
 
     const [parentEmail, setParentEmail] = useState("");
     const [linkingParent, setLinkingParent] = useState(false);
@@ -108,6 +136,8 @@ export default function Profile() {
             setEmail(p.email);
             setFullName(p.full_name || "");
             setDob(p.date_of_birth || "");
+            setTrainingEligible(Boolean(p.training_consent_eligible));
+            setTrainingConsent(Boolean(p.training_consent));
         } catch (err) {
             console.error("Failed to load profile:", err);
             setError("Could not load your profile");
@@ -356,8 +386,8 @@ export default function Profile() {
                                 ) : null}
                                 {isPaid
                                     ? subscription?.cancel_at_period_end
-                                        ? "Pro · ending"
-                                        : "Pro"
+                                        ? `${planName} · ending`
+                                        : planName
                                     : "Free"}
                             </span>
                         </div>
@@ -386,7 +416,8 @@ export default function Profile() {
                         ) : isPaid ? (
                             <div className="space-y-4">
                                 <p className="text-sm text-foreground/90">
-                                    You're on <span className="font-semibold">Pro</span> with unlimited access.
+                                    You're on <span className="font-semibold">{planName}</span>
+                                    {isSecondary ? " with every chapter unlocked." : " with unlimited access."}
                                 </p>
 
                                 <AlertDialog>
@@ -397,14 +428,14 @@ export default function Profile() {
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                         <AlertDialogHeader>
-                                            <AlertDialogTitle>Cancel your Pro plan?</AlertDialogTitle>
+                                            <AlertDialogTitle>Cancel your {planName} plan?</AlertDialogTitle>
                                             <AlertDialogDescription>
-                                                You'll keep Pro access until the end of your billing period, then move
+                                                You'll keep full access until the end of your billing period, then move
                                                 back to the free plan. You can re-subscribe anytime.
                                             </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
-                                            <AlertDialogCancel disabled={cancelling}>Keep Pro</AlertDialogCancel>
+                                            <AlertDialogCancel disabled={cancelling}>Keep {planName}</AlertDialogCancel>
                                             <AlertDialogAction
                                                 onClick={handleCancelSubscription}
                                                 disabled={cancelling}
@@ -422,9 +453,14 @@ export default function Profile() {
                                 <p className="text-sm text-foreground/90">
                                     {subscription?.status === "cancelled" || subscription?.status === "expired" ? (
                                         <>
-                                            Your Pro plan has ended and you're back on the{" "}
+                                            Your {planName} plan has ended and you're back on the{" "}
                                             <span className="font-semibold">Free</span> plan. Pick up where you left
                                             off whenever you're ready.
+                                        </>
+                                    ) : isSecondary ? (
+                                        <>
+                                            You're on the <span className="font-semibold">Free</span> plan. Subscribe to
+                                            unlock every chapter and your AI tutor for every lesson.
                                         </>
                                     ) : (
                                         <>
@@ -437,11 +473,37 @@ export default function Profile() {
                                     <Sparkles className="w-4 h-4" />
                                     {subscription?.status === "cancelled" || subscription?.status === "expired"
                                         ? "Subscribe again"
-                                        : "Upgrade to Pro"}
+                                        : isSecondary
+                                          ? "See plans"
+                                          : "Upgrade to Pro"}
                                 </Button>
                             </div>
                         )}
                     </section>
+                    )}
+
+                    {/* Training data opt-in — adults only (hidden for minors and
+                        anyone without a date of birth on file). */}
+                    {trainingEligible && (
+                        <section className="glass-panel rounded-3xl p-6 md:p-8">
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="space-y-1.5">
+                                    <h2 className="text-lg font-semibold tracking-tight">Help improve the tutor</h2>
+                                    <p className="text-muted-foreground text-sm">
+                                        When you delete a note, keep an anonymised copy of its tutor conversations for
+                                        training. Your name, email and account are removed and it can't be traced back to
+                                        you. Turning this off applies to notes you delete from now on.
+                                    </p>
+                                </div>
+                                <Switch
+                                    checked={trainingConsent}
+                                    onCheckedChange={handleTrainingConsent}
+                                    disabled={savingConsent}
+                                    aria-label="Allow anonymised training copies"
+                                    className="mt-1 shrink-0"
+                                />
+                            </div>
+                        </section>
                     )}
 
                     {/* Family plan members — renders nothing if not applicable */}

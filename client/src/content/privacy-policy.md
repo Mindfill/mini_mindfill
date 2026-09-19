@@ -2,220 +2,281 @@
 
 **Effective Date:** July 29, 2026
 
-**Last Updated:** August 26, 2026
+**Last Updated:** September 19, 2026
 
 ## 1. Introduction
 
-Techcess ("Techcess," "we," "our," or "us") is committed to protecting your personal information. This Privacy Policy explains how we collect, use, store, share, and protect information about users of our platform, including our website, web application, and related services (collectively, the "Platform").
+Techcess ("Techcess," "we," "our," or "us") is committed to protecting your personal information. This Privacy Policy explains, in plain language, what personal data we collect, why we collect it, the legal basis we rely on, who we share it with, how long we keep it, and the rights you have. It covers our website, web application, and related services (collectively, the "Platform").
 
-By accessing or using the Platform, you acknowledge that you have read, understood, and agree to the practices described in this Privacy Policy. If you do not agree, please discontinue use immediately.
+This Policy is written to meet the requirements of the **Nigeria Data Protection Act 2023 ("NDPA")** and the **NDPA General Application and Implementation Directive 2025 ("GAID")** issued by the Nigeria Data Protection Commission ("NDPC"). The Nigeria Data Protection Regulation 2019 (NDPR) no longer applies and has been replaced by these instruments. Where you live in the European Economic Area, the United Kingdom, or California, the additional rights described in Section 10 also apply.
 
-This Policy applies to all users of the Platform, including users of our paid and free subscription tiers. Some processing activities described below relate to features that are under active development and are disclosed for transparency.
+Reading this Policy is not the same as giving consent. Where we rely on your consent (for example, the optional training programme in Section 14.1), we ask for it separately and specifically.
 
-## 2. Identity and Contact Details of the Data Controller
+This Policy applies to all users of the Platform — university students, secondary school students, parents and guardians, and school administrators — on free and paid plans.
 
-**Company name:** Techcess
+## 2. Who We Are and How to Contact Us
+
+**Data controller:** Techcess
 
 **Registered country:** Federal Republic of Nigeria
 
 **Contact email:** techcessofficial@gmail.com
 
-**Data Protection Officer:** To be designated. Enquiries may be directed to the contact email above until a DPO is formally appointed.
+**Data Protection Officer:** To be designated. Until a Data Protection Officer is formally appointed, all privacy enquiries and requests should be sent to the contact email above with the subject line "Data Protection."
 
-For users in the European Economic Area (EEA) or United Kingdom, Techcess acts as a data controller with respect to personal data collected via the Platform.
+For users in the EEA or United Kingdom, Techcess acts as a data controller for personal data collected through the Platform.
 
 ## 3. Information We Collect
 
-We collect the following categories of personal data:
+We collect only what we need to run the Platform and the features you choose to use.
 
 ### 3.1 Account and Identity Data
 
-- Full name and email address provided directly or via Google OAuth (Google Sign-In).
-- Profile picture (where provided by your Google account).
-- Account creation timestamp and authentication tokens.
+- Full name and email address, provided directly or through Google Sign-In.
+- Profile picture, where your Google account provides one.
+- Date of birth, which we use to confirm you meet our minimum age of 13 and to determine whether you are under 18 (see Section 12).
+- Account creation time and authentication tokens.
 
-### 3.2 Uploaded Content
+### 3.2 Onboarding and Profile Data
 
-- PDF documents and notes you voluntarily upload to the Platform for AI-assisted analysis ("User Content").
-- Metadata associated with uploads (file name, size, upload timestamp).
+Depending on the kind of account you create, we ask for:
 
-We do not use your User Content to train any AI or machine learning models. Uploaded content is processed solely to deliver the features you requested.
+- **Secondary school students:** class level (SS1–SS3), school name, learning goals, and how you feel about your studies.
+- **University students:** institution, course of study, and topics you find difficult.
+- **All students:** notification preferences and, optionally, a phone number. Phone numbers are stored encrypted.
+- **Parents and guardians:** name and, optionally, a WhatsApp number.
+- **Linking accounts:** if a student enters a parent's or guardian's email address to link accounts, we store that email address and send the parent an invitation.
 
-### 3.3 Usage and Analytics Data
+### 3.3 Uploaded Content and Learning Activity
 
-- Pages visited, features interacted with, lesson sections selected, quiz attempts, and session duration.
-- Event logs including granular sub-events (e.g., quiz section completion, note chat interactions, lesson progress).
-- Device type, browser type, operating system, and approximate location (country/city level) derived from IP address.
+- PDF documents, images and notes you choose to upload ("User Content"), with their file name, size and upload time.
+- The text, sections and figures we extract from your uploads so the tutor can teach from them.
+- Your conversations with the AI tutor, including the tutor's assessment of your answers (for example, whether an answer showed correct understanding, partial understanding or a misconception) and which part of a lesson you are in.
+- Lesson progress, quiz and flashcard attempts and results, streaks, and time spent learning.
+
+Your uploaded files and the text extracted from them are **never used to train AI models**. They are processed only to deliver the features you ask for. The only exception to "not used for training" is the optional, opt-in programme in Section 14.1, which covers anonymised tutor conversations only — never your uploaded files.
+
+### 3.4 Device and Usage Data
+
+- Pages visited, features used, and events such as lesson and quiz completion.
+- Device type, browser, operating system, and approximate location (country or city level) derived from your IP address.
+- **Device identification:** plans are limited to two devices. To enforce this we store a device token in your browser and create a one-way code (a "fingerprint") from technical characteristics of your browser, such as its type, screen size, time zone and language. The fingerprint is used only to recognise a device you have used before, so that signing in again does not use up a device slot. It is not used for advertising or to track you on other websites.
 - Error logs and diagnostic data.
-- AI model usage logs, including the number of tokens consumed per session, recorded for platform cost monitoring and quality assurance purposes.
+- AI usage records (for example, the number of tokens used), kept to monitor cost and quality.
 
-### 3.4 Subscription and Payment Data
+### 3.5 Subscription and Payment Data
 
-We collect subscription tier and status information (Free, Pro Monthly, Pro Yearly) to manage your access and enforce credit limits. Payment processing is handled entirely by Paystack, our third-party payment processor. Techcess does not directly collect, store, or have access to your payment card details or bank account information. Paystack is governed by its own privacy policy and PCI-DSS compliance programme.
+We record your plan (for example, Pro, Individual or Family), its status and renewal dates, and the reference codes our payment processor gives us. Payments are processed entirely by **Paystack**. Techcess never sees or stores your card or bank details.
 
-### 3.5 Communications
+### 3.6 Communications
 
-- Any messages you send to us directly (e.g., support emails, beta feedback forms).
+Messages you send us (for example, support emails or feedback).
 
-## 4. Legal Bases for Processing
+We do not intentionally collect sensitive personal data (such as health, religious or biometric data). Please do not include such information in your notes or conversations.
 
-We process your personal data on the following legal bases, applicable depending on jurisdiction:
+## 4. Why We Use Your Data and Our Legal Basis
 
-### 4.1 Nigeria — Nigeria Data Protection Regulation (NDPR) 2019
+Under the NDPA, we must have a lawful basis for each use of your data. Each purpose and its basis:
 
-- **Consent:** where you have given express consent (e.g., uploading PDFs).
-- **Contract performance:** to deliver the Platform services you signed up for, including subscription management and credit allocation.
-- **Legitimate interests:** for platform security, fraud prevention, and product improvement, where these interests are not overridden by your rights.
-- **Legal obligation:** where applicable law requires processing.
+- **Performance of a contract with you:**
+  - creating and running your account, and authenticating you;
+  - delivering the tutor, lessons, notes, quizzes, flashcards and visualisations you ask for;
+  - tracking your progress and personalising lessons;
+  - managing your plan, credits, billing and the two-device limit.
+- **Consent** (or, for users under 18, the consent of a parent or guardian):
+  - showing a student's progress to a linked parent or guardian, or to their school (Section 6.2);
+  - sending weekly or monthly progress reports to linked parents and schools.
+- **Your explicit, separate consent (adults only):**
+  - optional anonymised training copies (Section 14.1).
+- **Legitimate interests** (see below):
+  - keeping the Platform secure, preventing fraud and abuse, and fixing errors;
+  - improving the Platform using aggregated usage statistics.
+- **Legal obligation:**
+  - keeping financial records and responding to lawful requests.
 
-### 4.2 European Union / United Kingdom — GDPR / UK GDPR
+**Our legitimate interests** are keeping the Platform secure and working, preventing misuse of accounts and plans, and understanding in aggregate how features are used so we can improve them. We rely on them only where they are not overridden by your rights and are consistent with what you would reasonably expect. You can object to this processing at any time (Section 10.1).
 
-- Article 6(1)(a) — Consent.
-- Article 6(1)(b) — Performance of a contract.
-- Article 6(1)(f) — Legitimate interests.
-
-Where we rely on legitimate interests, you have the right to object to that processing (see Section 9).
-
-### 4.3 California, USA — CCPA / CPRA
-
-We do not sell personal information. California residents have specific rights under the CCPA/CPRA as described in Section 9.
+If we want to use your data for a new purpose that is not compatible with the purposes above, we will tell you before we do so and, where required, ask for your consent.
 
 ## 5. How We Use Your Information
 
-We use your personal data for the following purposes:
+In summary, we use your personal data to:
 
-- To create and manage your account and authenticate your identity.
-- To deliver and personalise AI-powered tutoring, notes chat, lesson chat, and quiz features.
-- To process and analyse uploaded PDFs and notes to generate educational responses.
-- To track your learning progress and provide personalised recommendations.
-- To manage your subscription tier, enforce credit limits, and process recurring billing via Paystack.
-- To reset credits on a recurring basis and downgrade lapsed paid accounts in accordance with your subscription status.
-- To monitor Platform performance, diagnose errors, and improve product quality.
-- To conduct user research (including research sessions and feedback calls), where you have consented.
-- To communicate with you regarding your account, subscription, updates, or material changes to this Policy.
-- To comply with applicable laws and enforce our Terms of Service.
-- To detect, investigate, and prevent fraudulent, harmful, or illegal activity.
+- create and manage your account and verify your identity;
+- deliver AI tutoring, notes lessons, quizzes, flashcards and visualisations;
+- track your learning progress and recommend what to study next;
+- manage your plan, credits and devices, and process billing through Paystack;
+- keep linked parents, guardians and schools informed, where applicable (Section 6.2);
+- monitor performance, diagnose errors and improve the Platform;
+- communicate with you about your account, your plan and changes to this Policy;
+- comply with the law and enforce our Terms of Service; and
+- detect and prevent fraud, abuse and illegal activity.
 
-## 6. Third-Party Services and Data Sharing
+## 6. Who We Share Your Data With
 
-We do not sell, rent, or trade your personal information to third parties for their marketing purposes. We share data only in the following circumstances:
+We do not sell, rent or trade your personal information.
 
-### 6.1 Service Providers
+### 6.1 Service Providers (Data Processors)
 
-We share data with trusted third-party processors that help us operate the Platform:
+We use the following providers to run the Platform. They process data only on our instructions and under data processing terms:
 
-- **Supabase:** database, authentication, file storage, and real-time functionality. Servers located in the EU/US.
-- **OpenAI / Anthropic:** AI language model providers. Your query content and, where relevant, uploaded content may be transmitted to their APIs for processing. These providers are governed by their own data processing agreements.
-- **Paystack:** payment processing and subscription billing for Nigerian users. Paystack handles all payment card data and is PCI-DSS compliant.
-- **Modal.com:** serverless compute infrastructure used to render AI-generated mathematical visualisations (Manim). Relevant query context is transmitted to Modal for rendering purposes.
-- **Render:** application hosting (backend).
-- **Vercel:** frontend hosting.
+- **Supabase:** database, authentication and file storage.
+- **OpenAI and Anthropic:** AI models. Your messages and, where relevant, parts of your uploaded content are sent to their APIs to generate responses. Under their API terms, this data is not used to train their models.
+- **Modal:** computing used to render mathematical visualisations.
+- **Paystack:** payments and subscription billing.
+- **Google:** Sign-In, if you choose to sign in with Google.
+- **Resend:** delivery of account and report emails.
+- **Render and Vercel:** hosting for our servers and website.
 
-All service providers are bound by data processing agreements and are prohibited from using your data for purposes other than those we specify.
+### 6.2 Parents, Guardians and Schools
 
-### 6.2 Legal Requirements
+- **Parents and guardians:** if a student links a parent's or guardian's account, that parent or guardian can see the student's learning progress, streaks, study time, strengths and topics they struggled with, and may receive weekly progress emails.
+- **Schools:** if a secondary school student is enrolled with a school that uses Techcess, authorised school administrators can see that student's learning progress and activity, and the school may receive monthly reports.
 
-We may disclose personal data if required to do so by a court order, regulatory authority, or applicable law, or to protect the rights, property, or safety of Techcess, our users, or the public.
+Parents, guardians and schools cannot see a student's uploaded files or the text of their tutor conversations.
 
-### 6.3 Business Transfers
+### 6.3 Legal Requirements
 
-In the event of a merger, acquisition, or sale of assets, your data may be transferred to the successor entity, subject to the same protections described in this Policy.
+We may disclose personal data where required by law, a court order or a regulator (including the NDPC), or to protect the rights, property or safety of Techcess, our users or the public.
+
+### 6.4 Business Transfers
+
+If Techcess is involved in a merger, acquisition or sale of assets, your data may transfer to the successor, which must continue to protect it as described in this Policy. We will tell you before this happens.
 
 ## 7. International Data Transfers
 
-As a Nigerian company serving users across multiple regions, some of your personal data may be transferred to, and stored in, countries outside your country of residence, including the United States and the European Union. These countries may have data protection laws that differ from those in your country.
+Several of our service providers (Section 6.1) store or process data outside Nigeria, mainly in the United States and the European Union.
 
-Where we transfer data outside Nigeria, we take appropriate safeguards including contractual clauses, the use of processors that adhere to GDPR standard contractual clauses (SCCs), and privacy-by-design practices. For EEA/UK users, transfers are governed by SCCs or equivalent mechanisms under Chapter V of the GDPR.
+The NDPA allows personal data to leave Nigeria only where the recipient provides an adequate level of protection, or where another basis permitted by the NDPA applies. We rely on:
 
-## 8. Data Retention
+- the data protection laws of the recipient country, where the NDPC recognises them as adequate;
+- contractual safeguards with our providers, such as standard contractual clauses; and
+- where neither applies, transfers that are necessary to perform our contract with you (for example, sending your question to an AI provider so it can be answered), or your consent.
 
-We retain your personal data only for as long as necessary to fulfil the purposes described in this Policy, unless a longer retention period is required by law.
+We keep a record of the basis for each transfer. For EEA and UK users, transfers are covered by standard contractual clauses or equivalent mechanisms under the GDPR.
 
-- **Account data:** retained for the duration of your account, plus 90 days after a deletion request.
-- **Uploaded content (PDFs/notes):** retained for the duration of active use of that content, unless you request deletion.
-- **Subscription and billing records:** retained for up to 7 years as required for financial and tax compliance.
-- **Usage and analytics events:** retained for up to 24 months in aggregated form for product improvement purposes.
-- **Communication records:** retained for up to 3 years for support and legal purposes.
+## 8. How Long We Keep Your Data
 
-You may request deletion of your data at any time (see Section 9).
+We keep personal data only as long as we need it for the purposes above, unless the law requires longer.
 
-## 9. Your Rights
+- **Account data:** for as long as your account is open, then deleted within 90 days of account deletion.
+- **Uploaded content:** until you delete the note or ask us to delete it. Deleting a note permanently removes the file, its extracted text, and all lessons, tutor conversations, quizzes and flashcards created from it.
+- **Learning progress and activity:** for as long as your account is open.
+- **Subscription and billing records:** up to 7 years, for financial and tax compliance.
+- **Usage and analytics events:** up to 24 months, after which they are deleted or aggregated so they no longer identify you.
+- **Communications:** up to 3 years, for support and legal purposes.
+- **Anonymised training copies (opt-in only, Section 14.1):** kept indefinitely. Once anonymised they no longer identify you and are not linked to your account.
 
-Subject to applicable law, you have the following rights with respect to your personal data:
+## 9. Data Security and Breaches
 
-### 9.1 Rights for All Users (NDPR & General)
+We use appropriate technical and organisational measures to protect your data, including:
 
-- **Right to access:** obtain a copy of the personal data we hold about you.
-- **Right to rectification:** request correction of inaccurate or incomplete data.
-- **Right to erasure ("right to be forgotten"):** request deletion of your personal data.
-- **Right to withdraw consent:** where processing is based on consent, you may withdraw it at any time without affecting the lawfulness of prior processing.
-- **Right to lodge a complaint:** with the Nigeria Data Protection Commission (NDPC) at ndpc.gov.ng.
+- encryption of data in transit (TLS/HTTPS) and encryption of phone numbers at rest;
+- database row-level security so users cannot access each other's data;
+- access checks on every request, rate limiting and input validation;
+- validation of uploaded files; and
+- limiting staff access to what is needed.
 
-### 9.2 Additional Rights for EEA / UK Users (GDPR)
+No system is completely secure. If a personal data breach occurs that is likely to put your rights and freedoms at risk, we will notify the NDPC within 72 hours of becoming aware of it, as the NDPA requires. If the breach is likely to put your rights and freedoms at high risk, we will tell you without undue delay, in plain language, including what happened and the steps you can take to protect yourself.
 
-- Right to restriction of processing.
-- Right to data portability: receive your data in a structured, machine-readable format.
-- Right to object: to processing based on legitimate interests or for direct marketing.
-- Right not to be subject to solely automated decision-making with significant legal or similar effects.
-- Right to lodge a complaint with your local supervisory authority (e.g., ICO in the UK, CNIL in France).
+## 10. Your Rights
 
-### 9.3 California Residents — CCPA / CPRA Rights
+### 10.1 Your Rights Under the NDPA
 
-- Right to know what personal information is collected, used, shared, or sold.
-- Right to delete personal information (with certain exceptions).
-- Right to opt-out of the sale or sharing of personal information. **(Note: We do not sell personal information.)**
-- Right to non-discrimination for exercising CCPA rights.
-- Right to correct inaccurate personal information.
-- Right to limit use and disclosure of sensitive personal information.
+You have the right to:
 
-### 9.4 How to Exercise Your Rights
+- **Be informed** about how your data is used (this Policy).
+- **Access** the personal data we hold about you, in a commonly used electronic format.
+- **Rectification:** have inaccurate, incomplete or misleading data corrected. You can update your name and date of birth yourself on your Profile page.
+- **Erasure:** have your data deleted where it is no longer needed or there is no lawful basis to keep it. You can delete any note yourself at any time.
+- **Restriction:** ask us to pause processing while a complaint or objection is being resolved.
+- **Data portability:** receive your data in a structured, commonly used format, or have it sent to another provider where technically possible.
+- **Object** to processing based on our legitimate interests, and to any direct marketing.
+- **Withdraw consent** at any time, as easily as you gave it. Withdrawing does not affect processing that happened before. You can withdraw training consent yourself on your Profile page (Section 14.1).
+- **Not be subject to decisions based solely on automated processing** that produce legal or similarly significant effects on you (see Section 14).
+- **Complain to the NDPC** (see Section 10.5).
 
-To exercise any of the above rights, contact us at **techcessofficial@gmail.com** with the subject line "Data Rights Request." We will respond within 30 days (NDPR/CCPA) or one calendar month (GDPR). We may request identity verification before processing your request.
+### 10.2 Additional Rights for EEA and UK Users (GDPR / UK GDPR)
 
-## 10. Cookies and Tracking Technologies
+You also have the rights set out in the GDPR, including the right to complain to your local supervisory authority (for example, the ICO in the UK). Our legal bases correspond to Article 6(1)(a) consent, 6(1)(b) contract, 6(1)(c) legal obligation and 6(1)(f) legitimate interests.
 
-We use session cookies and browser local storage for authentication purposes. Specifically, your Supabase authentication token (JWT) is stored in your browser's local storage to maintain your login session across page loads. This is strictly necessary for the Platform to function.
+### 10.3 California Residents (CCPA / CPRA)
 
-We do not currently use advertising trackers or third-party analytics cookies beyond those described in this Policy.
+You have the right to know, delete and correct personal information, to limit the use of sensitive personal information, and not to be discriminated against for using these rights. We do not sell or share personal information for cross-context behavioural advertising.
 
-Essential authentication storage cannot be disabled as it is required for the Platform to function. As we expand features, we will update this section and implement a cookie consent mechanism where required by applicable law.
+### 10.4 How to Use Your Rights
 
-## 11. Children's Privacy
+Email **techcessofficial@gmail.com** with the subject line "Data Rights Request." We may need to verify your identity first. We will respond within 30 days. Using your rights is free, unless a request is clearly unfounded or excessive.
 
-The Platform is intended for users aged 13 and above. We do not knowingly collect personal data from children under 13. If you believe a child has provided us with personal data without appropriate parental consent, please contact us immediately and we will delete that information.
+### 10.5 If Something Goes Wrong
 
-Where users may be under 18 — a common scenario given our student user base — we take additional care to apply privacy-protective defaults and limit data collection to what is strictly necessary.
+If you believe we have not handled your data in line with this Policy or the law:
 
-## 12. Data Security
+1. Contact us at **techcessofficial@gmail.com** with the subject line "Privacy Complaint." We will acknowledge your complaint within 7 days and aim to resolve it within 30 days, telling you what we found and what we have done about it.
+2. If you are not satisfied, or at any time, you may complain to the **Nigeria Data Protection Commission** (ndpc.gov.ng), or to your local supervisory authority if you are in the EEA or UK.
 
-We implement appropriate technical and organisational measures to protect your personal data against unauthorised access, disclosure, alteration, or destruction, including:
+## 11. Cookies, Local Storage and Device Tokens
 
-- TLS/HTTPS encryption in transit for all data communications.
-- Row-level security (RLS) policies on our database to prevent cross-user data access.
-- Rate limiting and request validation to protect against abuse.
-- Magic bytes validation and XSS sanitisation for uploaded files.
-- IDOR (Insecure Direct Object Reference) protections on all API endpoints.
-- Background job isolation for subscription management and credit processing.
+We use only what is strictly necessary for the Platform to work:
 
-No method of transmission over the Internet is 100% secure. We cannot guarantee absolute security but are committed to promptly addressing any known vulnerabilities.
+- **Authentication:** your Supabase sign-in session is stored in your browser's local storage so you stay signed in between visits.
+- **Device token:** a random token stored in local storage and in a first-party cookie (valid for up to one year) that identifies this browser for the two-device limit.
+- **Preferences:** small settings, such as your chosen theme or view, stored in your browser.
 
-## 13. AI and Automated Processing
+We do not use advertising trackers or third-party analytics cookies. Because these items are strictly necessary, they cannot be switched off while you use the Platform. If this changes, we will update this Section and ask for your consent where the law requires.
 
-Our Platform uses AI language models (provided by OpenAI and Anthropic) to process your queries and generate educational responses. This involves transmitting your messages and, where relevant, your uploaded content to third-party AI API providers. Mathematical visualisations are rendered via Modal.com using the Manim library.
+## 12. Children's Privacy
 
-We do not use automated processing to make decisions that produce legal or similarly significant effects about you. AI-generated content on the Platform is for educational purposes only and should not be relied upon as professional, academic, medical, legal, or financial advice.
+Techcess is a learning platform, and many of our secondary school students are under 18. Under the NDPA, anyone under 18 is a child, and their data needs extra care.
 
-We do not use your personal data or User Content to train any AI models.
+- **Minimum age:** you must be at least 13 to use the Platform. We do not knowingly collect data from children under 13. If we learn that we have, we will delete it.
+- **Users aged 13 to 17:** you may use the Platform only with the permission of your parent or legal guardian, who is responsible for consenting to the processing of your data. When signing up, you confirm that your parent or guardian has given this consent. Parents and guardians can link to their child's account to follow their progress, and can contact us to access, correct or delete their child's data.
+- **Minimal data:** we collect from students under 18 only what is needed to teach them, and we apply privacy-protective defaults.
+- **Never used for training:** data from users under 18 is never used for AI training. Users under 18 are not offered the training opt-in, and deleting their notes is always a complete, permanent deletion. Whether a user is under 18 is worked out from their date of birth at the time the data would be copied, so the protection applies until the day they turn 18. If we do not have a date of birth for you, we treat you as under 18 for this purpose.
+- **Plain language:** we aim to keep this Policy understandable for students and their parents. If anything here is unclear, please contact us.
 
-## 14. Changes to This Privacy Policy
+If you believe a child's data has been provided to us without appropriate permission, contact us at techcessofficial@gmail.com and we will act promptly.
 
-We may update this Privacy Policy from time to time. Where changes are material, we will notify you by email or by a prominent notice on the Platform at least 14 days before the changes take effect. Your continued use of the Platform after the effective date constitutes acceptance of the updated Policy.
+## 13. Changes to This Policy
 
-The version history is maintained and prior versions are available on request.
+We may update this Policy from time to time. If the changes are material, we will tell you by email or by a clear notice on the Platform at least 14 days before they take effect. Where a change needs your consent, we will ask for it and will not treat continued use as consent.
+
+Earlier versions are available on request.
+
+## 14. AI and Automated Processing
+
+The Platform uses AI models from OpenAI and Anthropic to answer your questions, teach from your notes, and generate quizzes and flashcards. This means your messages and, where relevant, parts of your uploaded content are sent to these providers for processing. Visualisations are rendered using Modal.
+
+The tutor automatically assesses your answers (for example, marking an answer as correct, worth revisiting, or showing a misconception) to guide the lesson and show you your progress. These assessments are learning aids only. They do not produce legal or similarly significant effects on you, and no decision about your account, access or payments is made solely by automated means. You can always ask the tutor to explain again, or contact us if you disagree with how something was assessed.
+
+AI-generated content is for educational purposes only and should not be relied on as professional, medical, legal or financial advice.
+
+We do not use your personal data or uploaded files to train AI models. The only data that may be used for training is the anonymised, opt-in material described in Section 14.1.
+
+### 14.1 Optional Anonymised Training Copies
+
+If you are 18 or over, you may choose to help improve the Techcess tutor. This is entirely optional and is **off unless you turn it on** — through a separate, unticked checkbox when you sign up, or the "Help improve the tutor" switch on your Profile page. Saying no does not affect your use of the Platform in any way.
+
+If you have opted in, then when you delete a note:
+
+1. We first make an anonymised copy of your tutor conversations about that note: the messages exchanged, the order they were sent in, and the tutor's assessment of each answer, together with the section headings they relate to.
+2. Before the copy is saved, your name, email address and account identifier are replaced with a random code that is not derived from, and cannot be traced back to, your account. Other email addresses and phone numbers that appear in your messages are replaced in the same way.
+3. The copy is stored separately from your account, with no link to you, your account or the deleted note, and without the date or time of the conversations or the deletion.
+4. The note itself, including your uploaded file, its extracted text, and all conversations, lessons, quizzes and flashcards, is then permanently deleted as normal.
+
+**Never included:** your uploaded files, the text extracted from them, your quizzes and flashcards, or anything from a user under 18 (see Section 12).
+
+Anonymised copies may be used to evaluate and train the AI models that power the tutor, by Techcess or by AI providers acting on our instructions.
+
+If you have not opted in, deleting a note is always a complete, permanent deletion and nothing is kept.
+
+**Changing your mind:** you can turn this off at any time on your Profile page, just as easily as you turned it on. It then applies to every note you delete afterwards. Copies already made cannot be identified as yours — that is what makes them anonymous — so they cannot be located or removed on request.
+
+**Our limits:** we remove identifying details automatically, but we cannot guarantee that every personal detail you type into a conversation (for example, a friend's name or a student number) is caught. If you have opted in, please avoid sharing personal details in tutor conversations.
 
 ## 15. Contact Us
 
-If you have any questions, concerns, or requests relating to this Privacy Policy, please contact:
+For any questions, concerns or requests about this Policy or your data:
 
 **Email:** techcessofficial@gmail.com
 
@@ -223,8 +284,8 @@ If you have any questions, concerns, or requests relating to this Privacy Policy
 
 **Country:** Nigeria
 
-We are committed to resolving complaints promptly. If you are not satisfied with our response, you may escalate to the relevant supervisory authority in your jurisdiction.
+If you are not satisfied with our response, you may complain to the Nigeria Data Protection Commission (ndpc.gov.ng) or your local supervisory authority.
 
-Document version: 1.1  |  Effective: July 29, 2026  |  Last Updated: August 26, 2026
+Document version: 2.0  |  Effective: July 29, 2026  |  Last Updated: September 19, 2026
 
 © 2026 Techcess. All rights reserved.

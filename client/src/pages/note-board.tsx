@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { ArrowLeft, CircuitBoard as BoardIcon, FileText, Layers, ListChecks, Loader2, PlayCircle } from "lucide-react";
+import { ArrowLeft, CircuitBoard as BoardIcon, FileText, Layers, ListChecks, PlayCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useActivityHeartbeat } from "@/hooks/use-activity-heartbeat";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -12,7 +12,7 @@ import { ProgressBar } from "@/components/secondary/ProgressBar";
 import NoteQuizView from "@/components/notes/NoteQuizView";
 import FlashcardsView from "@/components/notes/FlashcardsView";
 import { OutOfCreditsError, generateNoteQuiz, type QuizQuestion } from "@/lib/api";
-import { ensureLessonPlan, fetchNoteBoard, type NoteBoard } from "@/lib/noteLessonApi";
+import { fetchNoteBoard, type NoteBoard } from "@/lib/noteLessonApi";
 import type { SubsectionType, TocSection } from "@/lib/secondaryApi";
 
 type Tab = "lessons" | "quiz" | "cards";
@@ -33,7 +33,6 @@ export default function NoteBoardPage() {
 
     const [board, setBoard] = useState<NoteBoard | null>(null);
     const [loadError, setLoadError] = useState(false);
-    const [preparing, setPreparing] = useState(false);
     const [tab, setTab] = useState<Tab>("lessons");
 
     const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
@@ -53,27 +52,14 @@ export default function NoteBoardPage() {
         if (!accessToken || !noteId) return;
         setLoadError(false);
         try {
-            const b = await fetchNoteBoard(noteId, accessToken);
-            setBoard(b);
-            if (!b.plan_ready) {
-                // No "Start Learning" screen: the lesson plan is prepared in
-                // the background while the student looks at the board.
-                setPreparing(true);
-                try {
-                    await ensureLessonPlan(noteId, accessToken);
-                    setBoard(await fetchNoteBoard(noteId, accessToken));
-                } catch (err) {
-                    if (err instanceof OutOfCreditsError) promptUpgrade();
-                    else console.warn("Lesson plan preparation failed:", err);
-                } finally {
-                    setPreparing(false);
-                }
-            }
+            // No lesson-plan step here any more: each section builds its own
+            // plan the first time it's opened.
+            setBoard(await fetchNoteBoard(noteId, accessToken));
         } catch (err) {
             console.error("Failed to load note board:", err);
             setLoadError(true);
         }
-    }, [accessToken, noteId, promptUpgrade]);
+    }, [accessToken, noteId]);
 
     useEffect(() => {
         load();
@@ -95,8 +81,9 @@ export default function NoteBoardPage() {
                     subsection_id: String(s.section_index),
                     subsection_title: s.title,
                     subsection_type: `Section ${String(i + 1).padStart(2, "0")}` as SubsectionType,
-                    status: s.state === "done" ? "completed" : s.started ? "in_progress" : s.state === "locked" ? "locked" : "unlocked",
-                    available: s.state !== "locked",
+                    status: s.state === "done" ? "completed" : s.started ? "in_progress" : "unlocked",
+                    // Nothing is locked on a note — any section, any order.
+                    available: true,
                 })),
             },
         ];
@@ -195,11 +182,6 @@ export default function NoteBoardPage() {
                             {done > 0 || current.started ? "Continue" : "Start"}: {current.title}
                         </span>
                     </button>
-                )}
-                {preparing && (
-                    <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Preparing your lessons…
-                    </p>
                 )}
             </header>
 

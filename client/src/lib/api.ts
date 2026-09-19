@@ -244,9 +244,13 @@ export interface UsageDay {
 
 export interface UsageGraph {
     days: UsageDay[];
+    /** Minutes this period minus the previous one — what the dashboards show. */
+    change_minutes: number;
     change_percent: number;
     change_direction: "up" | "down" | "same";
     sessions_this_week: number;
+    /** Sessions this week minus last week. */
+    sessions_change: number;
     sessions_change_percent: number;
 }
 
@@ -327,6 +331,8 @@ export interface SecondaryDashboardResponse {
     weaknesses: StrengthWeakness[];
     most_pressing: StrengthWeakness | null;
     sessions_this_week: number;
+    /** Sessions this week minus last week. */
+    sessions_change: number;
     sessions_change_percent: number;
     days_since_last_session: number | null;
     recently_completed_chapters: string[];
@@ -349,6 +355,7 @@ export type UsagePeriod = "daily" | "weekly";
 export interface UsageGraphWindow {
     period: UsagePeriod;
     days: UsageDay[];
+    change_minutes: number;
     change_percent: number;
     change_direction: "up" | "down" | "same";
 }
@@ -377,6 +384,8 @@ export interface StudentSummary {
     current_streak: number;
     study_minutes_this_week: number;
     study_minutes_change_percent: number;
+    /** Minutes this week minus last week — what the card shows. */
+    study_minutes_change: number;
     current_chapter: string;
     chapter_progress_percent: number;
     top_strengths: string[];
@@ -525,32 +534,11 @@ export interface NoteUploadResponse {
     pages_extracted: number;
 }
 
-export interface NoteLessonPlanResponse {
-    onboarding_message: string;
-    lesson_plan?: {
-        sections: { id: string; title: string; summary: string }[];
-        key_terms: { term: string; definition: string }[];
-    };
-}
-
 /** A visualization referenced by a [VIZ:N] token in a message's content. */
 export interface Visualization {
     viz_index: number;
     concept_description?: string;
     scene_type?: string;
-}
-
-export interface NoteChatMessage {
-    role: "user" | "assistant" | "developer";
-    content: string;
-    /** Session the message belongs to (needed to poll its [VIZ:N] videos). */
-    session_id?: string;
-}
-
-export interface NoteChatRequest {
-    role: "user" | "assistant";
-    content: string;
-    selected_sections?: string[];
 }
 
 export interface NoteChatResponse {
@@ -731,79 +719,6 @@ export async function uploadNote(
     return json;
 }
 
-/**
- * Onboard a note (generate lesson plan)
- * GET /notes/{note_id}/onboard
- */
-export async function onboardNote(
-    noteId: string,
-    accessToken: string
-): Promise<NoteLessonPlanResponse> {
-    const res = await fetch(`${BACKEND_URL}/notes/${noteId}/onboard`, {
-        headers: authHeaders(accessToken),
-    });
-
-    if (!res.ok) {
-        const text = (await res.text()) || res.statusText;
-        throw new Error(`Failed to onboard note: ${res.status} — ${text}`);
-    }
-
-    return res.json();
-}
-
-/**
- * Send message to note chat
- * POST /notes/{note_id}/chat
- */
-export async function sendNoteChatMessage(
-    noteId: string,
-    request: NoteChatRequest,
-    accessToken: string,
-    handlers?: StreamHandlers
-): Promise<NoteChatResponse> {
-    // Streams SSE: each `data: <chunk>` is a slice of the JSON body; `[DONE]`
-    // ends it. Content is extracted progressively (handlers.onContent); the full
-    // JSON (session_id, visualizations, flags) is parsed once at [DONE].
-    const res = await fetch(`${BACKEND_URL}/notes/${noteId}/chat`, {
-        method: "POST",
-        headers: authHeaders(accessToken, true),
-        body: JSON.stringify(request),
-    });
-
-    if (res.status === 402) throw new OutOfCreditsError();
-    if (!res.ok || !res.body) {
-        const text = (!res.ok && (await res.text())) || res.statusText;
-        throw new Error(`Failed to send message: ${res.status} — ${text}`);
-    }
-
-    const { text: accumulated, final } = await readAccumulatedSSE(res, handlers);
-    try {
-        return applyFinal(JSON.parse(accumulated) as NoteChatResponse, final);
-    } catch {
-        throw new Error("Streamed response was malformed.");
-    }
-}
-
-/**
- * Get note chat history
- * GET /notes/{note_id}/history
- */
-export async function fetchNoteHistory(
-    noteId: string,
-    accessToken: string
-): Promise<NoteChatMessage[]> {
-    const res = await fetch(`${BACKEND_URL}/notes/${noteId}/history`, {
-        headers: authHeaders(accessToken),
-    });
-
-    if (!res.ok) {
-        const text = (await res.text()) || res.statusText;
-        throw new Error(`Failed to fetch history: ${res.status} — ${text}`);
-    }
-
-    return res.json();
-}
-
 /** §2.3 — a real figure from the student's notes, shown inline by [FIGURE:n]. */
 export interface NoteFigure {
     number: number;
@@ -866,6 +781,22 @@ export async function createCourse(
 }
 
 /**
+ * Delete a note and everything built from it (lessons, chats, quizzes,
+ * flashcards, its PDF and figures). Irreversible.
+ * DELETE /notes/{note_id}
+ */
+export async function deleteNote(noteId: string, accessToken: string): Promise<void> {
+    const res = await fetch(`${BACKEND_URL}/notes/${noteId}`, {
+        method: "DELETE",
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to delete note: ${res.status} — ${text}`);
+    }
+}
+
+/**
  * Delete a course. Its notes are un-categorized (course_id → null) server-side.
  * DELETE /courses/{course_id}
  */
@@ -888,6 +819,22 @@ export interface Profile {
     full_name: string | null;
     /** ISO date string (YYYY-MM-DD) */
     date_of_birth: string | null;
+    /** 18+ today, by date of birth. Minors never see or get the training opt-in. */
+    training_consent_eligible: boolean;
+    training_consent: boolean;
+}
+
+/** Opt in/out of anonymised training copies of deleted notes (adults only). */
+export async function setTrainingConsent(consent: boolean, accessToken: string): Promise<void> {
+    const res = await fetch(`${BACKEND_URL}/profile/training-consent`, {
+        method: "POST",
+        headers: authHeaders(accessToken, true),
+        body: JSON.stringify({ consent }),
+    });
+    if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`Failed to save training consent: ${res.status} — ${text}`);
+    }
 }
 
 export interface ProfileUpdate {
@@ -1369,10 +1316,13 @@ export async function saveParentOnboarding(
  * Record terms + accuracy acceptance (the final gate screen in every flow).
  * POST /onboarding/accept-terms
  */
-export async function acceptOnboardingTerms(accessToken: string): Promise<void> {
+/** `trainingConsent` is the separate, unticked-by-default opt-in; the server
+ *  ignores it for anyone under 18. */
+export async function acceptOnboardingTerms(accessToken: string, trainingConsent = false): Promise<void> {
     const res = await fetch(`${BACKEND_URL}/onboarding/accept-terms`, {
         method: "POST",
-        headers: authHeaders(accessToken),
+        headers: authHeaders(accessToken, true),
+        body: JSON.stringify({ training_consent: trainingConsent }),
     });
 
     if (!res.ok) {
@@ -1898,6 +1848,8 @@ export interface SchoolStudentDetail {
     /** The snapshot's own weekly rollup (minutes), not the graph payload. */
     usage_week: { current_sum: number; previous_sum?: number; change_percent?: number };
     sessions_this_week: number;
+    /** Sessions this week minus last week. */
+    sessions_change: number;
     sessions_change_percent: number;
     days_since_last_session: number | null;
     last_active_date: string | null;

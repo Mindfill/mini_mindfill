@@ -3,7 +3,8 @@
  * Backend: mindfill_mvp_backend/app/routers/note_lessons.py.
  *
  * A note is taught one section at a time; each section has its own tutor
- * session. Section ids are note_sections.section_index.
+ * session, and sections open in any order. Section ids are
+ * note_sections.section_index.
  */
 
 import { BACKEND_URL, OutOfCreditsError, authHeaders, readAccumulatedSSE } from "./api";
@@ -11,7 +12,8 @@ import { BACKEND_URL, OutOfCreditsError, authHeaders, readAccumulatedSSE } from 
 export type Signal = "green" | "orange" | "red" | null;
 export type Phase = 1 | 2 | 3;
 export type ChipSet = "comprehension" | "confirm" | "choice";
-export type NodeState = "done" | "available" | "locked";
+/** Nothing is locked — any section can be opened in any order. */
+export type NodeState = "done" | "available";
 
 export const CHIP_SETS: Record<ChipSet, string[]> = {
     comprehension: ["Yes, keep going", "Slow down"],
@@ -36,7 +38,6 @@ export interface NoteBoard {
     note_id: string;
     title: string;
     file_url: string | null;
-    plan_ready: boolean;
     current_section: number | null;
     sections: BoardSection[];
 }
@@ -55,7 +56,6 @@ export interface SectionState {
     title: string;
     state: NodeState;
     next_section: number | null;
-    plan_ready: boolean;
     key_terms: unknown;
     session_id: string | null;
     is_review: boolean;
@@ -70,6 +70,8 @@ export interface OpenResult {
     messages: LessonMessage[];
     phase: Phase;
     is_review: boolean;
+    /** Present when the open just built the section's plan. */
+    key_terms?: unknown;
 }
 
 export interface SectionReply {
@@ -90,18 +92,9 @@ export interface NoteSectionText {
     content: string;
 }
 
-/** Thrown when the note's lesson plan doesn't exist yet (409 plan_not_ready). */
-export class PlanNotReadyError extends Error {
-    constructor() {
-        super("Lesson plan not ready");
-        this.name = "PlanNotReadyError";
-    }
-}
-
 async function failFrom(res: Response, what: string): Promise<never> {
     if (res.status === 402) throw new OutOfCreditsError();
     const text = (await res.text()) || res.statusText;
-    if (res.status === 409 && text.includes("plan_not_ready")) throw new PlanNotReadyError();
     throw new Error(`${what}: ${res.status} — ${text}`);
 }
 
@@ -127,27 +120,9 @@ export function fetchSectionState(noteId: string, sectionIndex: number, accessTo
     );
 }
 
-// One in-flight plan generation per note, shared by the board and the lesson
-// screen so a student who taps straight into section 1 doesn't start a second.
-const planRequests = new Map<string, Promise<void>>();
-
-/** Generates the note's lesson plan if it doesn't exist (spec: no "Start
- *  Learning" screen — it happens in the background). Safe to call repeatedly. */
-export function ensureLessonPlan(noteId: string, accessToken: string): Promise<void> {
-    let p = planRequests.get(noteId);
-    if (!p) {
-        // Same endpoint as onboardNote(), but through failFrom so a free user
-        // out of credits gets OutOfCreditsError rather than a generic error.
-        p = fetch(`${BACKEND_URL}/notes/${noteId}/onboard`, { headers: authHeaders(accessToken) })
-            .then((res) => (res.ok ? undefined : failFrom(res, "Failed to prepare lessons")))
-            .finally(() => planRequests.delete(noteId));
-        planRequests.set(noteId, p);
-    }
-    return p;
-}
-
 /** Spec §5.3 — the tutor speaks first. `review` starts a fresh session on a
- *  completed section. */
+ *  completed section. The first open of a section also builds that section's
+ *  lesson plan (same call, ~3–5s), so there's no separate plan step. */
 export async function openSection(
     noteId: string,
     sectionIndex: number,

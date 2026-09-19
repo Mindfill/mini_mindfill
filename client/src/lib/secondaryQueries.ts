@@ -15,11 +15,13 @@ import {
     fetchChapterToc,
     fetchSubjects,
     fetchSubsection,
+    type ClassLevel,
 } from "./secondaryApi";
 
 export const secondaryKeys = {
     all: ["secondary"] as const,
-    subjects: () => ["secondary", "subjects"] as const,
+    // Prefix ["secondary", "subjects"] still matches every class's list for invalidation.
+    subjects: (classLevel?: string | null) => ["secondary", "subjects", classLevel ?? "own"] as const,
     chapters: (subjectId: string) => ["secondary", "chapters", subjectId] as const,
     toc: (chapterId: string) => ["secondary", "toc", chapterId] as const,
     subsection: (subsectionId: string) => ["secondary", "subsection", subsectionId] as const,
@@ -34,8 +36,16 @@ const NAV_OPTIONS = {
     retry: 1,
 };
 
-export const useSubjects = (token: string) =>
-    useQuery({ queryKey: secondaryKeys.subjects(), queryFn: () => fetchSubjects(token), ...NAV_OPTIONS });
+/** `classLevel` null = the student's own class (the server decides). */
+export const useSubjects = (token: string, classLevel?: ClassLevel | null) =>
+    useQuery({
+        queryKey: secondaryKeys.subjects(classLevel),
+        queryFn: () => fetchSubjects(token, classLevel),
+        ...NAV_OPTIONS,
+        // Switching class tabs keeps the last list on screen (dimmed) rather
+        // than flashing the skeleton.
+        placeholderData: (previous) => previous,
+    });
 
 export const useChapters = (subjectId: string, token: string) =>
     useQuery({ queryKey: secondaryKeys.chapters(subjectId), queryFn: () => fetchChapters(subjectId, token), ...NAV_OPTIONS });
