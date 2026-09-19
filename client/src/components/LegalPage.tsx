@@ -34,10 +34,16 @@ export default function LegalPage({ title, markdown }: LegalPageProps) {
 
             <main className="flex-1 w-full max-w-3xl mx-auto px-5 sm:px-8 pb-16">
                 <button
-                    onClick={() => navigate("/")}
+                    onClick={() => {
+                        // Return to wherever the user came from, not always the
+                        // landing page — fall back to home only if this page was
+                        // opened directly (no in-app history to go back to).
+                        if (window.history.length > 1) window.history.back();
+                        else navigate("/");
+                    }}
                     className="text-white/40 hover:text-white text-xs font-bold tracking-widest uppercase flex items-center gap-1 mb-8 transition-colors"
                 >
-                    <ArrowLeft className="w-3 h-3" /> Back to home
+                    <ArrowLeft className="w-3 h-3" /> Back
                 </button>
 
                 <article

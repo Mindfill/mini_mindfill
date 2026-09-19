@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from "react";
+import { gsap } from "gsap";
 import { fetchQuestions, fetchTimedBatch, submitAttempt, submitBatchAttempts, fetchStats, fetchExplanation } from "@/lib/quizApi";
 import MarkdownLatex from "@/components/ui/markdown-latex";
+import { stripOptionLabel } from "@/lib/quizOptions";
+import CorrectAnswerBurst from "@/components/quiz/CorrectAnswerBurst";
 import { BookOpen, GraduationCap, Timer as TimerIcon, ChevronRight, CheckCircle, XCircle, Send, Loader2, ArrowLeft, X } from "lucide-react";
 
 interface QuizSectionProps {
@@ -65,12 +68,23 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
     const [explainContext, setExplainContext] = useState<{ qIndex: number; q: any; studentAnswer: string; correctAnswer: string } | null>(null);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const feedbackIconRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (showExplain) {
             messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
         }
     }, [explainHistory, showExplain]);
+
+    useEffect(() => {
+        if (submitted && feedbackData?.correct && feedbackIconRef.current) {
+            gsap.fromTo(
+                feedbackIconRef.current,
+                { scale: 0.5, rotate: -15 },
+                { scale: 1, rotate: 0, duration: 0.5, ease: "back.out(2.5)" }
+            );
+        }
+    }, [submitted, feedbackData]);
 
     // Timer effect
     useEffect(() => {
@@ -301,10 +315,10 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
 
     const renderScreen1 = () => (
         <div className="max-w-4xl mx-auto py-12 px-6">
-            <h2 className="text-2xl font-bold mb-8 text-center" style={{ textShadow: "0 0 30px rgba(245, 158, 11, 0.15)" }}>Choose your mode</h2>
+            <h2 className="font-display text-2xl font-bold mb-8 text-center" style={{ textShadow: "0 0 30px rgba(37, 130, 224, 0.15)" }}>Choose your mode</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
-                    { id: "mcq", title: "MCQ", desc: "Test your knowledge with multiple choice questions", icon: <BookOpen className="w-8 h-8 text-emerald-400 mb-4" /> },
+                    { id: "mcq", title: "MCQ", desc: "Test your knowledge with multiple choice questions", icon: <BookOpen className="w-8 h-8 text-emerald-700 dark:text-emerald-400 mb-4" /> },
                     { id: "flashcard", title: "Flashcard", desc: "Flip through concepts and self-assess", icon: <GraduationCap className="w-8 h-8 text-purple-400 mb-4" /> },
                     { id: "timed", title: "Timed Quiz", desc: "15 questions against the clock", icon: <TimerIcon className="w-8 h-8 text-blue-400 mb-4" /> }
                 ].map(m => (
@@ -327,7 +341,7 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
             <button onClick={() => setScreen(1)} className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-8">
                 <ArrowLeft className="w-4 h-4 mr-2" /> Back
             </button>
-            <h2 className="text-2xl font-bold mb-8" style={{ textShadow: "0 0 30px rgba(245, 158, 11, 0.15)" }}>Quiz Settings</h2>
+            <h2 className="font-display text-2xl font-bold mb-8" style={{ textShadow: "0 0 30px rgba(37, 130, 224, 0.15)" }}>Quiz Settings</h2>
 
             <div className="space-y-8 bg-card border border-border rounded-2xl p-8">
                 <div>
@@ -360,7 +374,7 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
                     </div>
                 </div>
 
-                {error && <p className="text-red-400 text-sm bg-red-400/10 p-4 rounded-xl border border-red-400/20">{error}</p>}
+                {error && <p className="text-red-700 dark:text-red-400 text-sm bg-red-400/10 p-4 rounded-xl border border-red-400/20">{error}</p>}
 
                 <button
                     onClick={handleStartConfig}
@@ -378,7 +392,7 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
             <div className="flex justify-between text-xs text-muted-foreground mb-2 font-medium tracking-wider">
                 <span>QUESTION {currentIndex + 1} OF {questions.length}</span>
                 {mode === "timed" && (
-                    <span className={`font-mono text-sm flex items-center gap-1 ${timeLeft < 60 ? "text-red-500" : "text-foreground/90"}`}>
+                    <span className={`font-mono text-sm flex items-center gap-1 ${timeLeft < 60 ? "text-red-700 dark:text-red-400" : "text-foreground/90"}`}>
                         <TimerIcon className="w-4 h-4" />
                         {Math.floor(Math.max(0, timeLeft) / 60).toString().padStart(2, "0")}:{(Math.max(0, timeLeft) % 60).toString().padStart(2, "0")}
                     </span>
@@ -504,9 +518,9 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
 
                                     if (submitted) {
                                         if (isCorrectOpt) {
-                                            btnClass = "border-emerald-500/50 bg-emerald-500/10 text-emerald-400";
+                                            btnClass = "border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400";
                                         } else if (isSelected && !isCorrectOpt) {
-                                            btnClass = "border-red-500/50 bg-red-500/10 text-red-400";
+                                            btnClass = "border-red-500/50 bg-red-500/10 text-red-700 dark:text-red-400";
                                         } else {
                                             btnClass = "border-border opacity-50 text-muted-foreground";
                                         }
@@ -523,7 +537,9 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
                                         >
                                             <span className="mr-3 text-muted-foreground font-mono text-sm mt-0.5">{String.fromCharCode(65 + i)}</span>
                                             <div className="flex-1">
-                                                <MarkdownLatex content={opt.text} className="text-foreground" />
+                                                {/* Strip any "(a)" the generator baked into the text — the
+                                                    letter is already shown beside it. */}
+                                                <MarkdownLatex content={stripOptionLabel(opt.text)} className="text-foreground" />
                                             </div>
                                         </button>
                                     );
@@ -539,10 +555,10 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
                         <div className="flex flex-col gap-4 mt-6">
                             <h4 className="text-center font-medium text-lg text-foreground mb-2">Did you get this correct?</h4>
                             <div className="flex gap-4">
-                                <button onClick={() => handleFlashcardAttempt(false)} disabled={loading} className="flex-1 py-4 rounded-xl border border-red-500/30 bg-red-500/5 hover:bg-red-500/10 text-red-500 font-medium transition-colors">
+                                <button onClick={() => handleFlashcardAttempt(false)} disabled={loading} className="flex-1 py-4 rounded-xl border border-red-500/30 bg-red-500/5 hover:bg-red-500/10 text-red-700 dark:text-red-400 font-medium transition-colors">
                                     {currentIndex + 1 >= questions.length ? "No (Finish)" : "No"}
                                 </button>
-                                <button onClick={() => handleFlashcardAttempt(true)} disabled={loading} className="flex-1 py-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 font-bold transition-colors">
+                                <button onClick={() => handleFlashcardAttempt(true)} disabled={loading} className="flex-1 py-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 font-bold transition-colors">
                                     {currentIndex + 1 >= questions.length ? "Yes (Finish)" : "Yes"}
                                 </button>
                             </div>
@@ -565,10 +581,10 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
                     <div className="flex flex-col gap-4 mt-6">
                         <h4 className="text-center font-medium text-lg text-foreground mb-2">Did you get this correct?</h4>
                         <div className="flex gap-4">
-                            <button onClick={() => handleFlashcardAttempt(false)} disabled={loading} className="flex-1 py-4 rounded-xl border border-red-500/30 bg-red-500/5 hover:bg-red-500/10 text-red-500 font-medium transition-colors">
+                            <button onClick={() => handleFlashcardAttempt(false)} disabled={loading} className="flex-1 py-4 rounded-xl border border-red-500/30 bg-red-500/5 hover:bg-red-500/10 text-red-700 dark:text-red-400 font-medium transition-colors">
                                 {currentIndex + 1 >= questions.length ? "No (Finish)" : "No"}
                             </button>
-                            <button onClick={() => handleFlashcardAttempt(true)} disabled={loading} className="flex-1 py-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 font-bold transition-colors">
+                            <button onClick={() => handleFlashcardAttempt(true)} disabled={loading} className="flex-1 py-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 font-bold transition-colors">
                                 {currentIndex + 1 >= questions.length ? "Yes (Finish)" : "Yes"}
                             </button>
                         </div>
@@ -578,9 +594,12 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
                 {/* MCQ / Flashcard Feedback */}
                 {submitted && feedbackData && mode !== "timed" && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className={`p-6 rounded-2xl border ${feedbackData.correct ? "bg-emerald-500/10 border-emerald-500/20" : "bg-red-500/10 border-red-500/20"} mb-6`}>
-                            <h4 className={`flex items-center gap-2 font-bold mb-3 ${feedbackData.correct ? "text-emerald-400" : "text-red-400"}`}>
-                                {feedbackData.correct ? <CheckCircle className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+                        <div className={`relative p-6 rounded-2xl border ${feedbackData.correct ? "bg-emerald-500/10 border-emerald-500/20" : "bg-red-500/10 border-red-500/20"} mb-6`}>
+                            {feedbackData.correct && <CorrectAnswerBurst triggerKey={currentIndex} />}
+                            <h4 className={`flex items-center gap-2 font-bold mb-3 ${feedbackData.correct ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}>
+                                <div ref={feedbackData.correct ? feedbackIconRef : undefined}>
+                                    {feedbackData.correct ? <CheckCircle className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+                                </div>
                                 {feedbackData.correct ? "Correct" : "Incorrect"}
                             </h4>
                             {feedbackData.correct_answer && !feedbackData.correct && (
@@ -636,7 +655,7 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
         return (
             <div className="max-w-3xl mx-auto py-12 px-6 animate-in fade-in zoom-in-95 duration-500 pb-32">
                 <div className="text-center mb-16">
-                    <div className="w-24 h-24 mx-auto bg-gradient-to-br from-primary to-blue-500 rounded-full flex items-center justify-center p-[2px] mb-8 shadow-[0_0_40px_rgba(245, 158, 11,0.2)]">
+                    <div className="w-24 h-24 mx-auto bg-gradient-to-br from-primary to-blue-500 rounded-full flex items-center justify-center p-[2px] mb-8 shadow-[0_0_40px_rgba(37,130,224,0.2)]">
                         <div className="w-full h-full bg-background rounded-full flex items-center justify-center">
                             <CheckCircle className="w-10 h-10 text-primary" />
                         </div>
@@ -671,16 +690,16 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
                                     <div className="flex items-start justify-between gap-4 mb-4">
                                         <div className="flex-1"><MarkdownLatex content={`${i + 1}. ${q.question}`} className="text-lg font-medium text-foreground" /></div>
                                         {isCorrect ? (
-                                            <span className="flex items-center gap-1 text-emerald-500 font-medium text-sm bg-emerald-500/10 px-3 py-1 rounded-full"><CheckCircle className="w-4 h-4" /> Correct</span>
+                                            <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-medium text-sm bg-emerald-500/10 px-3 py-1 rounded-full"><CheckCircle className="w-4 h-4" /> Correct</span>
                                         ) : (
-                                            <span className="flex items-center gap-1 text-red-500 font-medium text-sm bg-red-500/10 px-3 py-1 rounded-full"><XCircle className="w-4 h-4" /> Incorrect</span>
+                                            <span className="flex items-center gap-1 text-red-700 dark:text-red-400 font-medium text-sm bg-red-500/10 px-3 py-1 rounded-full"><XCircle className="w-4 h-4" /> Incorrect</span>
                                         )}
                                     </div>
 
                                     <div className="space-y-3 mb-6">
                                         <div className="flex flex-col">
                                             <span className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Your Answer</span>
-                                            <MarkdownLatex content={studentAnsText} className={`text-sm font-medium ${isCorrect ? 'text-emerald-500' : 'text-red-500'}`} />
+                                            <MarkdownLatex content={studentAnsText} className={`text-sm font-medium ${isCorrect ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`} />
                                         </div>
                                         {!isCorrect && (
                                             <div className="flex flex-col">
@@ -705,7 +724,7 @@ export default function QuizSection({ lessonId, lessonTitle, onClose }: QuizSect
                                         ) : (
                                             <button
                                                 onClick={() => openExplanation(i, studentAnsText)}
-                                                className="px-4 py-2 rounded-lg bg-card border border-border hover:bg-muted text-emerald-500/80 hover:text-emerald-500 text-sm font-medium transition-colors flex items-center gap-2"
+                                                className="px-4 py-2 rounded-lg bg-card border border-border hover:bg-muted text-emerald-700 dark:text-emerald-400/80 hover:text-emerald-500 text-sm font-medium transition-colors flex items-center gap-2"
                                             >
                                                 <Send className="w-4 h-4" /> Discuss Further
                                             </button>

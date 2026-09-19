@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
-import { Note, Course, fetchCourses, deleteCourse } from "@/lib/api";
+import { Note, Course, fetchCourses, deleteCourse, deleteNote } from "@/lib/api";
 import { invalidateNotesCache } from "@/pages/notes";
 import AppSidebar from "@/components/sidebar/AppSidebar";
+import TechcessLoader from "@/components/brand/TechcessLoader";
+import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import NoteUploadModal from "@/components/notes/NoteUploadModal";
 import NoteCard from "@/components/notes/NoteCard";
 import { useToast } from "@/hooks/use-toast";
@@ -151,6 +153,19 @@ export default function CourseNotes() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [session, authLoading, navigate, courseId]);
 
+    const handleDeleteNote = async (noteId: string) => {
+        if (!session) return;
+        try {
+            await deleteNote(noteId, session.access_token);
+            toast({ title: "Note deleted" });
+            invalidateNotesCache(); // the main Notes page still lists it otherwise
+            loadData();
+        } catch (err) {
+            console.error("Failed to delete note:", err);
+            toast({ variant: "destructive", title: "Couldn't delete note", description: "Please try again." });
+        }
+    };
+
     const handleSignOut = async () => {
         await supabaseSignOut();
         navigate("/login");
@@ -158,13 +173,11 @@ export default function CourseNotes() {
 
     if (authLoading || (loading && !hasLoaded)) {
         return (
-            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+            <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
+                <AnimatedGradientBg />
                 <AppSidebar userName={userName || "Loading..."} activeItem="notes" onSignOut={handleSignOut} />
-                <div className="flex-1 flex flex-col items-center justify-center bg-background">
-                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-                    <p className="text-xs font-bold tracking-[0.2em] uppercase text-muted-foreground animate-pulse">
-                        Loading Course...
-                    </p>
+                <div className="flex-1 relative">
+                    <TechcessLoader label="Loading this course" />
                 </div>
             </div>
         );
@@ -172,10 +185,11 @@ export default function CourseNotes() {
 
     if (error) {
         return (
-            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+            <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
+                <AnimatedGradientBg />
                 <AppSidebar userName={userName} activeItem="notes" onSignOut={handleSignOut} />
-                <div className="flex-1 flex items-center justify-center p-8">
-                    <div className="bg-card border border-border rounded-2xl p-8 max-w-sm w-full text-center">
+                <div className="flex-1 flex items-center justify-center p-8 relative">
+                    <div className="glass-panel rounded-2xl p-8 max-w-sm w-full text-center">
                         <h2 className="text-xl font-semibold mb-2">Unable to load course</h2>
                         <p className="text-muted-foreground text-sm mb-6">There was a problem fetching this course.</p>
                         <div className="flex gap-3 justify-center">
@@ -202,10 +216,11 @@ export default function CourseNotes() {
     const subtitle = course?.course_code ? course?.name : "Course notes";
 
     return (
-        <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+        <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
+            <AnimatedGradientBg />
             <AppSidebar userName={userName} activeItem="notes" onSignOut={handleSignOut} />
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 min-w-0 overflow-y-auto relative">
                 <main className="max-w-4xl mx-auto p-6 md:p-10 space-y-10">
                     {/* Header */}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -216,7 +231,7 @@ export default function CourseNotes() {
                             >
                                 <ArrowLeft className="w-3 h-3" /> All Notes
                             </button>
-                            <h1 className="text-2xl font-semibold tracking-tight">{heading}</h1>
+                            <h1 className="font-display text-2xl font-semibold tracking-tight">{heading}</h1>
                             <p className="text-muted-foreground text-sm">{subtitle}</p>
                         </div>
                         <div className="flex items-center gap-3 flex-shrink-0">
@@ -272,12 +287,13 @@ export default function CourseNotes() {
 
                     {/* Notes grid */}
                     {notes.length > 0 ? (
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                             {notes.map((note) => (
                                 <NoteCard
                                     key={note.id}
                                     note={note}
                                     onRemoveFromCourse={() => removeNoteFromCourse(note.id)}
+                                    onDelete={() => handleDeleteNote(note.id)}
                                 />
                             ))}
                         </div>

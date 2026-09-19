@@ -1,11 +1,14 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation, useParams } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useActivityHeartbeat } from "@/hooks/use-activity-heartbeat";
 import { fetchLessonHistory, submitLessonMessage, OutOfCreditsError, type ChatMessage } from "@/lib/api";
 import { useCredits } from "@/hooks/use-credits";
 import { useSubscription } from "@/hooks/use-subscription";
 import { supabase } from "@/lib/supabase";
 import AppSidebar from "@/components/sidebar/AppSidebar";
+import TechcessLoader from "@/components/brand/TechcessLoader";
+import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatInput from "@/components/chat/ChatInput";
 import TypingIndicator from "@/components/chat/TypingIndicator";
@@ -15,6 +18,7 @@ import mindfillIcon from "@/assets/mindfill.png";
 
 export default function LessonChat() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
+    useActivityHeartbeat(session?.access_token);
     const [, navigate] = useLocation();
     const params = useParams<{ lessonSlug: string }>();
     const lessonSlug = params.lessonSlug || "";
@@ -151,13 +155,10 @@ export default function LessonChat() {
 
     if (authLoading || (loading && !error)) {
         return (
-            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+            <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden">
                 <AppSidebar userName={userName} activeItem="courses" onSignOut={handleSignOut} />
-                <div className="flex-1 flex flex-col items-center justify-center bg-background">
-                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-                    <p className="text-xs font-bold tracking-[0.2em] uppercase text-muted-foreground animate-pulse">
-                        Synchronizing Knowledge...
-                    </p>
+                <div className="flex-1 relative">
+                    <TechcessLoader label="Opening your lesson" />
                 </div>
             </div>
         );
@@ -165,11 +166,11 @@ export default function LessonChat() {
 
     if (error) {
         return (
-            <div className="h-[100dvh] w-full bg-background text-foreground flex overflow-hidden">
+            <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden">
                 <AppSidebar userName={userName} activeItem="courses" onSignOut={handleSignOut} />
                 <div className="flex-1 flex flex-col items-center justify-center bg-background p-6 text-center">
                     <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mb-6">
-                        <X className="w-8 h-8 text-red-500" />
+                        <X className="w-8 h-8 text-red-700 dark:text-red-400" />
                     </div>
                     <h2 className="text-xl font-bold text-foreground mb-2">Connection Error</h2>
                     <p className="text-muted-foreground max-w-sm mb-8 leading-relaxed">
@@ -197,46 +198,50 @@ export default function LessonChat() {
     // ── MAIN RENDER ──────────────────────────────────────────────────────────
 
     return (
-        <div className="min-h-screen bg-background text-foreground flex">
+        <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
+            <AnimatedGradientBg />
             <AppSidebar
                 userName={userName}
                 activeItem="courses"
                 onSignOut={handleSignOut}
             />
 
-            <div className="flex-1 flex flex-col min-h-screen bg-background">
+            <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-background">
                 {/* Header */}
-                <header className="sticky top-0 z-20 bg-background/40 backdrop-blur-xl border-b border-border px-6 py-5 flex justify-between items-center">
-                    <div className="flex items-center gap-4">
+                {/* Same layout as the notes chat: on phones, title row then the
+                    Chat/Quiz switch full width. In one row the Quiz button sat
+                    at x=408 on a 360px screen — clipped and hard to tap. */}
+                <header className="sticky top-0 z-20 bg-background/40 backdrop-blur-xl border-b border-border px-4 md:px-6 py-3 sm:py-5 flex flex-wrap sm:flex-nowrap justify-between items-center gap-x-4 gap-y-3">
+                    <div className="flex items-center gap-4 min-w-0 flex-1">
                         <button
                             onClick={() => navigate("/courses")}
-                            className="text-muted-foreground hover:text-foreground transition-all text-xs font-bold tracking-widest uppercase"
+                            className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-all text-xs font-bold tracking-widest uppercase"
                         >
                             ← Back
                         </button>
-                        <div className="h-4 w-px bg-border" />
-                        <div className="flex items-center gap-3">
+                        <div className="h-4 w-px bg-border flex-shrink-0" />
+                        <div className="flex items-center gap-3 min-w-0">
                             <img
                                 src={mindfillIcon}
                                 alt="TECHCESS"
-                                className="w-8 h-8 rounded-lg object-cover"
+                                className="hidden sm:block w-8 h-8 rounded-lg object-cover flex-shrink-0"
                             />
-                            <h1 className="text-sm font-bold text-foreground tracking-tight truncate max-w-[200px] md:max-w-md">
+                            <h1 className="text-sm font-bold text-foreground tracking-tight truncate min-w-0 md:max-w-md">
                                 {displayTitle}
                             </h1>
                         </div>
                     </div>
 
-                    <div className="flex items-center bg-muted rounded-full p-1 border border-border">
+                    <div className="w-full sm:w-auto flex items-center bg-muted rounded-full p-1 border border-border">
                         <button
                             onClick={() => setActiveTab("chat")}
-                            className={`px-6 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "chat" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
+                            className={`flex-1 sm:flex-none px-6 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "chat" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
                         >
                             Chat
                         </button>
                         <button
                             onClick={() => setActiveTab("quiz")}
-                            className={`px-6 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "quiz" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
+                            className={`flex-1 sm:flex-none px-6 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === "quiz" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
                         >
                             Quiz
                         </button>
@@ -285,7 +290,7 @@ export default function LessonChat() {
 
                             {error && (
                                 <div className="flex justify-center">
-                                    <p className="text-red-400/80 text-sm bg-red-500/10 px-4 py-2 rounded-lg border border-red-500/20">
+                                    <p className="text-red-700 dark:text-red-400/80 text-sm bg-red-500/10 px-4 py-2 rounded-lg border border-red-500/20">
                                         {error}
                                     </p>
                                 </div>
@@ -299,7 +304,7 @@ export default function LessonChat() {
                         <div className="px-4 pb-2">
                             <button
                                 onClick={promptUpgrade}
-                                className="max-w-3xl w-full mx-auto block text-center text-sm text-red-400/90 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2 hover:bg-red-500/20 transition-colors"
+                                className="max-w-3xl w-full mx-auto block text-center text-sm text-red-700 dark:text-red-400/90 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2 hover:bg-red-500/20 transition-colors"
                             >
                                 You've run out of credits. Upgrade to Pro →
                             </button>

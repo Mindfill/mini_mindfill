@@ -2,7 +2,7 @@
 
 **Effective Date:** July 29, 2026
 
-**Last Updated:** August 26, 2026
+**Last Updated:** September 19, 2026
 
 **PLEASE READ THESE TERMS CAREFULLY BEFORE USING THE PLATFORM. BY CREATING AN ACCOUNT OR USING ANY PART OF THE TECHCESS PLATFORM, YOU AGREE TO BE BOUND BY THESE TERMS. IF YOU DO NOT AGREE, DO NOT USE THE PLATFORM.**
 
@@ -12,11 +12,18 @@ These Terms of Service ("Terms") constitute a legally binding agreement between 
 
 By registering for an account, accessing the Platform, or using any of its features, you confirm that:
 
-- You are at least 13 years of age (or have obtained verifiable parental or guardian consent if under 18).
-- You have the legal capacity to enter into this agreement in your jurisdiction.
+- You are at least 13 years of age.
+- If you are 17 or younger, your parent or legal guardian has given their consent for you to use the Platform and has agreed to these Terms on your behalf (see Section 1.1).
+- You have the legal capacity to enter into this agreement in your jurisdiction, or your parent or legal guardian does so for you.
 - You have read and agree to be bound by these Terms and our Privacy Policy, incorporated herein by reference.
 
 If you are accessing the Platform on behalf of an educational institution or organisation, you represent that you have authority to bind that entity to these Terms.
+
+### 1.1 Users Under 18
+
+The Platform may be used by students aged 13 to 17 only with the consent of a parent or legal guardian. When you sign up, you confirm that this consent has been given. By giving that consent, the parent or guardian agrees to these Terms and the Privacy Policy on the student's behalf and accepts responsibility for the student's use of the Platform, including any subscription purchased.
+
+Parents and guardians can link their account to their child's to follow their progress, and may contact us at any time to access, correct or delete their child's data, or to withdraw consent and close the child's account. If we learn that a user under 18 is using the Platform without a parent's or guardian's consent, we may suspend the account until consent is confirmed.
 
 ## 2. Description of the Platform
 
@@ -181,11 +188,15 @@ The inclusion of any third-party integration does not imply our endorsement of t
 
 ## 11. Privacy
 
-Your use of the Platform is also governed by our Privacy Policy, incorporated into these Terms by reference. By using the Platform, you consent to the data practices described therein. Our Privacy Policy is available at techcessofficial@gmail.com upon request.
+Your use of the Platform is also governed by our Privacy Policy, incorporated into these Terms by reference, which explains how we collect and use personal data under the Nigeria Data Protection Act 2023. It is available at any time on the Privacy Policy page of the Platform, or by email at techcessofficial@gmail.com.
+
+Agreeing to these Terms does not by itself mean you consent to any optional data use. Where the Privacy Policy relies on consent (for example, the optional anonymised training copies), we ask for it separately, and you can withdraw it at any time.
 
 ## 12. Termination
 
 ### 12.1 Termination by You
+
+You may stop using the Platform at any time. You can cancel a subscription from your Profile page (see Section 7.4) and delete any of your notes yourself. To close your account and have your data deleted, email techcessofficial@gmail.com; we will handle the request as described in our Privacy Policy.
 
 ### 12.2 Termination by Techcess
 
@@ -260,6 +271,6 @@ For questions, concerns, or notices regarding these Terms:
 
 For privacy-related requests, please refer to our Privacy Policy or email techcessofficial@gmail.com.
 
-Document version: 1.1  |  Effective: July 29, 2026  |  Last Updated: August 26, 2026
+Document version: 1.2  |  Effective: July 29, 2026  |  Last Updated: September 19, 2026
 
 © 2026 Techcess. All rights reserved.

@@ -1,13 +1,17 @@
 import { supabase } from "./supabase";
+import { getDeviceToken } from "./device";
 
 const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "https://mindfill-api.onrender.com").trim().replace(/[`'"]/g, "");
 
 const getHeaders = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    return {
+    const headers: Record<string, string> = {
         "Content-Type": "application/json",
         Authorization: `Bearer ${session?.access_token}`,
     };
+    const deviceToken = getDeviceToken();
+    if (deviceToken) headers["X-Device-Token"] = deviceToken;
+    return headers;
 };
 
 export async function fetchQuestions(lessonId: string, type: string, layer: string, difficulty: string) {

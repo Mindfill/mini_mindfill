@@ -98,7 +98,7 @@ export default function PdfViewer({ url }: PdfViewerProps) {
             {error && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
                     <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center">
-                        <X className="w-7 h-7 text-red-500" />
+                        <X className="w-7 h-7 text-red-700 dark:text-red-400" />
                     </div>
                     <p className="text-muted-foreground max-w-sm">{error}</p>
                     <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm font-medium">

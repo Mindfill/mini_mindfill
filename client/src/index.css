@@ -23,40 +23,57 @@
   --sidebar: 210 20% 97%;
   --sidebar-foreground: 200 30% 20%;
   --sidebar-border: 210 20% 92%;
-  --sidebar-primary: 200 30% 45%;
-  /* Slate Blue from Logo */
+  --sidebar-primary: 212 90% 46%;
+  /* Vivid Blue */
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 210 20% 94%;
   --sidebar-accent-foreground: 200 30% 30%;
-  --sidebar-ring: 200 30% 45%;
+  --sidebar-ring: 212 90% 46%;
   --popover: 0 0% 100%;
   --popover-foreground: 200 30% 15%;
   --popover-border: 210 20% 90%;
-  --primary: 200 30% 45%;
-  /* Slate Blue from Logo */
+  --primary: 212 90% 46%;
+  /* Vivid Blue */
   --primary-foreground: 0 0% 100%;
   --secondary: 210 20% 95%;
   --secondary-foreground: 200 30% 20%;
   --muted: 210 20% 96%;
   --muted-foreground: 210 10% 50%;
   /* Muted Slate Gray */
-  --accent: 200 30% 45%;
+  --accent: 212 90% 46%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 84% 45%;
   --destructive-foreground: 0 0% 100%;
   --input: 210 20% 90%;
-  --ring: 200 30% 45%;
-  --chart-1: 200 30% 45%;
-  --chart-2: 200 30% 55%;
-  --chart-3: 200 30% 65%;
-  --chart-4: 200 30% 75%;
-  --chart-5: 200 30% 85%;
+  --ring: 212 90% 46%;
+  --chart-1: 212 90% 46%;
+  --chart-2: 212 80% 56%;
+  --chart-3: 212 70% 66%;
+  --chart-4: 212 60% 76%;
+  --chart-5: 212 50% 86%;
+
+  /* Secondary accent — keyword highlights (Feature 05, not yet built). Same
+     value in both themes; kept vibrant against both light and dark card
+     surfaces. Not used for onboarding/brand accents anymore — see --primary. */
+  --amber: 38 92% 50%;
+  --amber-foreground: 26 40% 10%;
+
+  /* Decorative gradient surfaces only (auth background, onboarding shell,
+     dashboard hero band) — not meant for text-dense areas. */
+  --gradient-from: 0 0% 100%;
+  /* White */
+  --gradient-via: 212 80% 88%;
+  /* Soft light-blue wash */
+  --gradient-to: 212 90% 76%;
+  /* Deeper light-blue */
 
   /* Platform default (dashboard, chat, quiz, …). The landing page opts back
      into its display font via .font-landing. */
   --font-sans: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
+  /* Headline/display font — auth, onboarding, and major section headings. */
+  --font-display: "Space Grotesk", Inter, sans-serif;
   --radius: .75rem;
   --shadow-2xs: 0px 1px 2px 0px hsl(200 30% 5% / 0.02);
   --shadow-xs: 0px 2px 4px 0px hsl(200 30% 5% / 0.03);
@@ -98,34 +115,44 @@
   --sidebar: 200 30% 2%;
   --sidebar-foreground: 0 0% 100%;
   --sidebar-border: 200 20% 12%;
-  --sidebar-primary: 200 30% 45%;
-  /* Slate Blue from Logo */
-  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-primary: 212 90% 62%;
+  /* Vivid Blue (dark) */
+  --sidebar-primary-foreground: 210 40% 8%;
   --sidebar-accent: 200 20% 10%;
   --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 200 30% 45%;
+  --sidebar-ring: 212 90% 62%;
   --popover: 200 25% 6%;
   --popover-foreground: 0 0% 100%;
   --popover-border: 200 20% 12%;
-  --primary: 200 30% 45%;
-  /* Slate Blue from Logo */
-  --primary-foreground: 0 0% 100%;
+  --primary: 212 90% 62%;
+  /* Vivid Blue (dark) */
+  --primary-foreground: 210 40% 8%;
+  /* Deliberately dark navy, not white — white-on-62%-lightness-blue fails
+     AA contrast (~2.4:1); dark navy text on this fill is ~7.5:1. */
   --secondary: 200 15% 12%;
   --secondary-foreground: 0 0% 100%;
   --muted: 200 15% 10%;
   --muted-foreground: 200 10% 65%;
   /* Muted Slate Gray */
-  --accent: 200 30% 45%;
-  --accent-foreground: 0 0% 100%;
+  --accent: 212 90% 62%;
+  --accent-foreground: 210 40% 8%;
   --destructive: 0 84% 35%;
   --destructive-foreground: 0 84% 98%;
   --input: 200 15% 12%;
-  --ring: 200 30% 45%;
-  --chart-1: 200 30% 45%;
-  --chart-2: 200 30% 55%;
-  --chart-3: 200 30% 65%;
-  --chart-4: 200 30% 75%;
-  --chart-5: 200 30% 85%;
+  --ring: 212 90% 62%;
+  --chart-1: 212 90% 62%;
+  --chart-2: 212 80% 68%;
+  --chart-3: 212 70% 74%;
+  --chart-4: 212 60% 80%;
+  --chart-5: 212 50% 86%;
+
+  /* Decorative gradient surfaces only — see :root for usage notes. */
+  --gradient-from: 210 40% 4%;
+  /* Near-black */
+  --gradient-via: 214 55% 12%;
+  /* Deep navy */
+  --gradient-to: 212 75% 22%;
+  /* Richer navy-blue */
 
   --shadow-2xs: 0px 1px 2px 0px hsl(200 30% 5% / 0.1);
   --shadow-xs: 0px 2px 4px 0px hsl(200 30% 5% / 0.15);
@@ -202,6 +229,15 @@
   /* Smooth transitions for all interactive elements */
   * {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Exception: Radix's internal floating-position wrapper (used by Tooltip,
+     Popover, DropdownMenu, Select, HoverCard, Menubar, ContextMenu) sets its
+     own position via inline `transform` every time it repositions — it must
+     snap there instantly. The blanket rule above was smoothing that snap into
+     a visible slide/fly-in across every one of those components. */
+  [data-radix-popper-content-wrapper] {
+    transition: none;
   }
 
   /* Disable transition on page load for performance */
@@ -303,6 +339,109 @@
   }
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+   MOBILE CONTAINMENT
+
+   Most of our students are on 360px-wide budget Androids, and testers
+   reported the UI rendering wider than the screen. The rules below fix the
+   causes centrally rather than per-page, because the offenders (display
+   math, tables, code, long unbroken strings) can appear inside any
+   model-generated content anywhere in the app.
+
+   Note the interaction with the page shells: each one is
+   `h-[100dvh] overflow-hidden` with a `flex-1 overflow-y-auto` content
+   column. Per CSS overflow rules a box with `overflow-y: auto` and
+   `overflow-x: visible` resolves overflow-x to `auto` — so any too-wide
+   child gave that column its own horizontal scrollbar. That is the bar
+   testers were dragging. The `min-w-0` added to those columns lets them
+   shrink below their content's intrinsic width; these rules make the
+   content fit (or scroll by itself) so they don't have to.
+   ───────────────────────────────────────────────────────────────────────── */
+@layer base {
+
+  html,
+  body,
+  #root {
+    max-width: 100%;
+  }
+
+  /* Set on both elements deliberately: with only `body`, the overflow
+     propagates to the viewport and stops clipping. Safe here because no
+     sticky element uses the document as its scrollport — the app's sticky
+     headers/footers live inside the inner `overflow-y-auto` columns, and the
+     landing navbar is `fixed`, not `sticky`. */
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  /* Emails, URLs, file names and long compound words wrap instead of forcing
+     the layout wide. `break-word` rather than `anywhere` so ordinary prose
+     keeps its normal line breaking. */
+  body {
+    overflow-wrap: break-word;
+  }
+
+  img,
+  svg,
+  video,
+  canvas,
+  iframe {
+    max-width: 100%;
+  }
+}
+
+/* The content-level rules below are deliberately OUTSIDE @layer base.
+
+   `katex.min.css` is imported from markdown-latex.tsx as a plain stylesheet,
+   so its rules are unlayered — and in the CSS cascade unlayered rules beat
+   layered ones no matter the source order. A `.katex-display` override inside
+   @layer base silently lost to KaTeX's own rule (verified in the browser: it
+   computed to `overflow-x: visible` and a long equation still overhung a
+   360px column by 340px). Unlayered, plus an `html` prefix so it also wins on
+   specificity regardless of which stylesheet Vite injects last. */
+
+/* Display math is the worst offender in a maths app: a multi-step derivation
+   is legitimately wider than 360px and must NOT be wrapped (that would make
+   it unreadable), so the equation scrolls inside its own box while the page
+   stays put. `overflow-y: hidden` keeps the horizontal scrollbar from
+   clipping tall fractions and integrals. */
+html .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+/* Inline math KaTeX can't wrap — each run is one unbreakable box, and the
+   tutor sometimes wraps a whole phrase in $…$. MarkdownLatex tags only the
+   ones actually wider than their container with .katex-wide, so ordinary
+   inline math ($x^2$) keeps KaTeX's exact baseline alignment and only the
+   rare runaway one scrolls in place. */
+html .katex-wide {
+  display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  vertical-align: middle;
+  padding-bottom: 0.15rem;
+}
+
+/* Raw tables. Markdown tables get a scroll wrapper in MarkdownLatex; this
+   catches any hand-written in a page. */
+html .prose table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* Tailwind Typography sets `pre` to scroll, but our code blocks render
+   through react-syntax-highlighter with `PreTag="div"`, which drops that. */
+html .prose pre,
+html .prose div[class*="language-"] {
+  overflow-x: auto;
+}
+
 /**
  * Using the elevate system.
  * Automatic contrast adjustment.
@@ -324,6 +463,12 @@
  * need to be distinguished from eachother visually.
  */
 @layer utilities {
+
+  /* Decorative brand gradient — white/light-blue in light mode, black/navy in
+     dark mode (see --gradient-from/via/to). Auth + onboarding chrome only. */
+  .bg-brand-gradient {
+    background: linear-gradient(135deg, hsl(var(--gradient-from)) 0%, hsl(var(--gradient-via)) 50%, hsl(var(--gradient-to)) 100%);
+  }
 
   /* Hide ugly search cancel button in Chrome until we can style it properly */
   input[type="search"]::-webkit-search-cancel-button {
@@ -412,5 +557,266 @@
   .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
+  }
+}
+
+@layer utilities {
+
+  /* ── Circuit-board traces ────────────────────────────────────────────────
+     Deliberately CSS animation, not Framer Motion.
+
+     Two reasons. First, the blanket `* { transition: all 0.3s }` above fights
+     any JS-driven inline transform and leaves the segment frozen part-scaled
+     (measured at scaleY 0.17 — invisible hairlines with the solder pads still
+     showing). Second, and worse: a JS rAF animation that never runs leaves the
+     element at its `initial` value, i.e. scale 0 — invisible traces. Observed
+     exactly that inside an iframe.
+
+     A CSS animation with `both` fill can't fail that way: if animations are
+     disabled or never start, the element renders at its natural full size.
+     It is also cheaper on the budget Androids §3 cares about. */
+  @keyframes trace-draw-y {
+    from { transform: scaleY(0); }
+    to   { transform: scaleY(1); }
+  }
+
+  @keyframes trace-draw-x {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+  }
+
+  .trace-y {
+    transform-origin: top center;
+    animation: trace-draw-y 0.22s ease-out both;
+  }
+
+  .trace-x {
+    animation: trace-draw-x 0.26s ease-out both;
+  }
+
+  .trace-x-rtl {
+    transform-origin: right center;
+  }
+
+  .trace-x-ltr {
+    transform-origin: left center;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .trace-y,
+    .trace-x {
+      animation: none;
+    }
+  }
+
+  /* ── The lesson the student is on ────────────────────────────────────────
+     A heavy glow, tuned separately per theme because the same shadow does
+     opposite things on the two grounds.
+
+     On dark, light bleeding outward reads as a lit component, so it can be
+     wide and soft. On light, that same wide soft shadow just reads as grey
+     dirt under the card — so light mode gets a tighter, more saturated halo
+     plus a faint tint laid over the glass, making the chip look lit from
+     within rather than sitting in a shadow.
+
+     `html ` prefix so these beat .glass-panel's own box-shadow and background
+     regardless of source order. The tint is background-IMAGE, not
+     background-color: glass-panel sets the `background` shorthand, so a
+     colour here would replace its translucency instead of layering on it. */
+  html .node-live {
+    position: relative;
+    box-shadow:
+      0 0 0 1px hsl(var(--primary) / 0.6),
+      0 0 10px -1px hsl(var(--primary) / 0.4),
+      0 6px 20px -8px hsl(var(--primary) / 0.55);
+    background-image: linear-gradient(hsl(var(--primary) / 0.07), hsl(var(--primary) / 0.07));
+  }
+
+  html.dark .node-live {
+    box-shadow:
+      0 0 0 1px hsl(var(--primary) / 0.75),
+      0 0 24px -2px hsl(var(--primary) / 0.6),
+      0 0 52px -6px hsl(var(--primary) / 0.4);
+    background-image: linear-gradient(hsl(var(--primary) / 0.12), hsl(var(--primary) / 0.12));
+  }
+
+  /* The bloom lives on a pseudo-element so it can breathe without animating
+     the element's own (theme-dependent) shadow stack. */
+  html .node-live::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow: 0 0 16px 1px hsl(var(--primary) / 0.35);
+    animation: node-live-breathe 2.8s ease-in-out infinite;
+  }
+
+  html.dark .node-live::after {
+    box-shadow: 0 0 30px 3px hsl(var(--primary) / 0.5);
+  }
+
+  @keyframes node-live-breathe {
+    0%, 100% { opacity: 0.5; }
+    50%      { opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html .node-live::after {
+      animation: none;
+      opacity: 0.8;
+    }
+  }
+
+  /* Apple-glass surface — frosted, translucent, theme-aware. Used for
+     dashboard cards, sidebar, and any panel that should feel premium/floating
+     rather than flat. Pair with a bg-brand-gradient (or AnimatedGradientBg)
+     ancestor so there's something to frost. */
+  .glass-panel {
+    background: hsl(var(--card) / 0.6);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid hsl(var(--card-border) / 0.6);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.5), var(--shadow-lg);
+  }
+
+  .dark .glass-panel {
+    background: hsl(var(--card) / 0.55);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06), var(--shadow-lg);
+  }
+
+  /* Lighter-weight glass, for the mobile dropdown menu and small chips. */
+  .glass-chip {
+    background: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid hsl(var(--card-border) / 0.5);
+  }
+
+  /* Glass button (Apple-style frosted pill) — see components/ui/glass-button.tsx */
+  .glass-button-wrap {
+    position: relative;
+    display: inline-block;
+  }
+
+  .glass-button {
+    position: relative;
+    z-index: 1;
+    display: block;
+    background: linear-gradient(180deg, hsl(var(--primary) / 0.95) 0%, hsl(var(--primary) / 0.85) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.35),
+      inset 0 -1px 0 0 rgba(0, 0, 0, 0.08),
+      0 1px 2px rgba(0, 0, 0, 0.08);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-button:hover {
+    transform: translateY(-1px);
+  }
+
+  .glass-button:active {
+    transform: translateY(0) scale(0.97);
+  }
+
+  .glass-button-text {
+    color: hsl(var(--primary-foreground));
+  }
+
+  .glass-button-shadow {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: hsl(var(--primary) / 0.5);
+    filter: blur(16px);
+    opacity: 0.5;
+    transform: scale(0.92) translateY(6px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+
+  .glass-button-wrap:hover .glass-button-shadow {
+    opacity: 0.75;
+    transform: scale(0.98) translateY(8px);
+  }
+
+  /* Secondary (outline-glass) variant — for less prominent actions sitting on
+     a glass-panel, where a solid primary pill would be too loud. */
+  .glass-button-wrap.glass-button-outline .glass-button {
+    background: hsl(var(--card) / 0.5);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.25), inset 0 0 0 1px hsl(var(--card-border) / 0.8);
+  }
+
+  .glass-button-wrap.glass-button-outline .glass-button-text {
+    color: hsl(var(--foreground));
+  }
+
+  .glass-button-wrap.glass-button-outline .glass-button-shadow {
+    background: transparent;
+  }
+}
+
+/* ── Uni lesson comprehension signals (NOTES_LESSON_UI_SPEC §4) ──────────────
+   The only colours in that spec David asked to keep exactly; everything else
+   on the lesson screen uses the platform tokens. Light values are the spec's
+   light-mode table, .dark values its dark table. The tag pill is the same in
+   both themes by design (light tint, dark text from the same family). */
+:root {
+  --sig-green: #1d9e75;
+  --sig-green-bg: #eaf5ee;
+  --sig-orange: #BA7517;
+  --sig-orange-bg: #fdf3e3;
+  --sig-red: #A32D2D;
+  --sig-red-bg: #fdf0f0;
+  --sig-null: #c8c8d4;
+  --sig-null-bg: #ececf2;
+  --sig-track: #dddde4;
+
+  --sig-green-tag-bg: #eaf5ee;
+  --sig-green-tag-text: #0f6e56;
+  --sig-orange-tag-bg: #fdf3e3;
+  --sig-orange-tag-text: #633806;
+  --sig-red-tag-bg: #fdf0f0;
+  --sig-red-tag-text: #791F1F;
+}
+
+.dark {
+  --sig-green-bg: #071410;
+  --sig-orange-bg: #160e04;
+  --sig-red-bg: #130808;
+  --sig-null: #2a2a34;
+  --sig-null-bg: #1a1a20;
+  --sig-track: #1e1e24;
+}
+
+@layer utilities {
+  /* Fires once when a signal lands, then the resting glow (border + tint on
+     the message) is the permanent record. CSS keyframes, not JS, for the same
+     reason as the circuit-board traces above. */
+  @keyframes pcbpulse {
+    0%   { stroke-dashoffset: 80; opacity: 0; }
+    15%  { opacity: 1; }
+    85%  { opacity: 1; }
+    100% { stroke-dashoffset: 0; opacity: 0; }
+  }
+
+  .pcb-pulse {
+    stroke-dasharray: 80;
+    stroke-dashoffset: 80;
+    opacity: 0;
+    animation: pcbpulse 1.2s ease-out forwards;
+  }
+
+  /* Tag stays in the DOM (keeps layout) and only fades. Its own transition
+     beats the global `* { transition: all 0.3s }`. */
+  .signal-tag {
+    transition: opacity 0.6s ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pcb-pulse {
+      animation: none;
+    }
   }
 }

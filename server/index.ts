@@ -6,6 +6,16 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Vite runs as Express middleware here (middlewareMode), so its own
+// vite.config.ts `server.headers` never reaches the actual response —
+// Express owns that. Set it directly so Google Identity Services' sign-in
+// popup can postMessage back to the opener (mirrors vercel.json for prod,
+// where Vercel's own header rule applies at the edge regardless of Express).
+app.use((_req, res, next) => {
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  next();
+});
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;

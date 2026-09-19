@@ -1,6 +1,10 @@
 import { useLocation } from "wouter";
-import { FileText, FolderMinus, BookOpen } from "lucide-react";
+import { FileText, FolderMinus, BookOpen, Trash2 } from "lucide-react";
 import type { Note, Course } from "@/lib/api";
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 function formatFileSize(bytes: number) {
     if (bytes < 1024) return `${bytes} B`;
@@ -15,10 +19,12 @@ interface NoteCardProps {
     onAssign?: (courseId: string) => void;
     /** When provided, shows a "Remove from course" button on the card. */
     onRemoveFromCourse?: () => void;
+    /** When provided, shows a delete button (with confirmation) on the card. */
+    onDelete?: () => void;
 }
 
-/** A single note tile that navigates to the note chat on click. */
-export default function NoteCard({ note, courses, onAssign, onRemoveFromCourse }: NoteCardProps) {
+/** A single note tile that opens the note's lesson board on click. */
+export default function NoteCard({ note, courses, onAssign, onRemoveFromCourse, onDelete }: NoteCardProps) {
     const [, navigate] = useLocation();
     const showAssign = !!onAssign && !!courses && courses.length > 0;
 
@@ -33,19 +39,53 @@ export default function NoteCard({ note, courses, onAssign, onRemoveFromCourse }
                     <div className="p-4 rounded-2xl bg-primary/10 w-fit">
                         <FileText className="w-8 h-8 text-primary" />
                     </div>
-                    {note.file_url && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/notes/${note.id}/read`);
-                            }}
-                            className="text-muted-foreground hover:text-foreground border border-border hover:border-primary/40 rounded-full p-2 transition-colors flex-shrink-0"
-                            aria-label="Read PDF"
-                            title="Read PDF"
-                        >
-                            <BookOpen className="w-4 h-4" />
-                        </button>
-                    )}
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {note.file_url && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/notes/${note.id}/read`);
+                                }}
+                                className="text-muted-foreground hover:text-foreground border border-border hover:border-primary/40 rounded-full p-2 transition-colors"
+                                aria-label="Read PDF"
+                                title="Read PDF"
+                            >
+                                <BookOpen className="w-4 h-4" />
+                            </button>
+                        )}
+                        {onDelete && (
+                            // Wrapper stops the card's click from opening the note
+                            // when the trigger or the dialog is used.
+                            <div onClick={(e) => e.stopPropagation()}>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <button
+                                            className="text-muted-foreground/70 hover:text-red-700 dark:hover:text-red-400 hover:bg-red-500/10 border border-border hover:border-red-500/30 rounded-full p-2 transition-colors"
+                                            aria-label={`Delete ${note.title}`}
+                                            title="Delete note"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Delete this note?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                “{note.title}” will be deleted for good — its lessons, chats, quizzes,
+                                                flashcards and the uploaded file. This can't be undone.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={onDelete} className="bg-red-500 hover:bg-red-600 text-white">
+                                                Delete note
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Content */}

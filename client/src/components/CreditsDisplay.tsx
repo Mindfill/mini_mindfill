@@ -23,7 +23,7 @@ export function CreditsDisplay() {
                 <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                     <Coins className="w-3.5 h-3.5" /> Credits
                 </span>
-                <span className={`text-xs font-bold ${low ? "text-red-400" : "text-foreground"}`}>
+                <span className={`text-xs font-bold ${low ? "text-red-700 dark:text-red-400" : "text-foreground"}`}>
                     {credits === null ? "…" : value.toFixed(2)}
                 </span>
             </div>
