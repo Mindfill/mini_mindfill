@@ -9,6 +9,7 @@ import TechcessLoader from "@/components/brand/TechcessLoader";
 import PageFade from "@/components/ui/page-fade";
 import { Flame, TrendingUp, TrendingDown, Users, Sparkles, ArrowUpCircle, ChevronRight } from "lucide-react";
 import StudentDetailSheet from "@/components/dashboard/StudentDetailSheet";
+import UsageAnalyticsPanel from "@/components/dashboard/UsageAnalyticsPanel";
 import { fetchParentStudentDetail, StudentSummary } from "@/lib/api";
 import { useParentDashboard } from "@/lib/appQueries";
 import { formatMinutesChange } from "@/lib/studyTime";
@@ -189,15 +190,28 @@ export default function ParentDashboard() {
                     />
 
                     {data.students.length > 0 ? (
-                        <section className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-10">
-                            {data.students.map((student) => (
-                                <StudentCard
-                                    key={student.student_id}
-                                    student={student}
-                                    onOpen={() => setOpenStudentId(student.student_id)}
+                        <>
+                            <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {data.students.map((student) => (
+                                    <StudentCard
+                                        key={student.student_id}
+                                        student={student}
+                                        onOpen={() => setOpenStudentId(student.student_id)}
+                                    />
+                                ))}
+                            </section>
+
+                            {/* Read-only usage analytics, same panel the school
+                                and admin views use, scoped to this parent's
+                                children by the server. */}
+                            <section className="pb-10">
+                                <UsageAnalyticsPanel
+                                    scope="parent"
+                                    accessToken={session?.access_token ?? ""}
+                                    enabled={!!session}
                                 />
-                            ))}
-                        </section>
+                            </section>
+                        </>
                     ) : (
                         <section className="glass-panel rounded-3xl p-10 text-center">
                             <Users className="w-10 h-10 text-muted-foreground mx-auto mb-4" />

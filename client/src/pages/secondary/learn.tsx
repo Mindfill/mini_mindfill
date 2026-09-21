@@ -162,7 +162,9 @@ function ChapterCard({ chapter: c, index, onOpen }: { chapter: ChapterSummary; i
     if (c.coming_soon) stateLabel = <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Coming soon</span>;
     else if (c.is_complete) stateLabel = <span className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400"><CheckCircle2 className="w-3.5 h-3.5" /> Complete</span>;
     else if (c.requires_subscription) stateLabel = <span className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5" /> Subscribe to unlock</span>;
-    else if (c.locked) stateLabel = <span className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5" /> Finish the previous chapter</span>;
+    // No "finish the previous chapter" state any more — chapters are freely
+    // enterable (David, 2026-09-21). `locked` now only ever means coming_soon,
+    // which is handled above. Sequencing lives on the lessons inside a chapter.
     else if (c.completed_subsections > 0) stateLabel = <span className="text-primary">In progress</span>;
     else stateLabel = <span className="text-primary">Ready to start</span>;
 

@@ -59,6 +59,16 @@ function ChapterToc({ chapterId, accessToken }: { chapterId: string; accessToken
         return { defaultOpen: data.sections[0]?.section_id, resume: null };
     }, [data]);
 
+    // A locked lesson isn't a dead end: it leads to the prerequisite
+    // diagnostic, which can open it. Both navigations live here so the board
+    // and the list can't drift.
+    const openSubsection = (s: TocSubsection) =>
+        navigate(
+            s.available
+                ? `/secondary/subsections/${s.subsection_id}`
+                : `/secondary/diagnostic/${s.subsection_id}`,
+        );
+
     if (error && !data) return <AccessErrorState error={error} onRetry={() => refetch()} />;
     if (!data) return <PageSkeleton />;
 
@@ -131,7 +141,10 @@ function ChapterToc({ chapterId, accessToken }: { chapterId: string; accessToken
                 <CircuitBoard
                     sections={sections}
                     currentId={resume?.subsection_id}
-                    onOpen={(id) => navigate(`/secondary/subsections/${id}`)}
+                    onOpen={(id) => {
+                        const sub = sections.flatMap((s) => s.subsections).find((s) => s.subsection_id === id);
+                        if (sub) openSubsection(sub);
+                    }}
                 />
             ) : (
             <Accordion type="multiple" defaultValue={defaultOpen ? [defaultOpen] : []} className="space-y-3">
@@ -158,7 +171,7 @@ function ChapterToc({ chapterId, accessToken }: { chapterId: string; accessToken
                             <ol className="pb-2 space-y-1">
                                 {sec.subsections.map((s) => (
                                     <li key={s.subsection_id}>
-                                        <SubsectionRow sub={s} onOpen={() => navigate(`/secondary/subsections/${s.subsection_id}`)} />
+                                        <SubsectionRow sub={s} onOpen={() => openSubsection(s)} />
                                     </li>
                                 ))}
                             </ol>
@@ -183,14 +196,20 @@ function SubsectionRow({ sub, onOpen }: { sub: TocSubsection; onOpen: () => void
             <Circle className="w-5 h-5 text-muted-foreground/60" aria-label="Not started" />
         );
 
+    // Locked rows stay tappable — they lead to the skip check, not nowhere.
     return (
         <button
             onClick={onOpen}
-            disabled={!sub.available}
-            className="w-full min-h-[52px] flex items-center gap-3 px-3 rounded-xl text-left hover:bg-muted/60 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors"
+            aria-label={sub.available ? undefined : `${sub.subsection_title} — locked, take the skip check`}
+            className="w-full min-h-[52px] flex items-center gap-3 px-3 rounded-xl text-left hover:bg-muted/60 transition-colors"
         >
             <span className="w-5 flex justify-center shrink-0">{icon}</span>
             <span className={`flex-1 text-sm ${sub.available ? "" : "text-muted-foreground"}`}>{sub.subsection_title}</span>
+            {!sub.available && (
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full border border-primary/40 text-primary shrink-0">
+                    Skip check
+                </span>
+            )}
             <span className="text-[11px] font-medium px-2 py-0.5 rounded-full glass-chip text-muted-foreground shrink-0">
                 {SUBSECTION_TYPE_LABEL[sub.subsection_type] ?? sub.subsection_type}
             </span>

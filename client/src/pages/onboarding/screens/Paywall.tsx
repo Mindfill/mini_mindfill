@@ -12,7 +12,7 @@ import {
     PaymentPlan,
 } from "@/lib/api";
 import { useUserProfile } from "@/hooks/use-user-profile";
-import { SECONDARY_PLANS as PLANS } from "@/lib/plans";
+import { SECONDARY_PLANS as PLANS, PRICE_EXTRAS_NOTE } from "@/lib/plans";
 import { ScreenProps } from "../utils";
 
 export default function Paywall({ accessToken, collected }: ScreenProps) {
@@ -207,6 +207,8 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
                     );
                 })}
             </div>
+
+            <p className="text-[11px] text-muted-foreground leading-relaxed">{PRICE_EXTRAS_NOTE}</p>
 
             {payError && <p className="text-sm text-red-700 dark:text-red-400">{payError}</p>}
 

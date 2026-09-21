@@ -62,7 +62,16 @@ function SubsectionView({ subsectionId, accessToken }: { subsectionId: string; a
 
     const onTutorProgress = useCallback((p: TutorProgress) => setTutor(p), []);
 
-    if (error && !data) return <AccessErrorState error={error} onRetry={() => refetch()} />;
+    if (error && !data)
+        return (
+            <AccessErrorState
+                error={error}
+                onRetry={() => refetch()}
+                // Reaching a locked lesson by URL is the same situation as
+                // tapping it in the chapter: offer the skip check.
+                diagnosticFor={subsectionId}
+            />
+        );
     if (!data) return <PageSkeleton />;
 
     const { subsection, breadcrumb, progress, state } = data;
