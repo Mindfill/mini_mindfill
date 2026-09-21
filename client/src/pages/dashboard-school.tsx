@@ -9,51 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import TechcessLoader from "@/components/brand/TechcessLoader";
 import PageFade from "@/components/ui/page-fade";
 import StudentDetailSheet, { STATUS_LABEL, STATUS_STYLES } from "@/components/dashboard/StudentDetailSheet";
-import {
-    fetchSchoolMonthlyReport,
-    fetchSchoolStudentDetail,
-    SchoolDashboardResponse,
-} from "@/lib/api";
+import { fetchSchoolMonthlyReport, fetchSchoolStudentDetail } from "@/lib/api";
 import { useSchoolDashboard } from "@/lib/appQueries";
-
-/** Quote every field — student names and chapter titles can contain commas. */
-function toCsvRow(values: (string | number)[]): string {
-    return values.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",");
-}
-
-function buildReportCsv(report: SchoolDashboardResponse): string {
-    const { overview } = report;
-    return [
-        toCsvRow(["School", report.school_name]),
-        toCsvRow(["Generated", report.generated_at]),
-        "",
-        toCsvRow(["Total students", overview.total_students]),
-        toCsvRow(["Active this week", overview.active_this_week]),
-        toCsvRow(["Avg minutes this week", overview.avg_study_minutes_this_week]),
-        toCsvRow(["Avg streak", overview.avg_streak]),
-        toCsvRow(["% completed 1+ chapter", overview.chapters_completed_percent]),
-        "",
-        toCsvRow(["Weak topic", "Struggle count"]),
-        ...report.weak_topics.map((t) => toCsvRow([t.chapter_title, t.struggle_count])),
-        "",
-        toCsvRow([
-            "Name", "Class", "Sessions this week", "Current chapter",
-            "Strengths", "Improving", "Last active", "Status",
-        ]),
-        ...report.students.map((s) =>
-            toCsvRow([
-                s.student_name,
-                s.class_level,
-                s.sessions_this_week,
-                s.current_chapter,
-                s.top_strengths.join("; "),
-                s.resolved_weaknesses.join("; "),
-                s.last_active_date || "never",
-                STATUS_LABEL[s.status],
-            ])
-        ),
-    ].join("\n");
-}
 
 export default function SchoolDashboard() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
@@ -82,23 +39,19 @@ export default function SchoolDashboard() {
         navigate("/login");
     };
 
-    // Fetches the same snapshot the monthly email carries and saves it as CSV,
-    // so a school can open it in Excel rather than only reading it in-app.
+    // Fetches the same snapshot the monthly email carries and saves it as a
+    // designed A4 PDF, so a school can circulate or print it. jsPDF is pulled
+    // in on click rather than imported at the top — it's a large dependency
+    // and no other page needs it, so it stays out of the initial bundle.
     const handleDownloadReport = async () => {
         if (!session) return;
         setDownloadingReport(true);
         try {
-            const report = await fetchSchoolMonthlyReport(session.access_token);
-            const blob = new Blob([buildReportCsv(report)], { type: "text/csv;charset=utf-8" });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            const stamp = report.generated_at.slice(0, 10);
-            link.download = `${(report.school_name || "school").replace(/[^\w-]+/g, "-")}-report-${stamp}.csv`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+            const [report, { buildSchoolReportPdf, schoolReportFilename }] = await Promise.all([
+                fetchSchoolMonthlyReport(session.access_token),
+                import("@/lib/schoolReportPdf"),
+            ]);
+            buildSchoolReportPdf(report).save(schoolReportFilename(report));
         } catch (err) {
             console.error(err);
             toast({

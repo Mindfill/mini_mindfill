@@ -24,8 +24,15 @@ async function handleGoogleSignIn(response: { credential: string }) {
     // redirects to /dashboard.
 }
 
+// renderButton only accepts a fixed pixel width — it has no percentage or
+// "fill" mode — and silently clamps to this range.
+const GIS_MIN_WIDTH = 200;
+const GIS_MAX_WIDTH = 400;
+
 export default function GoogleSignInButton() {
+    const wrapRef = useRef<HTMLDivElement>(null);
     const btnRef = useRef<HTMLDivElement>(null);
+    const renderedWidth = useRef(0);
 
     useEffect(() => {
         const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
@@ -35,6 +42,30 @@ export default function GoogleSignInButton() {
         }
 
         let cancelled = false;
+
+        // The width used to be hardcoded at 300, so the button sat narrower
+        // than the email form beneath it and read as misaligned inside its
+        // box — and on a 360px phone a fixed 300 could overflow its container.
+        // Measure the wrapper instead and track it.
+        const measure = (): number => {
+            const w = wrapRef.current?.clientWidth ?? 0;
+            if (!w) return 0;
+            return Math.round(Math.min(GIS_MAX_WIDTH, Math.max(GIS_MIN_WIDTH, w)));
+        };
+
+        const renderAt = (width: number) => {
+            const g = (window as any).google;
+            if (!g?.accounts?.id || !btnRef.current) return;
+            btnRef.current.innerHTML = "";
+            g.accounts.id.renderButton(btnRef.current, {
+                theme: "outline",
+                size: "large",
+                shape: "pill",
+                text: "signin_with",
+                width,
+            });
+            renderedWidth.current = width;
+        };
 
         const init = () => {
             if (cancelled) return;
@@ -54,24 +85,32 @@ export default function GoogleSignInButton() {
                 gisInitialized = true;
             }
 
-            // Render (or re-render) the button into this instance's container.
-            if (btnRef.current) {
-                btnRef.current.innerHTML = "";
-                g.accounts.id.renderButton(btnRef.current, {
-                    theme: "outline",
-                    size: "large",
-                    shape: "pill",
-                    text: "signin_with",
-                    width: 300,
-                });
-            }
+            const width = measure();
+            if (width) renderAt(width);
         };
 
         init();
+
+        // renderButton tears down and rebuilds its iframe, so reacting to every
+        // sub-pixel resize would flicker. Only re-render on a real change.
+        const observer = new ResizeObserver(() => {
+            if (cancelled) return;
+            const width = measure();
+            if (width && Math.abs(width - renderedWidth.current) >= 2) renderAt(width);
+        });
+        if (wrapRef.current) observer.observe(wrapRef.current);
+
         return () => {
             cancelled = true;
+            observer.disconnect();
         };
     }, []);
 
-    return <div ref={btnRef} id="google-btn" className="flex justify-center" />;
+    // Wrapper spans the form's width so the button can be measured against it
+    // and centred within it; the inner div is what GIS renders into.
+    return (
+        <div ref={wrapRef} className="w-full flex justify-center">
+            <div ref={btnRef} id="google-btn" />
+        </div>
+    );
 }

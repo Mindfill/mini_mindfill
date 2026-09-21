@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, ReactNode } fro
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { fetchOnboardingStatus, OnboardingStatus, UserType, UserRole } from "@/lib/api";
+import { applyDyslexiaFont } from "@/lib/dyslexiaFont";
 
 interface UserProfileContextType {
     userType: UserType | null;
@@ -90,6 +91,13 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
                 if (cancelled) return;
                 setStatus(res);
                 loadedFor.current = userId ?? null;
+                // The account's answer beats this browser's localStorage, so
+                // the font follows the student onto a new device. Undefined
+                // means the backend predates the column — leave the local
+                // preference (and the sidebar toggle) alone.
+                if (typeof res.has_dyslexia === "boolean") {
+                    applyDyslexiaFont(res.has_dyslexia);
+                }
             })
             .catch((e) => {
                 if (cancelled) return;
