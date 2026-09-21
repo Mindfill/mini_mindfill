@@ -1174,6 +1174,8 @@ export interface OnboardingStatus {
     terms_accepted: boolean;
     full_name: string | null;
     role: UserRole;
+    /** Drives the OpenDyslexic font app-wide; set during onboarding. */
+    has_dyslexia?: boolean;
 }
 
 /**
@@ -1228,6 +1230,7 @@ export interface SecondaryOnboardingInput {
     school_id?: string;
     life_goals?: string[];
     education_sentiment?: string;
+    has_dyslexia?: boolean;
     notification_prefs?: NotificationPrefs;
     phone_number?: string;
 }
@@ -1262,6 +1265,7 @@ export interface UniversityOnboardingInput {
     course_of_study?: string;
     initial_struggle_topics?: string[];
     education_sentiment?: string;
+    has_dyslexia?: boolean;
     notification_prefs?: NotificationPrefs;
     phone_number?: string;
 }

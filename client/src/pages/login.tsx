@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { supabase } from "@/lib/supabase";
+import { authErrorMessage } from "@/lib/authErrors";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -59,8 +60,8 @@ export default function Login() {
                 const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
                 if (signInError) throw signInError;
             }
-        } catch (err: any) {
-            setError(err?.message || "Something went wrong. Please try again.");
+        } catch (err: unknown) {
+            setError(authErrorMessage(err));
         } finally {
             setSubmitting(false);
         }

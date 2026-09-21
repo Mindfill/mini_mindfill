@@ -1,30 +1,26 @@
 import { useEffect, useState } from "react";
 import { Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const STORAGE_KEY = "dyslexia-font";
+import { applyDyslexiaFont, isDyslexiaFontOn } from "@/lib/dyslexiaFont";
 
 /**
  * Toggles a dyslexia-friendly font (OpenDyslexic) app-wide by adding a
  * `dyslexic` class to <html>, which overrides the --font-sans variable.
- * The preference persists in localStorage (also applied in main.tsx pre-render).
+ * The preference persists in localStorage (also applied in main.tsx
+ * pre-render). Onboarding asks the same question and stores the answer on the
+ * profile so it follows the account — see lib/dyslexiaFont.ts.
  */
 export function DyslexiaToggle() {
     const [on, setOn] = useState(false);
 
     useEffect(() => {
-        setOn(document.documentElement.classList.contains("dyslexic"));
+        setOn(isDyslexiaFontOn());
     }, []);
 
     const toggle = () => {
         const next = !on;
         setOn(next);
-        document.documentElement.classList.toggle("dyslexic", next);
-        try {
-            localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
-        } catch {
-            /* localStorage unavailable */
-        }
+        applyDyslexiaFont(next);
     };
 
     return (

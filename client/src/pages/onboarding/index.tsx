@@ -9,6 +9,7 @@ import { OnboardingAnswers } from "./utils";
 import WhoAreYou from "./screens/WhoAreYou";
 import Name from "./screens/Name";
 import Dob from "./screens/Dob";
+import Dyslexia from "./screens/Dyslexia";
 import ClassLevel from "./screens/ClassLevel";
 import School from "./screens/School";
 import Goals from "./screens/Goals";
@@ -24,12 +25,16 @@ import UniversityDashboardLanding from "./screens/UniversityDashboardLanding";
 // Index 0 ("who_are_you") is universal and always screen 1 on the backend —
 // every array below deliberately shares that first slot so switching types
 // via the back button always lands back on index 1 ("name").
+// "dyslexia" sits at index 2 in both student flows (screen 3 on the backend —
+// keep app/routers/onboarding.py's SECONDARY_SCREENS/UNIVERSITY_SCREENS in
+// step). Early on purpose: the rest of onboarding then renders in the font the
+// student asked for. Parents aren't asked.
 const SECONDARY_FLOW = [
-    "who_are_you", "name", "dob", "class_level", "school",
+    "who_are_you", "name", "dyslexia", "dob", "class_level", "school",
     "goals", "sentiment", "notification_phone", "terms", "paywall",
 ];
 const UNIVERSITY_FLOW = [
-    "who_are_you", "name", "dob", "institution_course", "struggle_topics",
+    "who_are_you", "name", "dyslexia", "dob", "institution_course", "struggle_topics",
     "sentiment", "notification_phone", "terms", "dashboard",
 ];
 const PARENT_FLOW = ["who_are_you", "name", "terms", "dashboard"];
@@ -127,6 +132,9 @@ export default function Onboarding() {
             break;
         case "name":
             content = <Name {...commonProps} userType={localUserType as UserType} />;
+            break;
+        case "dyslexia":
+            content = <Dyslexia {...commonProps} userType={localUserType as "secondary" | "university"} />;
             break;
         case "dob":
             content = <Dob {...commonProps} userType={localUserType as "secondary" | "university"} />;

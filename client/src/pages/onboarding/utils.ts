@@ -64,6 +64,7 @@ export interface OnboardingAnswers {
     courseOfStudy?: string;
     struggleTopics?: string[];
     educationSentiment?: string;
+    hasDyslexia?: boolean;
     notificationWhatsapp?: boolean;
     notificationEmail?: boolean;
     phoneNumber?: string;

@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { authErrorMessage } from "@/lib/authErrors";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,8 +23,26 @@ export default function ResetPassword() {
     const [error, setError] = useState<string | null>(null);
     const [done, setDone] = useState(false);
 
+    const [linkError, setLinkError] = useState<string | null>(null);
+
     useEffect(() => {
         document.title = "Reset password | TECHCESS";
+
+        // When a recovery link is expired, already used, or points at a
+        // redirect URL that isn't on Supabase's allow-list, Supabase sends the
+        // reason back on the URL rather than issuing a session. We were
+        // dropping it and showing a generic "invalid or expired", which hid
+        // the one piece of information that says which of those it was.
+        const fromHash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        const fromQuery = new URLSearchParams(window.location.search);
+        const description =
+            fromHash.get("error_description") ?? fromQuery.get("error_description");
+        const code = fromHash.get("error") ?? fromQuery.get("error");
+
+        if (description || code) {
+            console.error("Password recovery link rejected:", { code, description });
+            setLinkError(description?.replace(/\+/g, " ") ?? code);
+        }
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -36,8 +55,8 @@ export default function ResetPassword() {
             if (updateError) throw updateError;
             setDone(true);
             setTimeout(() => navigate("/dashboard"), 1500);
-        } catch (err: any) {
-            setError(err?.message || "Something went wrong. Please try again.");
+        } catch (err: unknown) {
+            setError(authErrorMessage(err));
         } finally {
             setSubmitting(false);
         }
@@ -54,13 +73,16 @@ export default function ResetPassword() {
             {isLoading ? (
                 <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
             ) : !session ? (
-                <p className="text-sm text-muted-foreground">
-                    This reset link is invalid or has expired.{" "}
-                    <Link href="/login" className="underline hover:text-foreground">
-                        Request a new one
-                    </Link>
-                    .
-                </p>
+                <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                        This reset link is invalid or has expired.{" "}
+                        <Link href="/login" className="underline hover:text-foreground">
+                            Request a new one
+                        </Link>
+                        .
+                    </p>
+                    {linkError && <p className="text-xs text-destructive">{linkError}</p>}
+                </div>
             ) : done ? (
                 <p className="text-sm text-green-700 dark:text-green-400">Password updated — taking you to your dashboard.</p>
             ) : (
