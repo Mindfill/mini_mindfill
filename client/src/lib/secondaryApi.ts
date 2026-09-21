@@ -121,6 +121,9 @@ export interface TocSubsection {
     subsection_type: SubsectionType;
     status: SubsectionStatus;
     available: boolean;
+    /** Locked lessons offer a prerequisite diagnostic instead of a dead end.
+     *  Older backends omit it — treat undefined as false. */
+    can_diagnose?: boolean;
 }
 
 export interface TocSection {
@@ -419,6 +422,65 @@ export const revealQuizSolution = (problemId: string, t: string) =>
 /** Completes a mini quiz / end-of-chapter subsection (incl. ones with no questions yet). */
 export const completeNonTutorSubsection = (subsectionId: string, t: string) =>
     postJson<Progression>(`/secondary/subsections/${encodeURIComponent(subsectionId)}/complete`, null, t, "Couldn't continue");
+
+// ── Prerequisite diagnostic ────────────────────────────────────────────────
+
+export interface DiagnosticOption {
+    letter: string;
+    text: string;
+}
+
+export interface DiagnosticQuestion {
+    id: string;
+    question_text: string;
+    options: DiagnosticOption[];
+}
+
+export interface DiagnosticExam {
+    subsection_id: string;
+    subsection_title: string;
+    chapter_title: string;
+    /** The tutor's opening line — already in voice, shown before the questions. */
+    intro: string;
+    questions: DiagnosticQuestion[];
+    allowed_wrong: number;
+    attempts_used: number;
+    attempts_allowed: number;
+    attempts_remaining: number;
+}
+
+export interface DiagnosticQuestionResult {
+    id: string;
+    given: string | null;
+    answer: string;
+    correct: boolean;
+    explanation: string;
+}
+
+export interface DiagnosticOutcome {
+    passed: boolean;
+    correct_count: number;
+    question_count: number;
+    allowed_wrong: number;
+    results: DiagnosticQuestionResult[];
+    /** The tutor's verdict, in voice — pass or fail line from the cached exam. */
+    message: string;
+    attempts_used: number;
+    attempts_allowed: number;
+    attempts_remaining: number;
+    subsection_id: string;
+}
+
+/** Slow on a cold cache (the exam is written on first use), instant after. */
+export const fetchDiagnostic = (subsectionId: string, t: string) =>
+    getJson<DiagnosticExam>(
+        `/secondary/diagnostic/${encodeURIComponent(subsectionId)}`, t, "Couldn't prepare your diagnostic",
+    );
+
+export const submitDiagnostic = (subsectionId: string, answers: Record<string, string>, t: string) =>
+    postJson<DiagnosticOutcome>(
+        `/secondary/diagnostic/${encodeURIComponent(subsectionId)}/submit`, { answers }, t, "Couldn't mark your answers",
+    );
 
 // ── End-of-chapter problems ────────────────────────────────────────────────
 

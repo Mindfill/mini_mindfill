@@ -145,6 +145,10 @@ function Chip({
 }) {
     const locked = state === "locked";
 
+    // A locked chip is still a button — it routes to the prerequisite
+    // diagnostic. Only its LOOK stays dimmed, and the trace feeding it stays
+    // dark (see `interactive` below), so the board still reads as a route
+    // travelled rather than lighting up wherever the cursor goes.
     const shell =
         state === "completed"
             ? "border-primary/40 shadow-[0_0_20px_-6px_hsl(var(--primary)/0.45)]"
@@ -157,8 +161,11 @@ function Chip({
 
     // The chip powering on under the cursor. Transitions come from the app's
     // global rule, so this needs no transition classes of its own.
+    // Locked chips get a restrained version: they lift and clear their dimming,
+    // but never take the full power-on glow — that belongs to lessons you've
+    // actually reached.
     const hover = locked
-        ? ""
+        ? "hover:opacity-100 hover:border-primary/50"
         : "hover:-translate-y-[2px] hover:border-primary hover:shadow-[0_0_30px_-4px_hsl(var(--primary)/0.6)] active:translate-y-0";
 
     // Pins sit on the outward edge, away from the trace, and light with the chip.
@@ -176,9 +183,9 @@ function Chip({
             <button
                 type="button"
                 onClick={onOpen}
-                disabled={locked}
                 aria-current={state === "active" ? "step" : undefined}
-                className={`glass-panel relative w-full text-left rounded-xl border px-3 py-2.5 min-h-[62px] flex items-center gap-2 disabled:cursor-not-allowed ${shell} ${hover}`}
+                aria-label={locked ? `${sub.subsection_title} — locked, take the skip check` : undefined}
+                className={`glass-panel relative w-full text-left rounded-xl border px-3 py-2.5 min-h-[62px] flex items-center gap-2 ${shell} ${hover}`}
             >
                 {[14, 26, 38].map((top) => (
                     <span
@@ -221,6 +228,9 @@ export default function CircuitBoard({
     currentId,
 }: {
     sections: TocSection[];
+    /** Fired for every chip, INCLUDING locked ones — a locked lesson leads to
+     *  its prerequisite skip check, and the caller decides that. (The uni note
+     *  board also renders this component; nothing is ever locked there.) */
     onOpen: (subsectionId: string) => void;
     /** The lesson the student is on — marked "Now". Pass the same one the
      *  page's Continue button targets. */

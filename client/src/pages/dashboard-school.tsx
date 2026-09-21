@@ -9,8 +9,10 @@ import { useToast } from "@/hooks/use-toast";
 import TechcessLoader from "@/components/brand/TechcessLoader";
 import PageFade from "@/components/ui/page-fade";
 import StudentDetailSheet, { STATUS_LABEL, STATUS_STYLES } from "@/components/dashboard/StudentDetailSheet";
+import UsageAnalyticsPanel from "@/components/dashboard/UsageAnalyticsPanel";
+import HighlyEngagedBadge from "@/components/dashboard/HighlyEngagedBadge";
 import { fetchSchoolMonthlyReport, fetchSchoolStudentDetail } from "@/lib/api";
-import { useSchoolDashboard } from "@/lib/appQueries";
+import { useSchoolDashboard, useUsageAnalytics } from "@/lib/appQueries";
 
 export default function SchoolDashboard() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
@@ -26,6 +28,11 @@ export default function SchoolDashboard() {
     // provisioned manually and exempt from the onboarding gate, so this only
     // waits on the session.
     const { data, isPending, isError, refetch } = useSchoolDashboard(session?.access_token ?? "", !!session);
+    // Read separately so the usage panel can fail or lag without holding up the
+    // rest of the dashboard. Current week only — the badge is a "this week"
+    // claim, whatever week the panel below is showing.
+    const { data: usageThisWeek } = useUsageAnalytics("school", 0, session?.access_token ?? "", !!session);
+    const engagedIds = new Set(usageThisWeek?.highly_engaged_student_ids ?? []);
     const loading = isPending && !data;
     const error = isError && !data ? "Unable to load dashboard" : null;
     const loadDashboard = () => refetch();
@@ -153,6 +160,9 @@ export default function SchoolDashboard() {
                         </div>
                     </section>
 
+                    {/* Usage analytics — read-only, its own week navigation */}
+                    <UsageAnalyticsPanel scope="school" accessToken={session?.access_token ?? ""} enabled={!!session} />
+
                     {/* Weak topics */}
                     {weak_topics.length > 0 && (
                         <section className="glass-panel rounded-2xl p-6">
@@ -201,7 +211,12 @@ export default function SchoolDashboard() {
                                                 }}
                                                 className="border-b border-border/30 last:border-0 cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 outline-none transition-colors"
                                             >
-                                                <td className="px-6 py-3 font-medium">{s.student_name}</td>
+                                                <td className="px-6 py-3 font-medium">
+                                                    <span className="inline-flex items-center gap-2 flex-wrap">
+                                                        {s.student_name}
+                                                        {engagedIds.has(s.student_id) && <HighlyEngagedBadge />}
+                                                    </span>
+                                                </td>
                                                 <td className="px-6 py-3 text-muted-foreground">{s.class_level}</td>
                                                 <td className="px-6 py-3 text-muted-foreground">{s.sessions_this_week}</td>
                                                 <td className="px-6 py-3 text-muted-foreground">{s.current_chapter}</td>

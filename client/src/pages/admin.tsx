@@ -7,6 +7,9 @@ import { GlassButton } from "@/components/ui/glass-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import UsageAnalyticsPanel from "@/components/dashboard/UsageAnalyticsPanel";
+import HighlyEngagedBadge from "@/components/dashboard/HighlyEngagedBadge";
+import { useUsageAnalytics } from "@/lib/appQueries";
 import {
     Loader2, School, Ticket, UserPlus, Power, Upload, FileSpreadsheet,
     CheckCircle2, AlertTriangle, XCircle, GraduationCap,
@@ -780,11 +783,60 @@ function ContentPanel({ accessToken }: { accessToken: string }) {
     );
 }
 
+/**
+ * Usage analytics across every secondary student in the product.
+ *
+ * The shared panel carries the chart, the three figures and the revisit list;
+ * the roster below it is the admin-only part — the "highly engaged" flag next
+ * to a name, which needs a list of names to sit in. Read-only, like the panel.
+ */
+function AdminUsagePanel({ accessToken }: { accessToken: string }) {
+    const { data, isPending, isError } = useUsageAnalytics("admin", 0, accessToken, !!accessToken);
+    const engaged = (data?.students ?? []).filter((s) => s.highly_engaged);
+
+    return (
+        <div className="space-y-6">
+            <UsageAnalyticsPanel scope="admin" accessToken={accessToken} />
+
+            <section className="glass-panel rounded-2xl p-6">
+                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                    Highly engaged students
+                </h3>
+                <p className="text-xs text-muted-foreground mb-4">
+                    Studied outside school hours this week — early, late, or at the weekend.
+                </p>
+                {isPending && !data ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                ) : isError && !data ? (
+                    <p className="text-sm text-muted-foreground">Couldn't load the roster.</p>
+                ) : engaged.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Nobody yet this week.</p>
+                ) : (
+                    <ul className="flex flex-wrap gap-2">
+                        {engaged.map((s) => (
+                            <li
+                                key={s.student_id}
+                                className="inline-flex items-center gap-2 text-sm glass-chip rounded-full px-3 py-1.5"
+                            >
+                                <span className="font-medium">{s.student_name}</span>
+                                {s.class_level && (
+                                    <span className="text-xs text-muted-foreground">{s.class_level}</span>
+                                )}
+                                <HighlyEngagedBadge />
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </section>
+        </div>
+    );
+}
+
 export default function Admin() {
     const { session, isLoading: authLoading } = useAuth();
     const { role, loading: profileLoading } = useUserProfile();
     const [, navigate] = useLocation();
-    const [tab, setTab] = useState<"schools" | "promo" | "content" | "visuals">("schools");
+    const [tab, setTab] = useState<"schools" | "promo" | "content" | "visuals" | "usage">("schools");
 
     useEffect(() => {
         if (!authLoading && !session) navigate("/login");
@@ -836,12 +888,19 @@ export default function Admin() {
                     >
                         Visuals
                     </button>
+                    <button
+                        onClick={() => setTab("usage")}
+                        className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${tab === "usage" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                        Usage
+                    </button>
                 </div>
 
                 {tab === "schools" && <SchoolsPanel accessToken={session.access_token} />}
                 {tab === "promo" && <PromoCodesPanel accessToken={session.access_token} />}
                 {tab === "content" && <ContentPanel accessToken={session.access_token} />}
                 {tab === "visuals" && <CurriculumVisualsPanel accessToken={session.access_token} />}
+                {tab === "usage" && <AdminUsagePanel accessToken={session.access_token} />}
             </main>
         </div>
     );

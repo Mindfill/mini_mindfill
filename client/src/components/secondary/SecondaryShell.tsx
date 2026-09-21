@@ -43,7 +43,17 @@ export function PageSkeleton() {
 }
 
 /** Friendly full-page state for the access errors every lesson endpoint can return. */
-export function AccessErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
+export function AccessErrorState({
+    error,
+    onRetry,
+    diagnosticFor,
+}: {
+    error: unknown;
+    onRetry?: () => void;
+    /** Subsection id. When given, a "locked" error offers the prerequisite
+     *  skip check instead of just sending the student back. */
+    diagnosticFor?: string;
+}) {
     const [, navigate] = useLocation();
     const e = error instanceof SecondaryApiError ? error : null;
 
@@ -68,8 +78,25 @@ export function AccessErrorState({ error, onRetry }: { error: unknown; onRetry?:
     } else if (e?.status === 403 && e.reason === "locked") {
         icon = <Lock className="w-6 h-6" />;
         title = "Not unlocked yet";
-        body = "Finish the lessons before this one to open it.";
-        action = (
+        body = diagnosticFor
+            ? "Do the lessons before this one — or prove you don't need them."
+            : "Finish the lessons before this one to open it.";
+        action = diagnosticFor ? (
+            <div className="flex flex-col gap-2">
+                <button
+                    onClick={() => navigate(`/secondary/diagnostic/${diagnosticFor}`)}
+                    className="min-h-[44px] px-6 rounded-full bg-primary text-primary-foreground font-medium"
+                >
+                    Take the skip check
+                </button>
+                <button
+                    onClick={() => navigate("/secondary/learn")}
+                    className="min-h-[44px] px-6 rounded-full glass-chip font-medium"
+                >
+                    Back to chapters
+                </button>
+            </div>
+        ) : (
             <button onClick={() => navigate("/secondary/learn")} className="min-h-[44px] px-6 rounded-full bg-primary text-primary-foreground font-medium">
                 Back to chapters
             </button>

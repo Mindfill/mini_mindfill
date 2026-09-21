@@ -16,6 +16,15 @@ export interface PlanInfo {
     subtitle?: string;
 }
 
+/**
+ * Shown wherever a price is. Paystack adds VAT and its processing fee on its
+ * own checkout page, so the amount there is a little above the figure we
+ * print — this says so plainly beforehand rather than letting it land as a
+ * surprise. Keep it factual and low-key; it is not a warning.
+ */
+export const PRICE_EXTRAS_NOTE =
+    "Prices exclude VAT and payment processing fees. These are added at checkout, so the final amount is slightly higher.";
+
 export const UNIVERSITY_PLANS: PlanInfo[] = [
     {
         id: "pro_monthly",

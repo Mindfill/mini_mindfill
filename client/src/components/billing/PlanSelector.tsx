@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { initiatePayment, type PaymentPlan } from "@/lib/api";
-import { plansFor } from "@/lib/plans";
+import { plansFor, PRICE_EXTRAS_NOTE } from "@/lib/plans";
 import { Check, Loader2, Sparkles } from "lucide-react";
 
 interface PlanSelectorProps {
@@ -130,6 +130,10 @@ export default function PlanSelector({ onRedirect }: PlanSelectorProps) {
                     );
                 })}
             </div>
+
+            <p className="text-xs text-muted-foreground leading-relaxed text-center">
+                {PRICE_EXTRAS_NOTE}
+            </p>
 
             {error && (
                 <p className="text-red-700 dark:text-red-400/90 text-sm bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-center">

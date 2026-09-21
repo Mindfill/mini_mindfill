@@ -14,12 +14,14 @@ const loadLearn = () => import("@/pages/secondary/learn");
 const loadChapter = () => import("@/pages/secondary/chapter");
 const loadSubsection = () => import("@/pages/secondary/subsection");
 const loadStart = () => import("@/pages/secondary/start");
+const loadDiagnostic = () => import("@/pages/secondary/diagnostic");
 
 const SecondaryDashboard = lazy(loadDashboard);
 const Learn = lazy(loadLearn);
 const Chapter = lazy(loadChapter);
 const Subsection = lazy(loadSubsection);
 const Start = lazy(loadStart);
+const Diagnostic = lazy(loadDiagnostic);
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 /**
@@ -100,6 +102,7 @@ export default function SecondaryLayout() {
                                         <Route path="/secondary/learn/:subjectId" component={Learn} />
                                         <Route path="/secondary/chapters/:chapterId" component={Chapter} />
                                         <Route path="/secondary/subsections/:subsectionId" component={Subsection} />
+                                        <Route path="/secondary/diagnostic/:subsectionId" component={Diagnostic} />
                                         <Route component={NotFound} />
                                     </Switch>
                                 </motion.div>

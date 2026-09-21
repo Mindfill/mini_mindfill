@@ -19,12 +19,17 @@ import {
     type ParentDashboardResponse,
     type SchoolDashboardResponse,
 } from "./api";
+import { fetchUsageAnalytics, type UsageAnalytics, type UsageScope } from "./usageAnalytics";
 
 export const appKeys = {
     uniDashboard: () => ["uni", "dashboard"] as const,
     parentDashboard: () => ["parent", "dashboard"] as const,
     schoolDashboard: () => ["school", "dashboard"] as const,
     courses: () => ["uni", "courses"] as const,
+    // Scope AND week: paging back to a previous week must be a different
+    // cache entry, or stepping back and forward would show stale bars.
+    usageAnalytics: (scope: UsageScope, weekOffset: number) =>
+        ["usage-analytics", scope, weekOffset] as const,
 };
 
 /** Shared with secondaryQueries' NAV_OPTIONS: show cached, refresh behind. */
@@ -58,6 +63,24 @@ export const useSchoolDashboard = (token: string, enabled = true) =>
         queryFn: () => fetchSchoolDashboard(token),
         enabled,
         ...CACHED_PAGE,
+    });
+
+export const useUsageAnalytics = (
+    scope: UsageScope,
+    weekOffset: number,
+    token: string,
+    enabled = true,
+) =>
+    useQuery<UsageAnalytics>({
+        queryKey: appKeys.usageAnalytics(scope, weekOffset),
+        queryFn: () => fetchUsageAnalytics(scope, weekOffset, token),
+        enabled,
+        ...CACHED_PAGE,
+        // Keeps last week's bars on screen while this week's load, instead of
+        // collapsing the panel to a spinner on every step back.
+        placeholderData: (previous) => previous,
+        // A past week can't change. Only the week in progress needs refreshing.
+        staleTime: weekOffset === 0 ? CACHED_PAGE.staleTime : 10 * 60_000,
     });
 
 export interface CourseRow { id: string; title: string; slug: string }
