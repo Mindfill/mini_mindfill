@@ -4,6 +4,10 @@ import SecondaryShell, { AccessErrorState, PageSkeleton } from "@/components/sec
 import { ProgressBar } from "@/components/secondary/ProgressBar";
 import CircuitBoard from "@/components/secondary/CircuitBoard";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { CheckCircle2, Circle, Lock, PlayCircle, ChevronLeft, CircuitBoard as BoardIcon, List } from "lucide-react";
 import { SUBSECTION_TYPE_LABEL, type TocSubsection } from "@/lib/secondaryApi";
 import { useChapterToc } from "@/lib/secondaryQueries";
@@ -62,12 +66,17 @@ function ChapterToc({ chapterId, accessToken }: { chapterId: string; accessToken
     // A locked lesson isn't a dead end: it leads to the prerequisite
     // diagnostic, which can open it. Both navigations live here so the board
     // and the list can't drift.
-    const openSubsection = (s: TocSubsection) =>
-        navigate(
-            s.available
-                ? `/secondary/subsections/${s.subsection_id}`
-                : `/secondary/diagnostic/${s.subsection_id}`,
-        );
+    //
+    // Locked ones ask first. A board node or a list row is easy to catch by
+    // accident, and the diagnostic is not a cheap place to land: it's the
+    // student agreeing to skip material they haven't done, and the verdict
+    // screen shows them the prerequisites they're jumping over. Landing there
+    // unintentionally reads as a wall of content they don't understand.
+    const [skipTarget, setSkipTarget] = useState<TocSubsection | null>(null);
+    const openSubsection = (s: TocSubsection) => {
+        if (s.available) navigate(`/secondary/subsections/${s.subsection_id}`);
+        else setSkipTarget(s);
+    };
 
     if (error && !data) return <AccessErrorState error={error} onRetry={() => refetch()} />;
     if (!data) return <PageSkeleton />;
@@ -180,7 +189,49 @@ function ChapterToc({ chapterId, accessToken }: { chapterId: string; accessToken
                 ))}
             </Accordion>
             )}
+
+            <SkipConfirm
+                target={skipTarget}
+                onCancel={() => setSkipTarget(null)}
+                onConfirm={() => {
+                    const id = skipTarget?.subsection_id;
+                    setSkipTarget(null);
+                    if (id) navigate(`/secondary/diagnostic/${id}`);
+                }}
+            />
         </main>
+    );
+}
+
+/** The gate in front of the skip check. Deliberately not phrased as a warning:
+ *  skipping ahead is allowed, and a student who really knows the material
+ *  should feel invited to prove it. It just has to be a choice they made. */
+function SkipConfirm({
+    target,
+    onCancel,
+    onConfirm,
+}: {
+    target: TocSubsection | null;
+    onCancel: () => void;
+    onConfirm: () => void;
+}) {
+    return (
+        <AlertDialog open={target !== null} onOpenChange={(open) => !open && onCancel()}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Hmmm. So you want to skip ahead?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {target ? <>“{target.subsection_title}” builds on lessons you haven't done yet. </> : null}
+                        Are you sure? Let's see what you've got before we make that decision — a short check on
+                        the material in front of it. Get it right and the lesson opens.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Not yet</AlertDialogCancel>
+                    <AlertDialogAction onClick={onConfirm}>Let's see what I've got</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }
 

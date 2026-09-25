@@ -7,6 +7,7 @@ import AuthLayout from "@/components/auth/AuthLayout";
 import { supabase } from "@/lib/supabase";
 import { authErrorMessage } from "@/lib/authErrors";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
@@ -111,9 +112,8 @@ export default function Login() {
                         <Label htmlFor="password" className="text-muted-foreground">
                             Password
                         </Label>
-                        <Input
+                        <PasswordInput
                             id="password"
-                            type="password"
                             required
                             minLength={6}
                             value={password}

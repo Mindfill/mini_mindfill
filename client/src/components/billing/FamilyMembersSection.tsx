@@ -7,6 +7,7 @@ import {
     fetchSubscriptionMembers,
     inviteSubscriptionMember,
     removeSubscriptionMember,
+    NotFamilyPlanError,
     type MembersResponse,
 } from "@/lib/api";
 
@@ -14,10 +15,16 @@ import {
  * Owner-only family-plan member management (Feature 01). Renders nothing if
  * the user isn't a family-plan owner — GET /subscriptions/members 403s for
  * everyone else, which we treat as "not applicable" rather than an error.
+ *
+ * Only the 403 means that. Every other failure used to be swallowed the same
+ * way, so a network blip or a backend restart made the whole section silently
+ * vanish for a genuine family owner, with nothing to retry — indistinguishable
+ * from not having the feature. Those now show an error with a retry instead.
  */
 export default function FamilyMembersSection({ accessToken }: { accessToken: string }) {
     const [data, setData] = useState<MembersResponse | null>(null);
     const [applicable, setApplicable] = useState(true);
+    const [loadError, setLoadError] = useState(false);
     const [loading, setLoading] = useState(true);
     const [inviteEmail, setInviteEmail] = useState("");
     const [inviting, setInviting] = useState(false);
@@ -25,12 +32,21 @@ export default function FamilyMembersSection({ accessToken }: { accessToken: str
     const { toast } = useToast();
 
     const load = async () => {
+        setLoading(true);
         try {
             const res = await fetchSubscriptionMembers(accessToken);
             setData(res);
             setApplicable(true);
-        } catch {
-            setApplicable(false);
+            setLoadError(false);
+        } catch (err) {
+            if (err instanceof NotFamilyPlanError) {
+                // Not a family-plan owner — the section simply doesn't apply.
+                setApplicable(false);
+                setLoadError(false);
+            } else {
+                console.error("Failed to load family members:", err);
+                setLoadError(true);
+            }
         } finally {
             setLoading(false);
         }
@@ -81,7 +97,26 @@ export default function FamilyMembersSection({ accessToken }: { accessToken: str
         }
     };
 
-    if (loading || !applicable) return null;
+    // A confirmed 403 means the feature doesn't apply — stay invisible.
+    if (!applicable) return null;
+    if (loading) return null;
+
+    // Deliberately neutral wording: when the load fails we don't know whether
+    // this user has a family plan, so it must not imply they do.
+    if (loadError) {
+        return (
+            <section className="bg-card border border-border rounded-3xl p-6 md:p-8">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+                    <p className="text-sm text-muted-foreground">
+                        Couldn't load your plan's member settings just now.
+                    </p>
+                    <Button size="sm" variant="outline" onClick={load} className="sm:w-auto">
+                        Try again
+                    </Button>
+                </div>
+            </section>
+        );
+    }
 
     const memberCount = (data?.members.length ?? 0) + (data?.pending_invites.length ?? 0);
     const atLimit = memberCount >= 2;

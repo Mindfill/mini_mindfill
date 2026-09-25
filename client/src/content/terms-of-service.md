@@ -120,8 +120,10 @@ If you submit feedback, ideas, or suggestions about the Platform ("Feedback"), y
 Techcess offers the following subscription plans:
 
 - **Free:** 10 AI credits per month, reset at the start of each calendar month. Access to core features within credit limits.
-- **Pro Monthly:** ₦15,000 per month, billed monthly. Unlimited AI credits for the duration of the active subscription.
-- **Pro Yearly:** ₦120,000 per year, billed annually. Unlimited AI credits for the duration of the active subscription.
+- **Pro Monthly:** price to be decided. Billed monthly. Unlimited AI credits for the duration of the active subscription.
+- **Pro Yearly:** price to be decided. Billed annually. Unlimited AI credits for the duration of the active subscription.
+
+Paid subscriptions are not currently on sale. Prices have not been set, no paid plan can be purchased through the Platform at this time, and no charge will be made. Access during this period is granted by access code at our discretion and is free of charge. We will publish the prices here before any paid plan becomes available.
 
 Paid subscribers have credits deducted on a per-request basis and are not subject to the Free tier monthly credit cap while their subscription is active.
 

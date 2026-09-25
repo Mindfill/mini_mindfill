@@ -12,7 +12,7 @@ import HighlyEngagedBadge from "@/components/dashboard/HighlyEngagedBadge";
 import { useUsageAnalytics } from "@/lib/appQueries";
 import {
     Loader2, School, Ticket, UserPlus, Power, Upload, FileSpreadsheet,
-    CheckCircle2, AlertTriangle, XCircle, GraduationCap,
+    CheckCircle2, AlertTriangle, XCircle, GraduationCap, LogOut,
 } from "lucide-react";
 import {
     fetchAdminSchools,
@@ -40,13 +40,24 @@ import {
 } from "@/lib/api";
 import CurriculumVisualsPanel from "@/components/admin/CurriculumVisualsPanel";
 
+/**
+ * What a promo code may grant. Must stay in step with
+ * PROMO_GRANTABLE_PLAN_TYPES in app/core/subscription_access.py — the backend
+ * rejects anything else with a 400.
+ *
+ * uni_monthly / uni_yearly used to be offered here and never worked: promo
+ * redemption doesn't touch user_credits, which is the only thing gating
+ * university access, so a uni promo code granted nothing at all.
+ *
+ * The plan chosen here decides WHICH plan the grant behaves as — notably
+ * whether family seats come with it. It does NOT decide how long access lasts:
+ * that is Access Days, always.
+ */
 const PLAN_TYPES = [
     "secondary_individual_monthly",
     "secondary_individual_yearly",
     "secondary_family_monthly",
     "secondary_family_yearly",
-    "uni_monthly",
-    "uni_yearly",
     "pilot",
 ];
 
@@ -442,6 +453,20 @@ function SchoolStudents({ schoolId, accessToken }: { schoolId: string; accessTok
     );
 }
 
+/** Mirrors redeem_promo()'s check: past expires_at, the code is refused. */
+function isExpired(expiresAt: string | null): boolean {
+    return Boolean(expiresAt) && new Date(expiresAt as string) < new Date();
+}
+
+function formatExpiry(expiresAt: string | null): string {
+    if (!expiresAt) return "Never";
+    return new Date(expiresAt).toLocaleDateString(undefined, {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+    });
+}
+
 function PromoCodesPanel({ accessToken }: { accessToken: string }) {
     const { toast } = useToast();
     const [codes, setCodes] = useState<AdminPromoCode[]>([]);
@@ -451,6 +476,8 @@ function PromoCodesPanel({ accessToken }: { accessToken: string }) {
     const [planType, setPlanType] = useState(PLAN_TYPES[0]);
     const [accessDays, setAccessDays] = useState("30");
     const [maxUses, setMaxUses] = useState("");
+    // yyyy-mm-dd from <input type="date">, or "" for a code that never expires.
+    const [expiresOn, setExpiresOn] = useState("");
 
     const loadCodes = async () => {
         setLoading(true);
@@ -480,12 +507,20 @@ function PromoCodesPanel({ accessToken }: { accessToken: string }) {
                     plan_type: planType,
                     access_days: parseInt(accessDays, 10),
                     max_uses: maxUses ? parseInt(maxUses, 10) : undefined,
+                    // The picker gives a date; the backend stores an instant.
+                    // Send the END of that day in local (Lagos) time, so "expires
+                    // 31 Oct" means usable all through the 31st. Sending midnight
+                    // would kill the code a day earlier than it reads.
+                    expires_at: expiresOn
+                        ? new Date(`${expiresOn}T23:59:59`).toISOString()
+                        : undefined,
                 },
                 accessToken
             );
             toast({ title: "Promo code created" });
             setCode("");
             setMaxUses("");
+            setExpiresOn("");
             loadCodes();
         } catch (err) {
             console.error(err);
@@ -509,7 +544,9 @@ function PromoCodesPanel({ accessToken }: { accessToken: string }) {
         <div className="space-y-6">
             <form onSubmit={handleCreate} className="glass-panel rounded-2xl p-6 space-y-4">
                 <h3 className="font-semibold flex items-center gap-2"><Ticket className="w-4 h-4" /> New Promo Code</h3>
-                <div className="grid md:grid-cols-4 gap-4">
+                {/* Five fields now — 4 columns left the last one stranded alone
+                    on its own row. */}
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="space-y-1.5">
                         <Label>Code</Label>
                         <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="PILOT2026" />
@@ -526,11 +563,24 @@ function PromoCodesPanel({ accessToken }: { accessToken: string }) {
                     </div>
                     <div className="space-y-1.5">
                         <Label>Access Days</Label>
-                        <Input type="number" value={accessDays} onChange={(e) => setAccessDays(e.target.value)} />
+                        <Input type="number" min={1} value={accessDays} onChange={(e) => setAccessDays(e.target.value)} />
+                        <p className="text-[11px] text-muted-foreground leading-snug">
+                            How long access lasts. This — not the plan name — sets the duration: a
+                            monthly plan with 5 days gives 5 days.
+                        </p>
                     </div>
                     <div className="space-y-1.5">
                         <Label>Max Uses (optional)</Label>
-                        <Input type="number" value={maxUses} onChange={(e) => setMaxUses(e.target.value)} placeholder="Unlimited" />
+                        <Input type="number" min={1} value={maxUses} onChange={(e) => setMaxUses(e.target.value)} placeholder="Unlimited" />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label>Expires On (optional)</Label>
+                        <Input type="date" value={expiresOn} onChange={(e) => setExpiresOn(e.target.value)} />
+                        <p className="text-[11px] text-muted-foreground leading-snug">
+                            Last day the code can be redeemed. Blank means it never expires.
+                            Separate from Access Days, which is how long access lasts once
+                            someone redeems it.
+                        </p>
                     </div>
                 </div>
                 <GlassButton type="submit" disabled={creating || !code.trim()} contentClassName="flex items-center gap-2">
@@ -552,6 +602,7 @@ function PromoCodesPanel({ accessToken }: { accessToken: string }) {
                                     <th className="px-6 py-2 font-medium">Code</th>
                                     <th className="px-6 py-2 font-medium">Plan</th>
                                     <th className="px-6 py-2 font-medium">Uses</th>
+                                    <th className="px-6 py-2 font-medium">Expires</th>
                                     <th className="px-6 py-2 font-medium">Status</th>
                                     <th className="px-6 py-2 font-medium"></th>
                                 </tr>
@@ -562,9 +613,24 @@ function PromoCodesPanel({ accessToken }: { accessToken: string }) {
                                         <td className="px-6 py-3 font-mono font-medium">{c.code}</td>
                                         <td className="px-6 py-3 text-muted-foreground">{c.plan_type}</td>
                                         <td className="px-6 py-3 text-muted-foreground">{c.uses_count}{c.max_uses ? ` / ${c.max_uses}` : ""}</td>
+                                        <td className="px-6 py-3 text-muted-foreground whitespace-nowrap">
+                                            {formatExpiry(c.expires_at)}
+                                        </td>
                                         <td className="px-6 py-3">
-                                            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${c.is_active ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>
-                                                {c.is_active ? "Active" : "Inactive"}
+                                            {/* A code past its expiry still reads
+                                                is_active — the flag is a manual
+                                                switch, and redemption checks the
+                                                date separately. Say "Expired" so
+                                                the table doesn't claim a dead code
+                                                still works. */}
+                                            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                                                isExpired(c.expires_at)
+                                                    ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                                                    : c.is_active
+                                                      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                                                      : "bg-muted text-muted-foreground"
+                                            }`}>
+                                                {isExpired(c.expires_at) ? "Expired" : c.is_active ? "Active" : "Inactive"}
                                             </span>
                                         </td>
                                         <td className="px-6 py-3">
@@ -833,7 +899,7 @@ function AdminUsagePanel({ accessToken }: { accessToken: string }) {
 }
 
 export default function Admin() {
-    const { session, isLoading: authLoading } = useAuth();
+    const { session, isLoading: authLoading, signOut } = useAuth();
     const { role, loading: profileLoading } = useUserProfile();
     const [, navigate] = useLocation();
     const [tab, setTab] = useState<"schools" | "promo" | "content" | "visuals" | "usage">("schools");
@@ -852,15 +918,35 @@ export default function Admin() {
         document.title = "Admin | TECHCESS";
     }, []);
 
+    const handleSignOut = async () => {
+        await signOut();
+        navigate("/login");
+    };
+
     if (authLoading || !session || profileLoading || role !== "admin") return null;
 
     return (
         <div className="min-h-screen w-full bg-background text-foreground relative">
             <AnimatedGradientBg />
             <main className="max-w-4xl mx-auto p-6 md:p-10 space-y-8 relative">
-                <div>
-                    <h1 className="font-display text-2xl font-semibold tracking-tight">Admin</h1>
-                    <p className="text-muted-foreground text-sm">Schools, school admins, promo codes, and curriculum content.</p>
+                <div className="flex items-start justify-between gap-4">
+                    <div>
+                        <h1 className="font-display text-2xl font-semibold tracking-tight">Admin</h1>
+                        <p className="text-muted-foreground text-sm">Schools, school admins, promo codes, and curriculum content.</p>
+                    </div>
+                    {/* The admin pages have no sidebar, so this was the one
+                        signed-in screen with no way out — switching accounts to
+                        check an admin action's effect meant clearing storage by
+                        hand. */}
+                    <GlassButton
+                        size="sm"
+                        onClick={handleSignOut}
+                        className="flex-shrink-0"
+                        contentClassName="flex items-center gap-2"
+                    >
+                        <LogOut className="w-4 h-4" />
+                        Sign out
+                    </GlassButton>
                 </div>
 
                 <div className="flex items-center glass-chip rounded-full p-1 w-fit max-w-full overflow-x-auto">

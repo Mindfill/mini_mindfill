@@ -12,7 +12,13 @@ import {
     PaymentPlan,
 } from "@/lib/api";
 import { useUserProfile } from "@/hooks/use-user-profile";
-import { SECONDARY_PLANS as PLANS, PRICE_EXTRAS_NOTE } from "@/lib/plans";
+import {
+    SECONDARY_PLANS as PLANS,
+    displayPlan,
+    PRICE_EXTRAS_NOTE,
+    PRICING_TBD,
+    TBD_PRICING_NOTE,
+} from "@/lib/plans";
 import { ScreenProps } from "../utils";
 
 export default function Paywall({ accessToken, collected }: ScreenProps) {
@@ -33,7 +39,9 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
     const redirectingRef = useRef(false);
     const [payError, setPayError] = useState<string | null>(null);
 
-    const [promoOpen, setPromoOpen] = useState(false);
+    // While pricing is undecided an access code is the only way in, so the
+    // field is open from the start rather than hidden behind a link.
+    const [promoOpen, setPromoOpen] = useState(PRICING_TBD);
     const [promoCode, setPromoCode] = useState("");
     const [redeemingPromo, setRedeemingPromo] = useState(false);
     const [promoError, setPromoError] = useState<string | null>(null);
@@ -77,7 +85,8 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
     };
 
     const handlePay = async () => {
-        if (payingOrSkipping) return;
+        // Guard as well as disable — this is the call that reaches Paystack.
+        if (PRICING_TBD || payingOrSkipping) return;
         const attempt = ++payAttemptRef.current;
         setPending("pay");
         setPayError(null);
@@ -168,14 +177,18 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
             </h1>
 
             <div className="grid grid-cols-2 gap-2.5">
-                {PLANS.map((plan) => {
-                    const active = selectedPlan === plan.id;
+                {PLANS.map((source) => {
+                    const plan = displayPlan(source);
+                    const active = !PRICING_TBD && selectedPlan === plan.id;
                     return (
                         <button
                             key={plan.id}
                             onClick={() => setSelectedPlan(plan.id)}
-                            disabled={payingOrSkipping}
-                            className={`text-left p-4 rounded-2xl border transition-all disabled:opacity-60 ${
+                            disabled={PRICING_TBD || payingOrSkipping}
+                            aria-disabled={PRICING_TBD || payingOrSkipping}
+                            className={`text-left p-4 rounded-2xl border transition-all ${
+                                PRICING_TBD ? "opacity-70 cursor-not-allowed" : "disabled:opacity-60"
+                            } ${
                                 active ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border bg-card"
                             }`}
                         >
@@ -196,8 +209,14 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
                                     </span>
                                 )}
                             </div>
-                            <div className="flex items-baseline gap-1">
-                                <span className="text-lg font-bold">{plan.price}</span>
+                            <div className="flex items-baseline gap-1 flex-wrap">
+                                <span
+                                    className={`font-bold ${
+                                        PRICING_TBD ? "text-sm text-muted-foreground italic" : "text-lg"
+                                    }`}
+                                >
+                                    {plan.price}
+                                </span>
                                 <span className="text-[11px] text-muted-foreground">{plan.cadence}</span>
                             </div>
                             {plan.subtitle && (
@@ -208,12 +227,23 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
                 })}
             </div>
 
-            <p className="text-[11px] text-muted-foreground leading-relaxed">{PRICE_EXTRAS_NOTE}</p>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+                {PRICING_TBD ? TBD_PRICING_NOTE : PRICE_EXTRAS_NOTE}
+            </p>
 
             {payError && <p className="text-sm text-red-700 dark:text-red-400">{payError}</p>}
 
-            <Button size="lg" onClick={handlePay} disabled={payingOrSkipping} className="w-full gap-2">
-                {pending === "pay" ? (
+            <Button
+                size="lg"
+                onClick={handlePay}
+                disabled={PRICING_TBD || payingOrSkipping}
+                className="w-full gap-2"
+            >
+                {PRICING_TBD ? (
+                    <>
+                        <Sparkles className="w-4 h-4" /> Payment coming soon
+                    </>
+                ) : pending === "pay" ? (
                     <>
                         <Loader2 className="w-4 h-4 animate-spin" /> Opening secure checkout…
                     </>
@@ -223,7 +253,7 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
                     </>
                 )}
             </Button>
-            {pending === "pay" && (
+            {!PRICING_TBD && pending === "pay" && (
                 <button
                     type="button"
                     onClick={handleCancelPay}
@@ -243,7 +273,13 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
                         Have a school code?
                     </button>
                 ) : (
-                    <form onSubmit={handleRedeemPromo} className="flex gap-2 pt-3">
+                    <form onSubmit={handleRedeemPromo} className="space-y-2 pt-3">
+                        {PRICING_TBD && (
+                            <label className="block text-sm font-semibold">
+                                Have an access code? Enter it here.
+                            </label>
+                        )}
+                        <div className="flex gap-2">
                         <Input
                             value={promoCode}
                             onChange={(e) => setPromoCode(e.target.value)}
@@ -255,6 +291,7 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
                             {redeemingPromo && <Loader2 className="w-4 h-4 animate-spin" />}
                             Apply
                         </Button>
+                        </div>
                     </form>
                 )}
                 {promoError && <p className="text-sm text-red-700 dark:text-red-400">{promoError}</p>}

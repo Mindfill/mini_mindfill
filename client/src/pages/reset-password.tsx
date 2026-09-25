@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { authErrorMessage } from "@/lib/authErrors";
 import AuthLayout from "@/components/auth/AuthLayout";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
@@ -91,9 +91,8 @@ export default function ResetPassword() {
                         <Label htmlFor="new-password" className="text-muted-foreground">
                             New password
                         </Label>
-                        <Input
+                        <PasswordInput
                             id="new-password"
-                            type="password"
                             required
                             minLength={6}
                             value={password}
