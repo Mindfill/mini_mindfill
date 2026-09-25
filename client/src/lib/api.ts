@@ -946,6 +946,8 @@ export interface MySubscription {
     /** Cancelled, but still inside the period they paid for. */
     cancel_at_period_end: boolean;
     has_access: boolean;
+    /** How access was granted: a purchase, or a redeemed access code. */
+    source: "paystack" | "promo" | null;
 }
 
 /** GET /subscriptions/me — drives the billing panel's Cancel / Resume / Subscribe. */
@@ -1416,11 +1418,24 @@ export interface MembersResponse {
  * Owner-only: list active members + pending invites on the family plan.
  * GET /subscriptions/members
  */
+/**
+ * The caller isn't a family-plan owner, so member management doesn't apply to
+ * them. Distinct from a failure: the UI hides the section for this, but shows
+ * a retry for anything else. Raised on the 403 from require_subscription_owner.
+ */
+export class NotFamilyPlanError extends Error {
+    constructor(message = "This plan doesn't include additional members.") {
+        super(message);
+        this.name = "NotFamilyPlanError";
+    }
+}
+
 export async function fetchSubscriptionMembers(accessToken: string): Promise<MembersResponse> {
     const res = await fetch(`${BACKEND_URL}/subscriptions/members`, {
         headers: authHeaders(accessToken),
     });
 
+    if (res.status === 403) throw new NotFamilyPlanError(await parseErrorDetail(res));
     if (!res.ok) {
         throw new Error(`Failed to fetch members: ${res.status} — ${await parseErrorDetail(res)}`);
     }

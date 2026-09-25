@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
+import { useLocation } from "wouter";
 import { supabase } from "@/lib/supabase";
 import { Session, User } from "@supabase/supabase-js";
 import { registerDevice, type DeviceInfo } from "@/lib/device";
@@ -19,7 +20,12 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const RESET_PASSWORD_PATH = "/reset-password";
+
 export function AuthProvider({ children }: { children: ReactNode }) {
+    // wouter's default location hook reads browser history directly, so this
+    // works here even though AuthProvider sits outside <Router>.
+    const [, navigate] = useLocation();
     const [session, setSession] = useState<Session | null>(null);
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -92,12 +98,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 lastRegisteredToken.current = null;
                 setDeviceLimit(null);
             }
+
+            // A recovery link can land anywhere. Supabase only honours the
+            // redirectTo it was given if that exact URL is on the project's
+            // allow-list; otherwise it silently falls back to Site URL, which
+            // drops the user on the landing page with a valid recovery session
+            // and no way to reach the form. The token is in the URL hash, so
+            // detectSessionInUrl consumes it wherever it lands and fires this
+            // event — which makes it the one reliable signal, independent of
+            // dashboard configuration.
+            //
+            // pathname is read live rather than from a captured `location`:
+            // this callback outlives the render it was created in.
+            if (event === "PASSWORD_RECOVERY" && window.location.pathname !== RESET_PASSWORD_PATH) {
+                // Synchronous (history.pushState) — safe inside this callback,
+                // which must never await. replace: the URL it is leaving is a
+                // spent recovery link, not somewhere to go Back to.
+                navigate(RESET_PASSWORD_PATH, { replace: true });
+            }
         });
 
         return () => {
             mounted = false;
             subscription.unsubscribe();
         };
+        // navigate is stable for wouter's browser history hook; re-subscribing
+        // would tear down and rebuild the auth listener on every render.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const signOut = async () => {

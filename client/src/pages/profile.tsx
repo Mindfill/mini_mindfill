@@ -96,6 +96,14 @@ export default function Profile() {
     // Secondary plans are Individual / Family, not Pro — name the one they're on.
     const isSecondary = userType === "secondary";
     const planName = planDisplayName(subscription?.plan_type, userType);
+    // Which access model to believe. isPaid reads user_credits.subscription_status,
+    // which is the UNIVERSITY gate and nothing else — secondary access lives in
+    // the subscriptions table and is resolved by get_subscription_access(). So a
+    // secondary student with a live plan (or a redeemed access code) had isPaid
+    // false and was shown "Free" on this page while the app itself let them into
+    // every paid chapter. has_access comes from /subscriptions/me, which runs the
+    // same subscription_is_live() the backend gates on, so the two now agree.
+    const hasPlan = isSecondary ? Boolean(subscription?.has_access) : isPaid;
     // Prefer the name saved during onboarding/profile edits — falls back to
     // auth metadata/email only while that hasn't loaded yet, so this never
     // flips to the email-derived name after the page has finished loading.
@@ -374,17 +382,17 @@ export default function Profile() {
                             </div>
                             <span
                                 className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full ${
-                                    isPaid && subscription?.cancel_at_period_end
+                                    hasPlan && subscription?.cancel_at_period_end
                                         ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                                        : isPaid
+                                        : hasPlan
                                           ? "bg-green-500/10 text-green-700 dark:text-green-400"
                                           : "bg-muted text-muted-foreground"
                                 }`}
                             >
-                                {isPaid && !subscription?.cancel_at_period_end ? (
+                                {hasPlan && !subscription?.cancel_at_period_end ? (
                                     <CheckCircle2 className="w-3.5 h-3.5" />
                                 ) : null}
-                                {isPaid
+                                {hasPlan
                                     ? subscription?.cancel_at_period_end
                                         ? `${planName} · ending`
                                         : planName
@@ -392,7 +400,7 @@ export default function Profile() {
                             </span>
                         </div>
 
-                        {isPaid && subscription?.cancel_at_period_end ? (
+                        {hasPlan && subscription?.cancel_at_period_end ? (
                             /* Cancelled but still inside the period they paid for:
                                billing has stopped, access hasn't. */
                             <div className="space-y-4">
@@ -413,7 +421,23 @@ export default function Profile() {
                                     {endsOn ? `, replacing the one that runs to ${endsOn}` : ""}.
                                 </p>
                             </div>
-                        ) : isPaid ? (
+                        ) : hasPlan && subscription?.source === "promo" ? (
+                            /* A redeemed access code. There is no Paystack
+                               subscription behind it, nothing is being billed
+                               and nothing renews — so no cancel button, and the
+                               end date is the whole story. */
+                            <div className="space-y-4">
+                                <p className="text-sm text-foreground/90">
+                                    You're on <span className="font-semibold">{planName}</span>, unlocked with an access
+                                    code{isSecondary ? ", with every chapter open" : ""}.
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                    {endsOn
+                                        ? `It runs until ${endsOn}. Nothing is being billed, and it won't renew on its own.`
+                                        : "Nothing is being billed, and it won't renew on its own."}
+                                </p>
+                            </div>
+                        ) : hasPlan ? (
                             <div className="space-y-4">
                                 <p className="text-sm text-foreground/90">
                                     You're on <span className="font-semibold">{planName}</span>
