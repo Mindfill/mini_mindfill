@@ -20,7 +20,7 @@ This Policy applies to all users of the Platform — university students, second
 
 **Registered country:** Federal Republic of Nigeria
 
-**Contact email:** techcessofficial@gmail.com
+**Contact email:** support@techcess.org
 
 **Data Protection Officer:** To be designated. Until a Data Protection Officer is formally appointed, all privacy enquiries and requests should be sent to the contact email above with the subject line "Data Protection."
 
@@ -206,13 +206,13 @@ You have the right to know, delete and correct personal information, to limit th
 
 ### 10.4 How to Use Your Rights
 
-Email **techcessofficial@gmail.com** with the subject line "Data Rights Request." We may need to verify your identity first. We will respond within 30 days. Using your rights is free, unless a request is clearly unfounded or excessive.
+Email **support@techcess.org** with the subject line "Data Rights Request." We may need to verify your identity first. We will respond within 30 days. Using your rights is free, unless a request is clearly unfounded or excessive.
 
 ### 10.5 If Something Goes Wrong
 
 If you believe we have not handled your data in line with this Policy or the law:
 
-1. Contact us at **techcessofficial@gmail.com** with the subject line "Privacy Complaint." We will acknowledge your complaint within 7 days and aim to resolve it within 30 days, telling you what we found and what we have done about it.
+1. Contact us at **support@techcess.org** with the subject line "Privacy Complaint." We will acknowledge your complaint within 7 days and aim to resolve it within 30 days, telling you what we found and what we have done about it.
 2. If you are not satisfied, or at any time, you may complain to the **Nigeria Data Protection Commission** (ndpc.gov.ng), or to your local supervisory authority if you are in the EEA or UK.
 
 ## 11. Cookies, Local Storage and Device Tokens
@@ -235,7 +235,7 @@ Techcess is a learning platform, and many of our secondary school students are u
 - **Never used for training:** data from users under 18 is never used for AI training. Users under 18 are not offered the training opt-in, and deleting their notes is always a complete, permanent deletion. Whether a user is under 18 is worked out from their date of birth at the time the data would be copied, so the protection applies until the day they turn 18. If we do not have a date of birth for you, we treat you as under 18 for this purpose.
 - **Plain language:** we aim to keep this Policy understandable for students and their parents. If anything here is unclear, please contact us.
 
-If you believe a child's data has been provided to us without appropriate permission, contact us at techcessofficial@gmail.com and we will act promptly.
+If you believe a child's data has been provided to us without appropriate permission, contact us at support@techcess.org and we will act promptly.
 
 ## 13. Changes to This Policy
 
@@ -278,7 +278,7 @@ If you have not opted in, deleting a note is always a complete, permanent deleti
 
 For any questions, concerns or requests about this Policy or your data:
 
-**Email:** techcessofficial@gmail.com
+**Email:** support@techcess.org
 
 **Organisation:** Techcess
 

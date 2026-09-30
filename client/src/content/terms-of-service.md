@@ -143,7 +143,7 @@ You may cancel your subscription at any time via your account settings or by con
 
 ### 7.5 Refunds
 
-All subscription fees are non-refundable except where required by applicable law. No partial-period refunds are issued for unused time within a billing cycle. If you believe a charge was made in error, contact us at techcessofficial@gmail.com within 14 days of the charge.
+All subscription fees are non-refundable except where required by applicable law. No partial-period refunds are issued for unused time within a billing cycle. If you believe a charge was made in error, contact us at support@techcess.org within 14 days of the charge.
 
 ### 7.6 Lapsed Subscriptions
 
@@ -190,7 +190,7 @@ The inclusion of any third-party integration does not imply our endorsement of t
 
 ## 11. Privacy
 
-Your use of the Platform is also governed by our Privacy Policy, incorporated into these Terms by reference, which explains how we collect and use personal data under the Nigeria Data Protection Act 2023. It is available at any time on the Privacy Policy page of the Platform, or by email at techcessofficial@gmail.com.
+Your use of the Platform is also governed by our Privacy Policy, incorporated into these Terms by reference, which explains how we collect and use personal data under the Nigeria Data Protection Act 2023. It is available at any time on the Privacy Policy page of the Platform, or by email at support@techcess.org.
 
 Agreeing to these Terms does not by itself mean you consent to any optional data use. Where the Privacy Policy relies on consent (for example, the optional anonymised training copies), we ask for it separately, and you can withdraw it at any time.
 
@@ -198,7 +198,7 @@ Agreeing to these Terms does not by itself mean you consent to any optional data
 
 ### 12.1 Termination by You
 
-You may stop using the Platform at any time. You can cancel a subscription from your Profile page (see Section 7.4) and delete any of your notes yourself. To close your account and have your data deleted, email techcessofficial@gmail.com; we will handle the request as described in our Privacy Policy.
+You may stop using the Platform at any time. You can cancel a subscription from your Profile page (see Section 7.4) and delete any of your notes yourself. To close your account and have your data deleted, email support@techcess.org; we will handle the request as described in our Privacy Policy.
 
 ### 12.2 Termination by Techcess
 
@@ -265,13 +265,13 @@ These Terms are written in English. To the extent any translation is provided, t
 
 For questions, concerns, or notices regarding these Terms:
 
-**Email:** techcessofficial@gmail.com
+**Email:** support@techcess.org
 
 **Organisation:** Techcess
 
 **Country:** Nigeria
 
-For privacy-related requests, please refer to our Privacy Policy or email techcessofficial@gmail.com.
+For privacy-related requests, please refer to our Privacy Policy or email support@techcess.org.
 
 Document version: 1.2  |  Effective: July 29, 2026  |  Last Updated: September 19, 2026
 
