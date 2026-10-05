@@ -8,6 +8,12 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
 interface PdfViewerProps {
     url: string;
+    /**
+     * 1-based page to scroll to once it has been drawn. Used by the lesson's Notes
+     * drawer to open the student's note at the section they are studying. Pages render
+     * sequentially, so this scrolls when that page appears rather than on load.
+     */
+    scrollToPage?: number;
 }
 
 /**
@@ -16,7 +22,7 @@ interface PdfViewerProps {
  * sequentially and appended imperatively (React never owns the canvases), which
  * avoids reconciliation races and reliably paints every page.
  */
-export default function PdfViewer({ url }: PdfViewerProps) {
+export default function PdfViewer({ url, scrollToPage }: PdfViewerProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -69,6 +75,14 @@ export default function PdfViewer({ url }: PdfViewerProps) {
                     await page.render({ canvasContext: ctx, viewport }).promise;
                     if (cancelled) break;
                     setProgress({ done: n, total: pdf.numPages });
+
+                    // Jump to the requested page the moment it exists. Doing it here
+                    // rather than after the whole document means the student isn't
+                    // waiting on pages they don't want; later pages appending below
+                    // don't disturb the scroll position.
+                    if (scrollToPage && n === scrollToPage) {
+                        canvas.scrollIntoView({ block: "start" });
+                    }
                 }
             } catch (err) {
                 if (!cancelled) {
@@ -84,7 +98,7 @@ export default function PdfViewer({ url }: PdfViewerProps) {
             task.destroy().catch(() => {});
             if (container) container.innerHTML = "";
         };
-    }, [url]);
+    }, [url, scrollToPage]);
 
     return (
         <div className="w-full h-full relative">

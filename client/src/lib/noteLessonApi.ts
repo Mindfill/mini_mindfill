@@ -61,7 +61,10 @@ export interface SectionState {
     is_review: boolean;
     phase: Phase;
     messages: LessonMessage[];
+    /** No session left to continue in — history only, nothing to type into. */
     read_only: boolean;
+    /** Section is finished, but the chat stays open for follow-up questions. */
+    section_covered: boolean;
     needs_opening: boolean;
 }
 
@@ -90,6 +93,17 @@ export interface NoteSectionText {
     section_index: number;
     title: string;
     content: string;
+    /** Page range as extraction wrote it, e.g. "3" or "4-8". May be absent. */
+    page_range: string | null;
+    /** First page of that range, already parsed server-side. Null if unparseable. */
+    page_start: number | null;
+}
+
+/** What the Notes drawer shows: the original file, plus text as a fallback. */
+export interface NoteContent {
+    file_url: string | null;
+    file_name: string | null;
+    sections: NoteSectionText[];
 }
 
 async function failFrom(res: Response, what: string): Promise<never> {
@@ -108,8 +122,8 @@ export function fetchNoteBoard(noteId: string, accessToken: string) {
     return getJson<NoteBoard>(`/notes/${noteId}/board`, accessToken, "Failed to load board");
 }
 
-export function fetchNoteText(noteId: string, accessToken: string) {
-    return getJson<NoteSectionText[]>(`/notes/${noteId}/content`, accessToken, "Failed to load note");
+export function fetchNoteContent(noteId: string, accessToken: string) {
+    return getJson<NoteContent>(`/notes/${noteId}/content`, accessToken, "Failed to load note");
 }
 
 export function fetchSectionState(noteId: string, sectionIndex: number, accessToken: string) {
