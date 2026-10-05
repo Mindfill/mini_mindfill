@@ -57,6 +57,7 @@ export default function NoteLesson() {
     const [messages, setMessages] = useState<LessonMessage[]>([]);
     const [phase, setPhase] = useState<Phase>(1);
     const [readOnly, setReadOnly] = useState(false);
+    const [sectionCovered, setSectionCovered] = useState(false);
     const [completion, setCompletion] = useState<Completion | null>(null);
     const [keyTerms, setKeyTerms] = useState<KeyTerm[]>([]);
     const [figures, setFigures] = useState<Record<number, NoteFigure>>({});
@@ -130,6 +131,7 @@ export default function NoteLesson() {
             setMessages(state.messages);
             setPhase(state.phase ?? 1);
             setReadOnly(state.read_only);
+            setSectionCovered(state.section_covered);
             setLoading(false);
 
             if (state.needs_opening) {
@@ -225,25 +227,9 @@ export default function NoteLesson() {
         }
     };
 
-    const reviewAgain = async () => {
-        if (opening) return;
-        setOpening(true);
-        setCompletion(null);
-        setFreshIdx(null);
-        setMessages([]);
-        try {
-            const opened = await openSection(noteId, sectionIndex, accessToken, true);
-            setSessionId(opened.session_id);
-            setMessages(opened.messages);
-            setPhase(opened.phase ?? 1);
-            setReadOnly(false);
-        } catch (err) {
-            handleError(err, "Couldn't start the review");
-            load();
-        } finally {
-            setOpening(false);
-        }
-    };
+    // No reviewAgain handler any more — the "Review again" button is gone (it wiped the
+    // conversation on a mis-tap). The backend's review flag still exists on /open if a
+    // deliberate re-teach is ever wanted again.
 
     const handleSignOut = async () => {
         await signOut();
@@ -253,7 +239,12 @@ export default function NoteLesson() {
     const userName = user?.user_metadata?.full_name || user?.email || "User";
     const position = sections.findIndex((s) => s.section_index === sectionIndex);
     const last = messages[messages.length - 1];
-    const finished = readOnly || !!completion;
+    // Covered, but still open for questions. `readOnly` is now only true when there is
+    // no session left to continue in; a completed section keeps its composer so a
+    // student with one more question doesn't have to start a review and lose the
+    // conversation they wanted to ask about.
+    const covered = readOnly || sectionCovered || !!completion;
+    const finished = readOnly;
     const showChips =
         !finished && !sending && !opening && last?.role === "assistant" && last.requires_chips && !!last.chip_set;
     const outOfCredits = !hasCredits && !isPaid;
@@ -343,7 +334,12 @@ export default function NoteLesson() {
                     {showChips && last.chip_set && <ChipRow chipSet={last.chip_set} onPick={(t) => send(t)} disabled={outOfCredits} />}
 
                     {streaming ? <TutorMessage content={streaming} figures={figures} /> : null}
-                    {opening && <LessonPreparing review={messages.length === 0 && readOnly} />}
+                    {/* Only ever while there is genuinely nothing to show. The rotating
+                        "Reading this section… Finding the core idea…" phrases describe
+                        work that is about to happen, so on a section the student is
+                        coming back to — where the conversation is already on screen —
+                        they read as the lesson restarting from scratch. */}
+                    {opening && messages.length === 0 && <LessonPreparing review={readOnly || sectionCovered} />}
                     {sending && !streaming && (
                         <div>
                             <TutorLabel />
@@ -369,17 +365,18 @@ export default function NoteLesson() {
             {/* §3.6 input — or, once the section is done, where to go next */}
             <footer className="flex-shrink-0 bg-background/80 backdrop-blur-xl border-t border-border">
                 <div className="max-w-3xl mx-auto px-4 pt-2.5 pb-3">
-                    {finished ? (
+                    {covered && (
                         <SectionDone
                             justCompleted={!!completion}
                             noteComplete={completion?.noteComplete ?? false}
                             next={completion ? completion.next : nextSection}
                             onNext={(idx) => navigate(`/notes/${noteId}/sections/${idx}`)}
                             onBoard={() => navigate(`/notes/${noteId}`)}
-                            onReview={reviewAgain}
-                            reviewing={opening}
                         />
-                    ) : (
+                    )}
+                    {/* Shown alongside SectionDone once covered: where to go next AND
+                        the option to keep asking about what was just learnt. */}
+                    {!finished && (
                         <>
                             {outOfCredits && (
                                 <button
@@ -388,6 +385,11 @@ export default function NoteLesson() {
                                 >
                                     You've run out of credits. Upgrade to Pro →
                                 </button>
+                            )}
+                            {covered && (
+                                <p className="text-center text-xs text-muted-foreground mb-1.5">
+                                    Section covered — ask anything else about it below.
+                                </p>
                             )}
                             <LessonInput onSend={(t) => send(t)} disabled={sending || opening || outOfCredits} />
                         </>
@@ -436,22 +438,26 @@ function TutorMessage({
     );
 }
 
+/**
+ * Shown once a section is covered, above the composer — which stays available, so the
+ * student can keep asking about what they just learnt.
+ *
+ * There is deliberately no "Review again" here (David, 2026-10-05): it started a fresh
+ * session and wiped the conversation, so a single mis-tap destroyed the lesson the
+ * student had come back to re-read.
+ */
 function SectionDone({
     justCompleted,
     noteComplete,
     next,
     onNext,
     onBoard,
-    onReview,
-    reviewing,
 }: {
     justCompleted: boolean;
     noteComplete: boolean;
     next: number | null;
     onNext: (idx: number) => void;
     onBoard: () => void;
-    onReview: () => void;
-    reviewing: boolean;
 }) {
     return (
         <div className="space-y-2.5">
@@ -475,15 +481,6 @@ function SectionDone({
                 <button onClick={onBoard} className="min-h-[44px] px-5 rounded-full border border-border text-sm font-medium">
                     Back to board
                 </button>
-                {!justCompleted && (
-                    <button
-                        onClick={onReview}
-                        disabled={reviewing}
-                        className="min-h-[44px] px-5 rounded-full border border-border text-sm font-medium inline-flex items-center gap-1.5 disabled:opacity-50"
-                    >
-                        <RotateCcw className="w-3.5 h-3.5" /> Review again
-                    </button>
-                )}
             </div>
         </div>
     );
