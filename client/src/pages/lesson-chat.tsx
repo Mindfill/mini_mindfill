@@ -11,7 +11,9 @@ import TechcessLoader from "@/components/brand/TechcessLoader";
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatInput from "@/components/chat/ChatInput";
+import PendingMessages from "@/components/chat/PendingMessages";
 import TypingIndicator from "@/components/chat/TypingIndicator";
+import { useSendQueue } from "@/hooks/use-send-queue";
 import { X } from "lucide-react";
 import QuizSection from "@/components/quiz/QuizSection";
 import mindfillIcon from "@/assets/mindfill.png";
@@ -48,19 +50,16 @@ export default function LessonChat() {
     // Track the token we last fetched for, so re-renders / token refreshes
     // don't trigger duplicate API calls.
     const fetchedForToken = useRef<string | null>(null);
+    // Synchronous twin of `sending`: the queue calls handleSend again as soon
+    // as the previous one resolves, before React has re-rendered with
+    // sending=false, so the state would still read true in that closure.
+    const inFlight = useRef(false);
 
     // ── ALL HOOKS BEFORE ANY EARLY RETURNS ──────────────────────────────────
 
     useEffect(() => {
         document.title = `${displayTitle} | TECHCESS`;
     }, [displayTitle]);
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        }, 0);
-        return () => clearTimeout(timer);
-    }, [messages, sending, streamingContent]);
 
     useEffect(() => {
         if (!authLoading && !session) {
@@ -122,8 +121,11 @@ export default function LessonChat() {
         navigate("/login");
     };
 
-    const handleSend = async (content: string) => {
-        if (sending) return;
+    /** Resolves true only on a complete reply — the queue releases the next
+     * message off the back of this, not off the `sending` flag. */
+    const handleSend = async (content: string): Promise<boolean> => {
+        if (inFlight.current) return false;
+        inFlight.current = true;
 
         const userMsg: ChatMessage = { role: "user", content };
         setMessages((prev: ChatMessage[]) => [...prev, userMsg]);
@@ -140,18 +142,37 @@ export default function LessonChat() {
                 { role: "assistant", content: response.content, session_id: response.session_id },
             ]);
             if (response.session_id) setChatSessionId(response.session_id);
+            return true;
         } catch (err: any) {
             console.error("Failed to send message:", err);
+            // Drop the optimistic user bubble: the queue is now showing this
+            // same message with a Retry button, and two copies read as a bug.
+            setMessages((prev: ChatMessage[]) => prev.slice(0, -1));
             if (err instanceof OutOfCreditsError) {
                 promptUpgrade();
             } else {
                 setError("Something went wrong getting a response. Please try again.");
             }
+            // The message keeps its place in the queue with a Retry button
+            // rather than vanishing — including after an upgrade prompt.
+            return false;
         } finally {
+            inFlight.current = false;
             setSending(false);
             setStreamingContent(null);
         }
     };
+
+    const queue = useSendQueue(handleSend);
+
+    // Also follows the queue: a message submitted mid-stream appears below the
+    // fold otherwise.
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 0);
+        return () => clearTimeout(timer);
+    }, [messages, sending, streamingContent, queue.pending]);
 
     if (authLoading || (loading && !error)) {
         return (
@@ -257,7 +278,7 @@ export default function LessonChat() {
                 <div className="flex-1 flex flex-col min-h-0" style={{ display: activeTab === "chat" ? "flex" : "none" }}>
                     <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
                         <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-                            {messages.length === 0 && !sending && (
+                            {messages.length === 0 && !sending && queue.pending.length === 0 && (
                                 <div className="flex flex-col items-center justify-center py-20">
                                     <img
                                         src={mindfillIcon}
@@ -288,6 +309,8 @@ export default function LessonChat() {
 
                             {sending && !streamingContent && <TypingIndicator />}
 
+                            <PendingMessages pending={queue.pending} onRetry={queue.retry} onDismiss={queue.dismiss} />
+
                             {error && (
                                 <div className="flex justify-center">
                                     <p className="text-red-700 dark:text-red-400/80 text-sm bg-red-500/10 px-4 py-2 rounded-lg border border-red-500/20">
@@ -310,7 +333,9 @@ export default function LessonChat() {
                             </button>
                         </div>
                     )}
-                    <ChatInput onSend={handleSend} disabled={sending || (!hasCredits && !isPaid)} />
+                    {/* Out of credits still hard-disables; a streaming reply
+                        does not — that message is queued instead. */}
+                    <ChatInput onSend={queue.enqueue} disabled={!hasCredits && !isPaid} />
                 </div>
             </div>
         </div>

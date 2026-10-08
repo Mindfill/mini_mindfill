@@ -6,7 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatInput from "@/components/chat/ChatInput";
+import PendingMessages from "@/components/chat/PendingMessages";
 import TypingIndicator from "@/components/chat/TypingIndicator";
+import { useSendQueue } from "@/hooks/use-send-queue";
 import { Loader2, CheckCircle2, MessageSquare, Check } from "lucide-react";
 import {
     completeNonTutorSubsection,
@@ -34,8 +36,12 @@ function ProblemTutorSheet({
     const [messages, setMessages] = useState<SecondaryMessage[] | null>(null);
     const [sending, setSending] = useState(false);
     const [streaming, setStreaming] = useState<string | null>(null);
-    const [error, setError] = useState<{ message: string; retry?: string } | null>(null);
+    // Retry lives on the queued message now, so this only carries the reason.
+    const [error, setError] = useState<string | null>(null);
     const endRef = useRef<HTMLDivElement>(null);
+    // Synchronous twin of `sending` — the queue calls send() again before React
+    // has re-rendered, so the state would still read true in that closure.
+    const inFlight = useRef(false);
 
     useEffect(() => {
         if (!open || messages !== null) return;
@@ -43,16 +49,14 @@ function ProblemTutorSheet({
             .then((res) => setMessages(res.messages))
             .catch((err) => {
                 setMessages([]);
-                setError({ message: err instanceof Error ? err.message : "Couldn't start the tutor" });
+                setError(err instanceof Error ? err.message : "Couldn't start the tutor");
             });
     }, [open, messages, problem.problem_id, accessToken]);
 
-    useEffect(() => {
-        endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-    }, [messages, streaming]);
-
-    const send = async (text: string) => {
-        if (sending) return;
+    /** True only on a complete reply — gates the queue's next release. */
+    const send = async (text: string): Promise<boolean> => {
+        if (inFlight.current) return false;
+        inFlight.current = true;
         setError(null);
         setSending(true);
         setStreaming("");
@@ -60,14 +64,24 @@ function ProblemTutorSheet({
         try {
             const reply = await sendProblemTutorMessage(problem.problem_id, text, accessToken, { onContent: setStreaming });
             setMessages((m) => [...(m ?? []), { role: "assistant", content: reply }]);
+            return true;
         } catch (err) {
+            // The queue keeps this message with a Retry button.
             setMessages((m) => (m ?? []).slice(0, -1));
-            setError({ message: err instanceof Error ? err.message : "Something went wrong", retry: text });
+            setError(err instanceof Error ? err.message : "Something went wrong");
+            return false;
         } finally {
+            inFlight.current = false;
             setSending(false);
             setStreaming(null);
         }
     };
+
+    const queue = useSendQueue(send);
+
+    useEffect(() => {
+        endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }, [messages, streaming, queue.pending]);
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -83,17 +97,17 @@ function ProblemTutorSheet({
                         messages.map((m, i) => <ChatBubble key={i} role={m.role} content={m.content} />)
                     )}
                     {streaming ? <ChatBubble role="assistant" content={streaming} /> : sending && <TypingIndicator />}
+                    <PendingMessages pending={queue.pending} onRetry={queue.retry} onDismiss={queue.dismiss} />
                     {error && (
                         <div role="alert" className="text-sm text-red-700 dark:text-red-400 text-center">
-                            {error.message}{" "}
-                            {error.retry && (
-                                <button className="underline font-medium min-h-[44px]" onClick={() => send(error.retry!)}>Send again</button>
-                            )}
+                            {error}
                         </div>
                     )}
                     <div ref={endRef} />
                 </div>
-                <ChatInput onSend={send} disabled={sending || messages === null} />
+                {/* Only the initial load disables the input; a streaming reply
+                    queues the next message instead. */}
+                <ChatInput onSend={queue.enqueue} disabled={messages === null} />
             </SheetContent>
         </Sheet>
     );

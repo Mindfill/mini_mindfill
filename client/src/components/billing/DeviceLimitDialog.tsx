@@ -1,15 +1,20 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Laptop, Loader2 } from "lucide-react";
+import { Laptop } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { deregisterDevice } from "@/lib/api";
+import DeviceList from "@/components/billing/DeviceList";
 
 /**
  * App-wide notice shown when POST /devices/register comes back 403 (already
- * at the 2-device cap for this account). Dismissable — hitting the cap has
- * no effect on any existing (uni-side) feature yet; it only matters once
- * Feature 02's paid secondary content starts checking device registration.
+ * at the 2-device cap for this account). Dismissable, because hitting the cap
+ * doesn't break the uni side — but the secondary lesson endpoints do enforce
+ * it (`verify_device`), so a dismissed dialog is not the end of the story.
+ *
+ * This only ever appears on the SIGNED_IN event, so it can't be relied on as
+ * the way out: a reload never re-triggers it. The durable place to manage
+ * devices is DevicesSection on the profile page, and the blocked-lesson screen
+ * (AccessErrorState) handles the same thing in place.
  */
 export default function DeviceLimitDialog() {
     const { deviceLimit, retryDeviceRegistration, session } = useAuth();
@@ -44,31 +49,12 @@ export default function DeviceLimitDialog() {
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-2 pt-2">
-                    {(deviceLimit ?? []).map((device) => (
-                        <div
-                            key={device.device_token}
-                            className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2.5"
-                        >
-                            <div className="min-w-0">
-                                <p className="text-sm font-medium truncate">{device.device_name || "Unknown device"}</p>
-                                <p className="text-xs text-muted-foreground">
-                                    Last active {new Date(device.last_seen_at).toLocaleDateString()}
-                                </p>
-                            </div>
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={removingToken === device.device_token}
-                                onClick={() => handleRemove(device.device_token)}
-                            >
-                                {removingToken === device.device_token && (
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
-                                )}
-                                Remove
-                            </Button>
-                        </div>
-                    ))}
+                <div className="pt-2">
+                    <DeviceList
+                        devices={deviceLimit ?? []}
+                        onRemove={handleRemove}
+                        removingToken={removingToken}
+                    />
                 </div>
             </DialogContent>
         </Dialog>
