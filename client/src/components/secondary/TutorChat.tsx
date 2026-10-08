@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { gsap } from "gsap";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatInput from "@/components/chat/ChatInput";
+import PendingMessages from "@/components/chat/PendingMessages";
 import TypingIndicator from "@/components/chat/TypingIndicator";
+import { useSendQueue } from "@/hooks/use-send-queue";
 import { Loader2, MessageSquare, RotateCcw } from "lucide-react";
 import { lessonTextForChat } from "@/lib/lessonMarkup";
 import {
@@ -62,20 +64,18 @@ export default function TutorChat({
     const [started, setStarted] = useState(false);
     const [sending, setSending] = useState(false);
     const [streaming, setStreaming] = useState<string | null>(null);
-    const [error, setError] = useState<{ message: string; retry?: string } | null>(null);
+    // Retrying a failed message is the queue's job now (the message keeps its
+    // own bubble and Retry button), so this only carries the reason.
+    const [error, setError] = useState<string | null>(null);
     const dividerRef = useRef<HTMLDivElement>(null);
     const turnRef = useRef(0);
     const startingRef = useRef(false);
+    // Synchronous twin of `sending`. The queue calls send() the instant the
+    // previous one resolves, before React has re-rendered, so the `sending`
+    // state is still true in that closure and would reject the next message.
+    const inFlight = useRef(false);
 
     const promptText = useMemo(() => lessonTextForChat(chatPrompt) || FALLBACK_PROMPT, [chatPrompt]);
-
-    // Report unlock state upward for the Next button.
-    useEffect(() => {
-        const unlocked = session
-            ? session.session_type === "review" || session.unlock_ready || session.exchange_count >= session.exchange_ceiling
-            : isCompleted;
-        onProgress({ session, unlocked, busy: sending || starting });
-    }, [session, isCompleted, sending, starting, onProgress]);
 
     // A completed subsection shows its original conversation read-only until
     // the student chooses to review — opening the page never starts a session.
@@ -100,7 +100,7 @@ export default function TutorChat({
                 gsap.fromTo(dividerRef.current, { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: "power2.inOut" });
             }
         } catch (err) {
-            setError({ message: err instanceof Error ? err.message : "Couldn't start your tutor." });
+            setError(err instanceof Error ? err.message : "Couldn't start your tutor.");
         } finally {
             startingRef.current = false;
             setStarting(false);
@@ -124,8 +124,11 @@ export default function TutorChat({
         return () => clearTimeout(t);
     }, [session, accessToken]);
 
-    const send = async (text: string) => {
-        if (!session || sending) return;
+    /** Resolves true only once a reply has actually landed — the queue reads
+     * this to decide whether it may release the next message. */
+    const send = async (text: string): Promise<boolean> => {
+        if (!session || inFlight.current) return false;
+        inFlight.current = true;
         const turn = ++turnRef.current;
         const isCurrent = () => turnRef.current === turn;
         const sessionId = session.session_id;
@@ -160,30 +163,44 @@ export default function TutorChat({
         } catch (err) {
             if (committed) {
                 // The reply landed; only the trailing assessment was lost. Ask
-                // for the session state instead of reporting an error.
+                // for the session state instead of reporting an error — and the
+                // queue may move on, because the exchange itself completed.
                 fetchSessionState(sessionId, accessToken)
                     .then((fresh) => setSession((s) => (s ? mergeSession(s, fresh) : s)))
                     .catch(() => {});
-                return;
+            } else {
+                // The backend removes an unanswered message, so drop it here
+                // too — the queue keeps its own copy to retry.
+                setMessages((m) => m.slice(0, -1));
+                const e = err instanceof SecondaryApiError ? err : null;
+                if (e?.reason === "busy") setError("Your tutor is still answering your last message.");
+                else if (e?.reason === "session_not_active") {
+                    setError("This session ended. Starting a fresh one…");
+                    setStarted(false);
+                    setSession(null);
+                    begin();
+                } else setError(err instanceof Error ? err.message : "Something went wrong.");
             }
-            // The backend removes an unanswered message, so drop it here too
-            // and offer to resend it.
-            setMessages((m) => m.slice(0, -1));
-            const e = err instanceof SecondaryApiError ? err : null;
-            if (e?.reason === "busy") setError({ message: "Your tutor is still answering your last message." });
-            else if (e?.reason === "session_not_active") {
-                setError({ message: "This session ended. Starting a fresh one…" });
-                setStarted(false);
-                setSession(null);
-                begin();
-            } else setError({ message: err instanceof Error ? err.message : "Something went wrong.", retry: text });
         } finally {
+            inFlight.current = false;
             if (!committed && isCurrent()) {
                 setSending(false);
                 setStreaming(null);
             }
         }
+        return committed;
     };
+
+    const queue = useSendQueue(send);
+
+    // Report unlock state upward for the Next button. Messages still waiting in
+    // the queue count as busy, so Next can't be tapped with a reply outstanding.
+    useEffect(() => {
+        const unlocked = session
+            ? session.session_type === "review" || session.unlock_ready || session.exchange_count >= session.exchange_ceiling
+            : isCompleted;
+        onProgress({ session, unlocked, busy: sending || starting || queue.pending.length > 0 });
+    }, [session, isCompleted, sending, starting, queue.pending.length, onProgress]);
 
     const reviewing = isCompleted && !started;
     // The authored prompt stands in as the tutor's opening line ONLY for a
@@ -209,6 +226,7 @@ export default function TutorChat({
                     <ChatBubble key={i} role={m.role} content={m.content} sessionId={m.session_id} isHistory />
                 ))}
                 {streaming ? <ChatBubble role="assistant" content={streaming} /> : sending && <TypingIndicator />}
+                <PendingMessages pending={queue.pending} onRetry={queue.retry} onDismiss={queue.dismiss} />
             </div>
 
             {!started && (
@@ -230,18 +248,15 @@ export default function TutorChat({
 
             {error && (
                 <div role="alert" className="flex flex-wrap items-center justify-center gap-3 text-sm text-red-700 dark:text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2">
-                    {error.message}
-                    {error.retry && (
-                        <button onClick={() => send(error.retry!)} className="underline font-medium min-h-[44px]">
-                            Send again
-                        </button>
-                    )}
+                    {error}
                 </div>
             )}
 
             {started && session?.status === "active" && (
                 <div className="sticky bottom-0 z-10">
-                    <ChatInput onSend={send} disabled={sending} variant="floating" placeholder="Reply to your tutor…" />
+                    {/* Never disabled while a reply streams — the message is
+                        queued and sent as soon as this exchange completes. */}
+                    <ChatInput onSend={queue.enqueue} variant="floating" placeholder="Reply to your tutor…" />
                 </div>
             )}
         </section>

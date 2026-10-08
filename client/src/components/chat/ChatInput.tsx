@@ -1,8 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Send } from "lucide-react";
+import MicButton from "@/components/chat/MicButton";
+import { useVoiceInput } from "@/hooks/use-voice-input";
 
 interface ChatInputProps {
     onSend: (content: string) => void;
+    /** Hard disable only — no credits, session closed. A reply still streaming
+     * must NOT disable the input: the caller queues instead. */
     disabled?: boolean;
     placeholder?: string;
     /** "page" (default): full-width bar with a solid background, for chat
@@ -16,6 +20,16 @@ export default function ChatInput({ onSend, disabled = false, placeholder = "Ask
     const [value, setValue] = useState("");
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+    const voice = useVoiceInput();
+    // Mic actually open, for the recording affordances.
+    const capturing = voice.status === "listening";
+    // Any live voice session, including the finalising wait — the punctuated
+    // final transcript arrives during that wait and must still land in the box.
+    const voiceActive = capturing || voice.status === "connecting" || voice.status === "finalising";
+    // What was already typed when the mic opened. The transcript is appended to
+    // it rather than replacing it, so a half-typed question is never wiped.
+    const baseRef = useRef("");
+
     useEffect(() => {
         const ta = textareaRef.current;
         if (ta) {
@@ -24,9 +38,22 @@ export default function ChatInput({ onSend, disabled = false, placeholder = "Ask
         }
     }, [value]);
 
+    // Live population: every partial result rewrites the box. The text is
+    // ordinary editable content — on stop it just stays there, unsent.
+    useEffect(() => {
+        if (!voiceActive || !voice.transcript) return;
+        setValue([baseRef.current, voice.transcript].filter(Boolean).join(" "));
+    }, [voice.transcript, voiceActive]);
+
+    const startVoice = () => {
+        baseRef.current = value;
+        voice.start();
+    };
+
     const handleSubmit = () => {
         const trimmed = value.trim();
         if (!trimmed || disabled) return;
+        if (voiceActive) voice.stop();
         onSend(trimmed);
         setValue("");
     };
@@ -46,20 +73,23 @@ export default function ChatInput({ onSend, disabled = false, placeholder = "Ask
                         floating
                             ? "border-border/70 bg-card/75 backdrop-blur-xl shadow-[0_8px_30px_-12px_rgba(0,0,0,0.45)]"
                             : "border-border bg-muted"
-                    }`}
+                    } ${capturing ? "border-red-500/50" : ""}`}
                 >
                     <textarea
                         ref={textareaRef}
                         value={value}
                         onChange={(e) => setValue(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder={placeholder}
+                        placeholder={voice.status === "listening" ? "Listening…" : placeholder}
                         disabled={disabled}
                         rows={1}
                         className="flex-1 bg-transparent text-foreground text-[15px] resize-none outline-none placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed max-h-[160px] py-1.5 [&::-webkit-scrollbar]:hidden"
                         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                         data-testid="chat-input"
                     />
+                    {voice.supported && !disabled && (
+                        <MicButton status={voice.status} onStart={startVoice} onStop={voice.stop} className="w-9 h-9" />
+                    )}
                     <button
                         onClick={handleSubmit}
                         disabled={disabled || !value.trim()}
@@ -69,9 +99,15 @@ export default function ChatInput({ onSend, disabled = false, placeholder = "Ask
                         <Send className="w-4 h-4" />
                     </button>
                 </div>
-                <p className={`text-[10px] text-center mt-1.5 ${floating ? "text-muted-foreground/60" : "text-muted-foreground/40"}`}>
-                    TECHCESS may produce inaccurate information. Verify important facts.
-                </p>
+                {voice.error ? (
+                    <p role="status" className="text-[11px] text-center mt-1.5 text-red-700 dark:text-red-400">
+                        {voice.error}
+                    </p>
+                ) : (
+                    <p className={`text-[10px] text-center mt-1.5 ${floating ? "text-muted-foreground/60" : "text-muted-foreground/40"}`}>
+                        TECHCESS may produce inaccurate information. Verify important facts.
+                    </p>
+                )}
             </div>
         </div>
     );

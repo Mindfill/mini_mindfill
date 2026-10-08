@@ -17,6 +17,8 @@ import ChipRow from "@/components/notes/lesson/ChipRow";
 import LessonInput from "@/components/notes/lesson/LessonInput";
 import NotesDrawer from "@/components/notes/lesson/NotesDrawer";
 import LessonPreparing from "@/components/notes/lesson/LessonPreparing";
+import { QueuedNote } from "@/components/chat/PendingMessages";
+import { useSendQueue } from "@/hooks/use-send-queue";
 import { OutOfCreditsError, fetchNoteFigures, type NoteFigure } from "@/lib/api";
 import { extractKeyTerms, type KeyTerm } from "@/lib/keywordHighlight";
 import {
@@ -74,6 +76,9 @@ export default function NoteLesson() {
     const endRef = useRef<HTMLDivElement>(null);
     // Guards against a stale load (quick node switches) writing into the new section.
     const loadSeq = useRef(0);
+    // Synchronous twin of `sending`: the queue calls send() again as soon as the
+    // previous one resolves, before React has re-rendered with sending=false.
+    const inFlight = useRef(false);
 
     useEffect(() => {
         if (!authLoading && !session) navigate("/login");
@@ -165,22 +170,30 @@ export default function NoteLesson() {
         load();
     }, [load]);
 
-    useEffect(() => {
-        const t = setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 0);
-        return () => clearTimeout(t);
-    }, [messages, streaming, opening, completion]);
-
-    const send = async (text: string, retry = false) => {
-        if (sending || !accessToken) return;
-        const userIdx = retry ? messages.length - 1 : messages.length;
-        if (!retry) setMessages((prev) => [...prev, { role: "user", content: text }]);
+    /** Resolves true only on a complete reply, which is what releases the next
+     * queued message. A failure is reported the way it always was — the
+     * `failed` banner with its own Retry — so the queue drops its copy. */
+    const send = async (text: string, retry = false): Promise<boolean> => {
+        if (inFlight.current || !accessToken) return false;
+        inFlight.current = true;
+        // Which message this reply is assessing. Taken from inside the updater
+        // rather than from `messages` in this closure: a second queued message
+        // is sent before React has re-rendered with the first exchange added,
+        // so the closure's length would tag the previous bubble.
+        const userIdx = { current: retry ? messages.length - 1 : messages.length };
+        if (!retry) {
+            setMessages((prev) => {
+                userIdx.current = prev.length;
+                return [...prev, { role: "user", content: text }];
+            });
+        }
         setSending(true);
         setFailed(null);
         setStreaming("");
 
         const applySignal = (signal: Signal) => {
-            setMessages((prev) => prev.map((m, i) => (i === userIdx ? { ...m, signal } : m)));
-            if (signal) setFreshIdx(userIdx);
+            setMessages((prev) => prev.map((m, i) => (i === userIdx.current ? { ...m, signal } : m)));
+            if (signal) setFreshIdx(userIdx.current);
         };
 
         let signalSeen = false;
@@ -196,7 +209,7 @@ export default function NoteLesson() {
             // streamed one if the stream never showed it.
             if (!signalSeen) applySignal(reply.signal);
             setMessages((prev) => [
-                ...prev.map((m, i) => (i === userIdx ? { ...m, signal: reply.signal } : m)),
+                ...prev.map((m, i) => (i === userIdx.current ? { ...m, signal: reply.signal } : m)),
                 {
                     role: "assistant",
                     content: reply.content,
@@ -214,6 +227,7 @@ export default function NoteLesson() {
                     prev.map((s) => (s.section_index === sectionIndex ? { ...s, state: "done" } : s)),
                 );
             }
+            return true;
         } catch (err) {
             if (err instanceof OutOfCreditsError) {
                 promptUpgrade();
@@ -221,11 +235,23 @@ export default function NoteLesson() {
                 console.error("Lesson message failed:", err);
                 setFailed(text);
             }
+            return false;
         } finally {
+            inFlight.current = false;
             setSending(false);
             setStreaming(null);
         }
     };
+
+    // dropFailed: a failed message is already shown in the thread with the
+    // `failed` banner's own Retry, so the queue must not show a second copy.
+    const queue = useSendQueue(send, { dropFailed: true });
+
+    // Follows the queue too, so a message submitted mid-reply scrolls into view.
+    useEffect(() => {
+        const t = setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 0);
+        return () => clearTimeout(t);
+    }, [messages, streaming, opening, completion, queue.pending]);
 
     // No reviewAgain handler any more — the "Review again" button is gone (it wiped the
     // conversation on a mis-tap). The backend's review flag still exists on /open if a
@@ -245,8 +271,11 @@ export default function NoteLesson() {
     // conversation they wanted to ask about.
     const covered = readOnly || sectionCovered || !!completion;
     const finished = readOnly;
+    // Also hidden while anything is queued: the chips answer the tutor's last
+    // question, and a queued message has already answered it.
     const showChips =
-        !finished && !sending && !opening && last?.role === "assistant" && last.requires_chips && !!last.chip_set;
+        !finished && !sending && !opening && queue.pending.length === 0 &&
+        last?.role === "assistant" && last.requires_chips && !!last.chip_set;
     const outOfCredits = !hasCredits && !isPaid;
 
     const shell = (body: React.ReactNode) => (
@@ -331,7 +360,16 @@ export default function NoteLesson() {
                         ),
                     )}
 
-                    {showChips && last.chip_set && <ChipRow chipSet={last.chip_set} onPick={(t) => send(t)} disabled={outOfCredits} />}
+                    {showChips && last.chip_set && <ChipRow chipSet={last.chip_set} onPick={queue.enqueue} disabled={outOfCredits} />}
+
+                    {/* Queued messages — the notes lesson draws the student's
+                        own turns with StudentMessage, so it renders its own. */}
+                    {queue.pending.map((m) => (
+                        <div key={m.id} className="opacity-70">
+                            <StudentMessage content={m.content} signal={undefined} />
+                            <QueuedNote item={m} onRetry={queue.retry} onDismiss={queue.dismiss} />
+                        </div>
+                    ))}
 
                     {streaming ? <TutorMessage content={streaming} figures={figures} /> : null}
                     {/* Only ever while there is genuinely nothing to show. The rotating
@@ -391,7 +429,9 @@ export default function NoteLesson() {
                                     Section covered — ask anything else about it below.
                                 </p>
                             )}
-                            <LessonInput onSend={(t) => send(t)} disabled={sending || opening || outOfCredits} />
+                            {/* A streaming reply no longer locks the box — the
+                                message is queued and sent when it completes. */}
+                            <LessonInput onSend={queue.enqueue} disabled={opening || outOfCredits} />
                         </>
                     )}
                 </div>

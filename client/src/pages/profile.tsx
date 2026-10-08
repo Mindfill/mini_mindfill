@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2, User as UserIcon, Sparkles, CheckCircle2, UserPlus, Mail } from "lucide-react";
 import FamilyMembersSection from "@/components/billing/FamilyMembersSection";
+import DevicesSection from "@/components/billing/DevicesSection";
 import type { Variant } from "@/components/sidebar/AppSidebar";
 import { planDisplayName } from "@/lib/plans";
 
@@ -534,6 +535,11 @@ export default function Profile() {
                     {caps.family && accessToken && (
                         <FamilyMembersSection accessToken={accessToken} />
                     )}
+
+                    {/* Registered devices. Not capability-gated: the 2-device cap
+                        applies to every account, and this is where the
+                        device-limit screens send students. */}
+                    {accessToken && <DevicesSection accessToken={accessToken} />}
 
                     {/* Parent linking — secondary only, see PROFILE_CAPABILITIES */}
                     {caps.linkParent && (

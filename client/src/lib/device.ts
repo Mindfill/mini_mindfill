@@ -81,10 +81,19 @@ export async function computeFingerprint(): Promise<string> {
     }
 }
 
-export interface DeviceInfo {
+/**
+ * The minimum a device row needs to be rendered. The same row reaches the UI
+ * from three places — `GET /devices`, the body of a `device_limit` 403, and
+ * `POST /devices/register`'s 403 — so the list component takes this rather
+ * than any one caller's fuller type.
+ */
+export interface DeviceRow {
     device_token: string;
     device_name: string | null;
     last_seen_at: string;
+}
+
+export interface DeviceInfo extends DeviceRow {
     registered_at: string;
 }
 

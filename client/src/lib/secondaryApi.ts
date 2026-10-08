@@ -10,21 +10,30 @@
  * branch on it instead of string-matching messages.
  */
 import { BACKEND_URL, authHeaders, extractStreamingContent } from "./api";
+import type { DeviceRow } from "./device";
 
 export class SecondaryApiError extends Error {
     status: number;
     reason: string | null;
-    constructor(status: number, message: string, reason: string | null) {
+    /**
+     * Only on a `device_limit` 403. `verify_device` sends the user's registered
+     * devices in the error body so the blocked screen can offer Remove in
+     * place, instead of sending the student off to find them.
+     */
+    devices?: DeviceRow[];
+    constructor(status: number, message: string, reason: string | null, devices?: DeviceRow[]) {
         super(message);
         this.name = "SecondaryApiError";
         this.status = status;
         this.reason = reason;
+        this.devices = devices;
     }
 }
 
 async function toError(res: Response, fallback: string): Promise<SecondaryApiError> {
     let message = fallback;
     let reason: string | null = null;
+    let devices: DeviceRow[] | undefined;
     try {
         const body = await res.json();
         const detail = body?.detail;
@@ -32,11 +41,12 @@ async function toError(res: Response, fallback: string): Promise<SecondaryApiErr
         else if (detail && typeof detail === "object") {
             if (typeof detail.reason === "string") reason = detail.reason;
             if (typeof detail.message === "string") message = detail.message;
+            if (Array.isArray(detail.devices)) devices = detail.devices as DeviceRow[];
         }
     } catch {
         // not JSON
     }
-    return new SecondaryApiError(res.status, message, reason);
+    return new SecondaryApiError(res.status, message, reason, devices);
 }
 
 async function getJson<T>(path: string, accessToken: string, fallback: string): Promise<T> {
