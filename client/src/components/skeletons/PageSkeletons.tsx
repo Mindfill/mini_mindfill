@@ -12,10 +12,11 @@ import { cn } from "@/lib/utils";
  * content lands where the placeholder was, without a jump.
  */
 
-/** The shared Skeleton's bg-muted all but vanishes on the dark theme's
- *  near-black background, so these shapes are lifted a little there. */
+/** The shared Skeleton's bg-muted is barely different from the page
+ *  background in either theme, so these shapes use a tint of the text colour
+ *  in light mode and a lifted white in dark mode. */
 function Bone({ className }: { className?: string }) {
-    return <Skeleton className={cn("dark:bg-white/[0.15]", className)} />;
+    return <Skeleton className={cn("bg-foreground/[0.08] dark:bg-white/[0.15]", className)} />;
 }
 
 function Busy({ label, className, children }: { label: string; className: string; children: ReactNode }) {
