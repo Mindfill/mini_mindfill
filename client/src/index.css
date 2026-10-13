@@ -191,6 +191,9 @@
      are unaffected. */
   html.dyslexic {
     --font-sans: "OpenDyslexic", "Space Grotesk", Inter, sans-serif;
+    /* Headings (font-display) too, or page titles stay in Space Grotesk
+       while everything around them switches. */
+    --font-display: "OpenDyslexic", "Space Grotesk", Inter, sans-serif;
     --font-serif: "OpenDyslexic", Georgia, serif;
   }
 
