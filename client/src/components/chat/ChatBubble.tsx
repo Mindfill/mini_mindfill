@@ -1,7 +1,8 @@
 import ChatContent from "@/components/chat/ChatContent";
 import type { KeyTerm } from "@/lib/keywordHighlight";
 import type { NoteFigure } from "@/lib/api";
-import mindfillIcon from "@/assets/mindfill.png";
+import TutorAvatar from "@/components/chat/TutorAvatar";
+import UserAvatar from "@/components/chat/UserAvatar";
 
 interface ChatBubbleProps {
     role: "user" | "assistant" | "developer";
@@ -26,15 +27,10 @@ export default function ChatBubble({ role, content, sessionId, isHistory, keyTer
             <div
                 className={`flex items-start gap-3 ${isUser ? "flex-row-reverse max-w-[75%]" : "max-w-3xl w-full"}`}
             >
-                {/* Avatar */}
-                <img
-                    src={mindfillIcon}
-                    alt={isUser ? "User" : "TECHCESS"}
-                    className={`
-                        w-8 h-8 rounded-lg flex-shrink-0 object-cover
-                        ${isUser ? "" : "shadow-lg"}
-                    `}
-                />
+                {/* Avatars: the student's initial, and the tutor's mascot — still
+                    here, since a history of blinking bots would be noise;
+                    TypingIndicator animates it. */}
+                {isUser ? <UserAvatar /> : <TutorAvatar />}
 
                 {/* Message bubble. min-w-0: as a flex item it would otherwise
                     refuse to shrink below its widest child — one long code

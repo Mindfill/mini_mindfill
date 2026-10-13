@@ -4,13 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useSecondaryShell } from "@/components/secondary/SecondaryShell";
-import TechcessLoader from "@/components/brand/TechcessLoader";
+import { DashboardSkeleton } from "@/components/skeletons/PageSkeletons";
 import { secondaryKeys } from "@/lib/secondaryQueries";
-import { BorderBeam } from "@/components/ui/border-beam";
-import WelcomeHeader from "@/components/dashboard/WelcomeHeader";
+import WelcomeHeader, { greetingMood } from "@/components/dashboard/WelcomeHeader";
+import ContinueLearningCard from "@/components/dashboard/ContinueLearningCard";
 import StreakBadge from "@/components/dashboard/StreakBadge";
 import UsageGraphCard from "@/components/dashboard/UsageGraphCard";
-import { TrendingUp, TrendingDown, AlertTriangle, Sparkles } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertTriangle, Sparkles, BookOpen, Play } from "lucide-react";
 import {
     fetchSecondaryDashboard,
     fetchSecondaryUsageGraph,
@@ -66,7 +66,7 @@ export default function SecondaryDashboard() {
         }
     };
 
-    if (isPending && !data) return <TechcessLoader />;
+    if (isPending && !data) return <DashboardSkeleton />;
 
     if (isError && !data) {
         return (
@@ -84,7 +84,7 @@ export default function SecondaryDashboard() {
             </div>
         );
     }
-    if (!data) return <TechcessLoader />;
+    if (!data) return <DashboardSkeleton />;
 
     const {
         continue_learning, chapter_rings, streak, usage_graph, strengths, weaknesses,
@@ -106,47 +106,32 @@ export default function SecondaryDashboard() {
                                         ? `It's been ${days_since_last_session} days — let's get back to it.`
                                         : "Here's where you left off."
                             }
+                            mascot={greetingMood({ streak: streak.current_streak, daysAway: days_since_last_session })}
                         />
                         <StreakBadge currentStreak={streak.current_streak} longestStreak={streak.longest_streak} />
                     </div>
 
-                    {/* Continue learning */}
-                    <section className="relative rounded-3xl">
-                        <BorderBeam size="md" colorVariant="ocean" theme="auto">
-                            <div className="rounded-3xl p-8 glass-panel">
-                                {continue_learning ? (
-                                    <>
-                                        <span className="bg-primary/15 text-primary text-xs font-medium px-2.5 py-1 rounded-full">
-                                            {continue_learning.section_label}
-                                        </span>
-                                        <h2 className="text-2xl md:text-3xl font-semibold mt-3 mb-1">
-                                            {continue_learning.subsection_title}
-                                        </h2>
-                                        <p className="text-muted-foreground text-sm">{continue_learning.chapter_title}</p>
-                                        <button
-                                            onClick={() => navigate(`/secondary/subsections/${continue_learning.subsection_id}`)}
-                                            className="mt-5 min-h-[48px] px-6 rounded-full bg-primary text-primary-foreground font-medium"
-                                            data-testid="button-continue-learning"
-                                        >
-                                            Continue →
-                                        </button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <h2 className="text-2xl font-semibold mb-2">Start with Chapter 0</h2>
-                                        <p className="text-muted-foreground">Mental Models is free and always unlocked — a great place to begin.</p>
-                                        <button
-                                            onClick={() => navigate("/secondary/start")}
-                                            className="mt-5 min-h-[48px] px-6 rounded-full bg-primary text-primary-foreground font-medium"
-                                            data-testid="button-start-learning"
-                                        >
-                                            Start learning →
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-                        </BorderBeam>
-                    </section>
+                    {continue_learning ? (
+                        <ContinueLearningCard
+                            icon={<BookOpen className="w-6 h-6" />}
+                            eyebrow={continue_learning.section_label}
+                            title={continue_learning.subsection_title}
+                            meta={continue_learning.chapter_title}
+                            ctaLabel="Continue"
+                            onClick={() => navigate(`/secondary/subsections/${continue_learning.subsection_id}`)}
+                            testId="button-continue-learning"
+                        />
+                    ) : (
+                        <ContinueLearningCard
+                            icon={<Play className="w-6 h-6" />}
+                            eyebrow="Get started"
+                            title="Start with Chapter 0"
+                            meta="Mental Models is free and always unlocked — a great place to begin."
+                            ctaLabel="Start learning"
+                            onClick={() => navigate("/secondary/start")}
+                            testId="button-start-learning"
+                        />
+                    )}
 
                     {/* Usage + chapter progress */}
                     <section className="grid md:grid-cols-2 gap-4">

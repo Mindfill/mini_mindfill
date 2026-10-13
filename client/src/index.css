@@ -820,3 +820,46 @@ html .prose div[class*="language-"] {
     }
   }
 }
+/* ── TECHCESS mascot (components/brand/TechcessBot.tsx) ──────────────────────
+   Motion lives here rather than in the component so a chat full of avatars
+   doesn't inject one <style> per message. Only `.tbot-animated` bots move. */
+@layer utilities {
+  .tbot * { transition: none; }
+  .tbot .tbot-float,
+  .tbot .tbot-eyes,
+  .tbot .tbot-arm,
+  .tbot .tbot-antenna {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .tbot .tbot-arm { transform-origin: 50% 0%; }
+
+  .tbot-animated .tbot-float { animation: tbot-bob 2.6s ease-in-out infinite; }
+  .tbot-animated .tbot-antenna { animation: tbot-glow 1.8s ease-in-out infinite; }
+  .tbot-animated.tbot-idle .tbot-eyes { animation: tbot-blink 4.2s ease-in-out infinite; }
+  .tbot-animated.tbot-thinking .tbot-eyes { animation: tbot-glance 2.4s ease-in-out infinite; }
+  .tbot-animated.tbot-thinking .tbot-antenna { animation-duration: 0.9s; }
+  /* A greeting, not a fidget: three waves, then the arm rests. */
+  .tbot-animated.tbot-wave .tbot-arm { animation: tbot-wave 0.9s ease-in-out 0.3s 3; }
+  .tbot-animated.tbot-sleepy .tbot-float { animation-duration: 4s; }
+  .tbot-animated.tbot-sleepy .tbot-zzz { animation: tbot-zzz 2.8s ease-in-out infinite; }
+
+  @keyframes tbot-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2.5px); } }
+  @keyframes tbot-glow { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+  @keyframes tbot-blink { 0%, 90%, 100% { transform: scaleY(1); } 94% { transform: scaleY(0.12); } }
+  @keyframes tbot-glance {
+    0%, 15%, 100% { transform: translateX(0); }
+    30%, 45% { transform: translateX(-2.5px) translateY(-1px); }
+    60%, 75% { transform: translateX(2.5px) translateY(-1px); }
+  }
+  @keyframes tbot-wave { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-38deg) translateY(-3px); } }
+  @keyframes tbot-zzz { 0% { opacity: 0; transform: translateY(2px); } 40%, 70% { opacity: 1; } 100% { opacity: 0; transform: translateY(-4px); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tbot-animated .tbot-float,
+    .tbot-animated .tbot-antenna,
+    .tbot-animated .tbot-eyes,
+    .tbot-animated .tbot-arm,
+    .tbot-animated .tbot-zzz { animation: none; }
+  }
+}

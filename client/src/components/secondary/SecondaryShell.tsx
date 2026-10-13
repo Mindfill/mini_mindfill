@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
-import TechcessLoader from "@/components/brand/TechcessLoader";
+import { ContentSkeleton } from "@/components/skeletons/PageSkeletons";
 import { useActivityHeartbeat } from "@/hooks/use-activity-heartbeat";
 import { SecondaryApiError } from "@/lib/secondaryApi";
 import { useAuth } from "@/hooks/use-auth";
@@ -41,9 +41,9 @@ export default function SecondaryShell({
     return <>{children(ctx)}</>;
 }
 
-/** In-page loading state (kept under its old name for existing imports). */
+/** In-page loading state for chapters, lessons and the rest. */
 export function PageSkeleton() {
-    return <TechcessLoader />;
+    return <ContentSkeleton />;
 }
 
 /** Friendly full-page state for the access errors every lesson endpoint can return. */

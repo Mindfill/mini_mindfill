@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { Note, Course, fetchCourses, deleteCourse, deleteNote } from "@/lib/api";
 import { invalidateNotesCache } from "@/pages/notes";
 import AppSidebar from "@/components/sidebar/AppSidebar";
-import TechcessLoader from "@/components/brand/TechcessLoader";
+import { NotesSkeleton } from "@/components/skeletons/PageSkeletons";
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import NoteUploadModal from "@/components/notes/NoteUploadModal";
 import NoteCard from "@/components/notes/NoteCard";
@@ -176,8 +176,8 @@ export default function CourseNotes() {
             <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
                 <AnimatedGradientBg />
                 <AppSidebar userName={userName || "Loading..."} activeItem="notes" onSignOut={handleSignOut} />
-                <div className="flex-1 relative">
-                    <TechcessLoader label="Loading this course" />
+                <div className="flex-1 min-w-0 overflow-y-auto relative">
+                    <NotesSkeleton />
                 </div>
             </div>
         );

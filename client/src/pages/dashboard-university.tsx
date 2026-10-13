@@ -4,14 +4,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
-import { BorderBeam } from "@/components/ui/border-beam";
 import { GlassButton } from "@/components/ui/glass-button";
-import WelcomeHeader from "@/components/dashboard/WelcomeHeader";
+import WelcomeHeader, { greetingMood } from "@/components/dashboard/WelcomeHeader";
+import ContinueLearningCard from "@/components/dashboard/ContinueLearningCard";
 import StreakBadge from "@/components/dashboard/StreakBadge";
 import UsageGraphCard from "@/components/dashboard/UsageGraphCard";
-import TechcessLoader from "@/components/brand/TechcessLoader";
+import { DashboardSkeleton } from "@/components/skeletons/PageSkeletons";
 import PageFade from "@/components/ui/page-fade";
-import { BookOpen, Clock, Play, ArrowRight, FileText } from "lucide-react";
+import { BookOpen, Clock, Play, FileText } from "lucide-react";
 import { useUniDashboard } from "@/lib/appQueries";
 
 export default function UniversityDashboard() {
@@ -63,9 +63,9 @@ export default function UniversityDashboard() {
         return (
             <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
                 <AnimatedGradientBg />
-                <AppSidebar userName={userName || "Loading..."} activeItem="home" onSignOut={handleSignOut} />
+                <AppSidebar userName={userName} activeItem="home" onSignOut={handleSignOut} />
                 <div className="flex-1 min-w-0 overflow-y-auto relative">
-                    <TechcessLoader />
+                    <DashboardSkeleton />
                 </div>
             </div>
         );
@@ -108,53 +108,38 @@ export default function UniversityDashboard() {
                 <main className="max-w-5xl mx-auto p-6 md:p-10 space-y-8">
 
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <WelcomeHeader name={firstName} subtitle="Here's where you left off." />
+                        <WelcomeHeader
+                            name={firstName}
+                            subtitle="Here's where you left off."
+                            mascot={greetingMood({ streak: streak.current_streak })}
+                        />
                         <StreakBadge currentStreak={streak.current_streak} longestStreak={streak.longest_streak} />
                     </div>
 
-                    {/* Continue Learning Hero */}
-                    <section className="relative rounded-3xl">
-                        <BorderBeam size="md" colorVariant="ocean" theme="auto">
-                            {continue_learning ? (
-                                <div className="relative overflow-hidden rounded-3xl p-8 glass-panel">
-                                    <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-3">
-                                                <span className="bg-primary/15 text-primary text-xs font-medium px-2.5 py-1 rounded-full">
-                                                    Continue Learning
-                                                </span>
-                                            </div>
-                                            <h2 className="text-2xl md:text-3xl font-semibold mb-2">
-                                                {continue_learning.lesson_title}
-                                            </h2>
-                                            <p className="text-muted-foreground text-sm flex items-center gap-2">
-                                                <Clock className="w-4 h-4" />
-                                                Last active {formatRelativeTime(continue_learning.last_activity_at)}
-                                            </p>
-                                        </div>
-                                        <GlassButton
-                                            onClick={() => navigate(`/lessons/${continue_learning.lesson_slug}?session=${continue_learning.session_id}`)}
-                                            contentClassName="flex items-center gap-2"
-                                        >
-                                            Resume Lesson <ArrowRight className="w-4 h-4" />
-                                        </GlassButton>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="rounded-3xl p-8 glass-panel">
-                                    <div className="flex flex-col md:flex-row items-center md:items-center justify-between gap-6 text-center md:text-left">
-                                        <div>
-                                            <h2 className="text-2xl font-semibold mb-2">Start your first lesson</h2>
-                                            <p className="text-muted-foreground">Begin learning and your progress will appear here.</p>
-                                        </div>
-                                        <GlassButton onClick={() => navigate("/courses")}>
-                                            Start Learning
-                                        </GlassButton>
-                                    </div>
-                                </div>
-                            )}
-                        </BorderBeam>
-                    </section>
+                    {continue_learning ? (
+                        <ContinueLearningCard
+                            icon={<BookOpen className="w-6 h-6" />}
+                            eyebrow="Continue learning"
+                            title={continue_learning.lesson_title}
+                            meta={
+                                <span className="flex items-center gap-1.5">
+                                    <Clock className="w-4 h-4" />
+                                    Last active {formatRelativeTime(continue_learning.last_activity_at)}
+                                </span>
+                            }
+                            ctaLabel="Resume lesson"
+                            onClick={() => navigate(`/lessons/${continue_learning.lesson_slug}?session=${continue_learning.session_id}`)}
+                        />
+                    ) : (
+                        <ContinueLearningCard
+                            icon={<Play className="w-6 h-6" />}
+                            eyebrow="Get started"
+                            title="Start your first lesson"
+                            meta="Begin learning and your progress will appear here."
+                            ctaLabel="Start learning"
+                            onClick={() => navigate("/courses")}
+                        />
+                    )}
 
                     {/* Usage graph + Progress */}
                     <section className="grid grid-cols-1 md:grid-cols-2 gap-4">

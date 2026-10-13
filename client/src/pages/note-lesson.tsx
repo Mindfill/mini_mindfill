@@ -7,8 +7,9 @@ import { useCredits } from "@/hooks/use-credits";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useToast } from "@/hooks/use-toast";
 import AppSidebar from "@/components/sidebar/AppSidebar";
-import TechcessLoader from "@/components/brand/TechcessLoader";
+import { ChatSkeleton } from "@/components/skeletons/PageSkeletons";
 import TypingIndicator from "@/components/chat/TypingIndicator";
+import TechcessBot from "@/components/brand/TechcessBot";
 import ChatContent from "@/components/chat/ChatContent";
 import NodeStrip from "@/components/notes/lesson/NodeStrip";
 import PhaseBar from "@/components/notes/lesson/PhaseBar";
@@ -287,8 +288,8 @@ export default function NoteLesson() {
 
     if (authLoading || (loading && !loadError)) {
         return shell(
-            <div className="flex-1 relative">
-                <TechcessLoader label="Loading your lesson" />
+            <div className="flex-1 min-w-0 flex flex-col relative">
+                <ChatSkeleton label="Loading your lesson" />
             </div>,
         );
     }
@@ -449,7 +450,12 @@ export default function NoteLesson() {
 }
 
 function TutorLabel() {
-    return <p className="text-[10px] uppercase tracking-[0.05em] font-semibold text-muted-foreground mb-1.5">TECHCESS</p>;
+    return (
+        <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.05em] font-semibold text-muted-foreground mb-1.5">
+            <TechcessBot headOnly animated={false} size={16} />
+            TECHCESS
+        </p>
+    );
 }
 
 /** Spec §3.4 — tutor turn: label above, card-toned bubble. Key terms only on

@@ -23,7 +23,12 @@ export default function AuthLayout({ children, headline, transitionKey }: AuthLa
                 always covers the full screen no matter how much the section's
                 content scrolls, instead of being sized to the section's own
                 (potentially content-stretched) box and getting "cut off". */}
-            <div className="fixed inset-0 -z-10 bg-brand-gradient opacity-70 pointer-events-none" />
+            {/* One quiet wash of brand colour from the top, not a full-screen
+                gradient: the card and the form are what should stand out. */}
+            <div
+                className="fixed inset-0 -z-10 pointer-events-none"
+                style={{ background: "radial-gradient(ellipse 80% 55% at 50% -10%, hsl(var(--primary) / 0.10), transparent 70%)" }}
+            />
 
             <section className="flex-1 min-h-0 flex flex-col relative overflow-y-auto">
                 <header className="p-4 sm:p-6 relative z-10 flex-shrink-0">
@@ -54,7 +59,7 @@ export default function AuthLayout({ children, headline, transitionKey }: AuthLa
                             transition={{ duration: 0.35, ease: "easeOut" }}
                             className="relative w-full max-w-md text-center my-auto"
                         >
-                            <div className="rounded-[2rem] border border-border/40 bg-card/30 backdrop-blur-2xl shadow-[0_0_70px_-20px_hsl(var(--primary)/0.45)] p-6 sm:p-8 md:p-10">
+                            <div className="rounded-3xl border border-border bg-card/85 backdrop-blur-xl shadow-[0_24px_48px_-28px_rgb(15_23_42/0.18)] dark:shadow-[0_1px_0_0_hsl(0_0%_100%/0.04)_inset,0_24px_48px_-28px_rgb(0_0_0/0.45)] p-6 sm:p-8 md:p-10">
                                 {headline}
                                 {children}
                             </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import AuthLayout from "@/components/auth/AuthLayout";
+import TechcessBot from "@/components/brand/TechcessBot";
 import { supabase } from "@/lib/supabase";
 import { authErrorMessage } from "@/lib/authErrors";
 import { Input } from "@/components/ui/input";
@@ -72,13 +73,20 @@ export default function Login() {
         <AuthLayout
             transitionKey={mode}
             headline={
-                <h1
-                    className="font-display text-2xl sm:text-3xl md:text-4xl font-bold mb-8 md:mb-10 tracking-tight leading-tight text-foreground"
-                    data-testid="text-login-headline"
-                >
-                    Become <br />
-                    <span className="text-muted-foreground">the Exception.</span>
-                </h1>
+                <>
+                    {/* The mascot's first hello. Keyed on mode so switching to
+                        sign-up / forgot password replays the wave. */}
+                    <div className="flex justify-center mb-3">
+                        <TechcessBot key={mode} mood={mode === "forgot" ? "thinking" : "wave"} size={72} />
+                    </div>
+                    <h1
+                        className="font-display text-2xl sm:text-3xl md:text-4xl font-bold mb-8 md:mb-10 tracking-tight leading-tight text-foreground"
+                        data-testid="text-login-headline"
+                    >
+                        Become <br />
+                        <span className="text-muted-foreground">the Exception.</span>
+                    </h1>
+                </>
             }
         >
             <div className="flex justify-center mb-6">
@@ -127,7 +135,7 @@ export default function Login() {
                 {error && <p className="text-sm text-destructive">{error}</p>}
                 {checkEmailMessage && <p className="text-sm text-green-700 dark:text-green-400">{checkEmailMessage}</p>}
 
-                <Button type="submit" size="lg" disabled={submitting} className="w-full gap-2">
+                <Button type="submit" size="lg" disabled={submitting} className="w-full gap-2 shadow-none hover:shadow-none">
                     {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                     {mode === "signup" ? "Create account" : mode === "forgot" ? "Send reset link" : "Sign in"}
                 </Button>
@@ -154,9 +162,11 @@ export default function Login() {
                                 setError(null);
                                 setCheckEmailMessage(null);
                             }}
-                            className="block w-full hover:text-foreground transition-colors"
+                            className="group block w-full pt-1 hover:text-foreground transition-colors"
+                            data-testid="button-show-signup"
                         >
-                            Don't have an account? Sign up
+                            Don't have an account?{" "}
+                            <span className="font-semibold text-primary group-hover:underline underline-offset-4">Sign up</span>
                         </button>
                     </>
                 )}
