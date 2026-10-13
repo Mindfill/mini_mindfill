@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import TechcessLoader from "@/components/brand/TechcessLoader";
+import { CoursesSkeleton } from "@/components/skeletons/PageSkeletons";
 import PageFade from "@/components/ui/page-fade";
 import { useCourseCatalogue } from "@/lib/appQueries";
 import CourseCard from "@/components/courses/CourseCard";
@@ -65,7 +66,19 @@ export default function Courses() {
             }));
     };
 
-    if (authLoading || loading) return <TechcessLoader fullScreen />;
+    if (authLoading) return <TechcessLoader fullScreen />;
+
+    if (loading) {
+        return (
+            <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
+                <AnimatedGradientBg />
+                <AppSidebar userName={userName} activeItem="courses" onSignOut={handleSignOut} />
+                <div className="flex-1 min-w-0 flex flex-col h-full relative overflow-y-auto">
+                    <CoursesSkeleton />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">

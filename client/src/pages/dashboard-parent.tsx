@@ -5,7 +5,7 @@ import { useUserProfile } from "@/hooks/use-user-profile";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import WelcomeHeader from "@/components/dashboard/WelcomeHeader";
-import TechcessLoader from "@/components/brand/TechcessLoader";
+import { DashboardSkeleton } from "@/components/skeletons/PageSkeletons";
 import PageFade from "@/components/ui/page-fade";
 import { Flame, TrendingUp, TrendingDown, Users, Sparkles, ArrowUpCircle, ChevronRight } from "lucide-react";
 import StudentDetailSheet from "@/components/dashboard/StudentDetailSheet";
@@ -149,7 +149,7 @@ export default function ParentDashboard() {
                 <AnimatedGradientBg />
                 <AppSidebar variant="parent" userName={userName || "Loading..."} activeItem="home" onSignOut={handleSignOut} />
                 <div className="flex-1 min-w-0 overflow-y-auto relative">
-                    <TechcessLoader />
+                    <DashboardSkeleton />
                 </div>
             </div>
         );

@@ -7,7 +7,7 @@ import { useCredits } from "@/hooks/use-credits";
 import { useSubscription } from "@/hooks/use-subscription";
 import { supabase } from "@/lib/supabase";
 import AppSidebar from "@/components/sidebar/AppSidebar";
-import TechcessLoader from "@/components/brand/TechcessLoader";
+import { ChatSkeleton } from "@/components/skeletons/PageSkeletons";
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatInput from "@/components/chat/ChatInput";
@@ -17,6 +17,7 @@ import { useSendQueue } from "@/hooks/use-send-queue";
 import { X } from "lucide-react";
 import QuizSection from "@/components/quiz/QuizSection";
 import mindfillIcon from "@/assets/mindfill.png";
+import TechcessBot from "@/components/brand/TechcessBot";
 
 export default function LessonChat() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
@@ -178,8 +179,8 @@ export default function LessonChat() {
         return (
             <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden">
                 <AppSidebar userName={userName} activeItem="courses" onSignOut={handleSignOut} />
-                <div className="flex-1 relative">
-                    <TechcessLoader label="Opening your lesson" />
+                <div className="flex-1 min-w-0 flex flex-col relative">
+                    <ChatSkeleton />
                 </div>
             </div>
         );
@@ -280,11 +281,7 @@ export default function LessonChat() {
                         <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
                             {messages.length === 0 && !sending && queue.pending.length === 0 && (
                                 <div className="flex flex-col items-center justify-center py-20">
-                                    <img
-                                        src={mindfillIcon}
-                                        alt="TECHCESS"
-                                        className="w-16 h-16 rounded-2xl object-cover mb-4"
-                                    />
+                                    <TechcessBot mood="wave" size={72} className="mb-4" />
                                     <h2 className="text-xl font-bold mb-2 text-foreground">Start learning</h2>
                                     <p className="text-muted-foreground text-sm text-center max-w-sm">
                                         Ask TECHCESS anything about this lesson. Get clear, layered explanations with deep reasoning.

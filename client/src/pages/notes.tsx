@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import TechcessLoader from "@/components/brand/TechcessLoader";
+import { NotesSkeleton } from "@/components/skeletons/PageSkeletons";
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import { GlassButton } from "@/components/ui/glass-button";
 import { supabase } from "@/lib/supabase";
@@ -202,13 +203,15 @@ export default function NotesDashboard() {
         navigate("/login");
     };
 
-    if (authLoading || (loading && !hasLoaded)) {
+    if (authLoading) return <TechcessLoader fullScreen label="Loading your notes" />;
+
+    if (loading && !hasLoaded) {
         return (
             <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
                 <AnimatedGradientBg />
-                <AppSidebar userName={userName || "Loading..."} activeItem="home" onSignOut={handleSignOut} />
+                <AppSidebar userName={userName} activeItem="notes" onSignOut={handleSignOut} />
                 <div className="flex-1 min-w-0 overflow-y-auto relative">
-                    <TechcessLoader label="Loading your notes" />
+                    <NotesSkeleton />
                 </div>
             </div>
         );

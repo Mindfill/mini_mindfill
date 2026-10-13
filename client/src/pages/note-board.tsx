@@ -6,7 +6,7 @@ import { useActivityHeartbeat } from "@/hooks/use-activity-heartbeat";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useToast } from "@/hooks/use-toast";
 import AppSidebar from "@/components/sidebar/AppSidebar";
-import TechcessLoader from "@/components/brand/TechcessLoader";
+import { ContentSkeleton } from "@/components/skeletons/PageSkeletons";
 import CircuitBoard from "@/components/secondary/CircuitBoard";
 import { ProgressBar } from "@/components/secondary/ProgressBar";
 import NoteQuizView from "@/components/notes/NoteQuizView";
@@ -138,7 +138,7 @@ export default function NoteBoardPage() {
     if (authLoading || !board) {
         return shell(
             <div className="relative h-full">
-                <TechcessLoader label="Loading your note" />
+                <ContentSkeleton label="Loading your note" />
             </div>,
         );
     }

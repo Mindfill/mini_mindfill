@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { DyslexiaToggle } from "@/components/DyslexiaToggle";
 import { CreditsDisplay } from "@/components/CreditsDisplay";
 import mindfillLogo from "@/assets/mindfill.png";
+import { warmAppRoutes } from "@/lib/appShell";
 import type { UserType, UserRole } from "@/lib/api";
 
 export type Variant = "university" | "secondary" | "parent" | "school_admin";
@@ -73,16 +74,27 @@ export function deriveVariant(userType: UserType | null, role: UserRole | null):
 
 export default function AppSidebar({ userName, activeItem, onSignOut, variant: variantProp }: AppSidebarProps) {
     const { session } = useAuth();
-    const { userType, role } = useUserProfile();
+    const { userType, role, loading: profileLoading } = useUserProfile();
     const [, navigate] = useLocation();
     const variant = variantProp ?? deriveVariant(userType, role);
-    const [isMobile, setIsMobile] = useState(false);
+    // Read the width up front: starting at false drew the full desktop
+    // sidebar for a frame on phones before the effect below corrected it.
+    const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [desktopOpen, setDesktopOpen] = useState(true);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const accessToken = session?.access_token;
     const navItems = NAV_ITEMS_BY_VARIANT[variant];
     const homePath = HOME_PATH_BY_VARIANT[variant];
+
+    // The sidebar only renders for signed-in users, so this is the point to
+    // start fetching the other tabs (lib/appShell.ts). Runs once per visit,
+    // and not before the variant is known — the "university" fallback used
+    // while the profile loads would download uni tabs for everyone.
+    const variantKnown = !!variantProp || !profileLoading;
+    useEffect(() => {
+        if (variantKnown) warmAppRoutes({ universityTabs: variant === "university" });
+    }, [variantKnown, variant]);
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);

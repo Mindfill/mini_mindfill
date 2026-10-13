@@ -3,6 +3,7 @@ import { useLocation, useParams, useSearch } from "wouter";
 import { motion } from "motion/react";
 import SecondaryShell, { AccessErrorState, PageSkeleton } from "@/components/secondary/SecondaryShell";
 import { ProgressBar } from "@/components/secondary/ProgressBar";
+import { SubjectGridSkeleton } from "@/components/skeletons/PageSkeletons";
 import { Lock, CheckCircle2, Sparkles, ChevronRight, Clock } from "lucide-react";
 import { CLASS_LEVELS, type ChapterSummary, type ClassLevel, type SubjectSummary } from "@/lib/secondaryApi";
 import { useChapters, useSubjects } from "@/lib/secondaryQueries";
@@ -51,7 +52,7 @@ function SubjectList({ accessToken }: { accessToken: string }) {
     }, []);
 
     if (error && !data) return <AccessErrorState error={error} onRetry={() => refetch()} />;
-    if (!subjects) return <PageSkeleton />;
+    if (!subjects) return <SubjectGridSkeleton />;
 
     return (
         <main className="max-w-4xl mx-auto px-4 py-8 md:p-10 space-y-8">
