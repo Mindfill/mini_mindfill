@@ -866,3 +866,31 @@ html .prose div[class*="language-"] {
     .tbot-animated .tbot-zzz { animation: none; }
   }
 }
+
+/* Skeleton mascot badge (components/skeletons/PageSkeletons.tsx): waits a
+   beat before appearing, so fast loads don't flash it. */
+@layer utilities {
+  .loading-badge { animation: loading-badge-in 260ms ease-out 220ms both; }
+  @keyframes loading-badge-in { from { opacity: 0; transform: translateY(4px) scale(0.98); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .loading-badge { animation: none; }
+  }
+}
+
+/* Peeking mascot (components/brand/PeekingMascot.tsx). The bot sits inside a
+   clipped box at the screen's bottom corner and slides up into view, so it
+   looks like it's rising from behind the edge. */
+@layer utilities {
+  .peek-bot {
+    transform: translateY(105%);
+    transition: transform 520ms cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+  .peek-bot[data-shown="true"] { transform: translateY(16%); }
+  .peek-bubble {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+    transform-origin: bottom right;
+    transition: opacity 200ms ease-out, transform 200ms ease-out;
+  }
+  .peek-bubble[data-shown="true"] { opacity: 1; transform: none; }
+}

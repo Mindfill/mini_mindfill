@@ -41,6 +41,8 @@ const InviteAccept = lazy(() => import("@/pages/invite-accept"));
 // Every /secondary/* page renders inside one persistent layout (sidebar,
 // background, guards), which owns its own nested routes.
 const SecondaryLayout = lazy(() => import("@/components/secondary/SecondaryLayout"));
+// The mascot that peeks in now and then (signed-in app pages only).
+const PeekingMascot = lazy(() => import("@/components/brand/PeekingMascot"));
 
 /** While a route's chunk downloads: a signed-in user moving around the app
  * keeps the sidebar and sees that page's skeleton; anything else (first load,
@@ -52,6 +54,24 @@ function RouteFallback() {
   const ShellSkeleton = getShellSkeleton();
   if (session && view && ShellSkeleton) return <ShellSkeleton view={view} />;
   return <TechcessLoader fullScreen />;
+}
+
+/** Pages where the mascot may peek: the signed-in app, not the landing page,
+ * sign-in, onboarding, checkout or admin. */
+function MascotLayer() {
+  const [location] = useLocation();
+  const { session } = useAuth();
+  const inApp =
+    shellViewFor(location) !== null ||
+    location.startsWith("/secondary/") ||
+    location === "/parent/dashboard" ||
+    location === "/school/dashboard";
+  if (!session || !inApp) return null;
+  return (
+    <Suspense fallback={null}>
+      <PeekingMascot />
+    </Suspense>
+  );
 }
 
 function Router() {
@@ -107,6 +127,7 @@ function App() {
           <TooltipProvider>
             <Toaster />
             <Router />
+            <MascotLayer />
             <PaywallDialog />
             <DeviceLimitDialog />
           </TooltipProvider>
