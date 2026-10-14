@@ -5,8 +5,18 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { VizVideo } from "@/components/chat/ChatContent";
 import {
-    Loader2, Play, RefreshCw, CheckCircle2, EyeOff, Save, AlertTriangle, Film, Clapperboard,
+    Loader2, Play, RefreshCw, CheckCircle2, EyeOff, Save, AlertTriangle, Film, Clapperboard, Copy,
 } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
     SCENE_TYPES,
     fetchCurriculumVisuals,
@@ -15,7 +25,9 @@ import {
     editCurriculumVisualPrompt,
     approveCurriculumVisual,
     unapproveCurriculumVisual,
+    reuseCurriculumVisuals,
     type CurriculumVisual,
+    type CurriculumVisualReuseResult,
     type SceneType,
     type VisualApprovalStatus,
 } from "@/lib/api";
@@ -335,6 +347,56 @@ export default function CurriculumVisualsPanel({ accessToken }: { accessToken: s
         }
     };
 
+    // Reuse runs in two steps: a dry run that writes nothing and lists what
+    // would be adopted, then the real sweep once it's confirmed. One request
+    // does every match, so this is a single click however many there are.
+    const [reuseBusy, setReuseBusy] = useState(false);
+    const [reusePlan, setReusePlan] = useState<CurriculumVisualReuseResult | null>(null);
+
+    const previewReuse = async () => {
+        setReuseBusy(true);
+        try {
+            const plan = await reuseCurriculumVisuals(accessToken, {
+                dryRun: true,
+                chapterId: chapterId === "all" ? null : chapterId,
+            });
+            if (plan.matched === 0) {
+                toast({
+                    title: "Nothing to reuse",
+                    description: "No unrendered visual shares a prompt with one that's already rendered.",
+                });
+                return;
+            }
+            setReusePlan(plan);
+        } catch (err) {
+            console.error(err);
+            toast({ variant: "destructive", title: "Couldn't check for reusable visuals" });
+        } finally {
+            setReuseBusy(false);
+        }
+    };
+
+    const confirmReuse = async () => {
+        setReuseBusy(true);
+        try {
+            const result = await reuseCurriculumVisuals(accessToken, {
+                dryRun: false,
+                chapterId: chapterId === "all" ? null : chapterId,
+            });
+            setReusePlan(null);
+            toast({
+                title: `Reused ${result.applied} visual${result.applied === 1 ? "" : "s"}`,
+                description: "They keep the approval they had where they were first rendered.",
+            });
+            await load();
+        } catch (err) {
+            console.error(err);
+            toast({ variant: "destructive", title: "Couldn't reuse visuals" });
+        } finally {
+            setReuseBusy(false);
+        }
+    };
+
     useEffect(() => {
         load();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -422,14 +484,25 @@ export default function CurriculumVisualsPanel({ accessToken }: { accessToken: s
                             ))}
                         </select>
                     </div>
-                    <button
-                        type="button"
-                        onClick={load}
-                        disabled={loading}
-                        className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 min-h-[44px] md:ml-auto"
-                    >
-                        <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh
-                    </button>
+                    <div className="flex items-center gap-4 md:ml-auto">
+                        <button
+                            type="button"
+                            onClick={previewReuse}
+                            disabled={loading || reuseBusy}
+                            title="Adopt an already-rendered video onto any visual whose prompt is identical, instead of rendering it again"
+                            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 min-h-[44px] disabled:opacity-50"
+                        >
+                            <Copy className={`w-4 h-4 ${reuseBusy ? "animate-pulse" : ""}`} /> Reuse rendered visuals
+                        </button>
+                        <button
+                            type="button"
+                            onClick={load}
+                            disabled={loading}
+                            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 min-h-[44px]"
+                        >
+                            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+                        </button>
+                    </div>
                 </div>
 
                 <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" role="tablist" aria-label="Filter by status">
@@ -478,6 +551,60 @@ export default function CurriculumVisualsPanel({ accessToken }: { accessToken: s
                     ))}
                 </div>
             )}
+
+            <AlertDialog open={reusePlan !== null} onOpenChange={(open) => !open && setReusePlan(null)}>
+                <AlertDialogContent className="max-w-2xl">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            Reuse {reusePlan?.matched} already-rendered visual{reusePlan?.matched === 1 ? "" : "s"}?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Each of these is authored with a prompt identical to one that has already been
+                            rendered, so it can use that video instead of being rendered again. Each keeps the
+                            approval it had where it was first rendered, so approved ones go live with their
+                            chapter — use Unapprove on any you want to look at again. Nothing is rendered and
+                            nothing is charged.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    <div className="max-h-72 overflow-y-auto rounded-xl border border-border divide-y divide-border text-sm">
+                        {reusePlan?.visuals.map((v) => (
+                            <div key={`${v.subsection_id}-${v.index}`} className="p-3 space-y-1">
+                                <div className="flex items-baseline justify-between gap-3">
+                                    <span className="font-medium break-all">
+                                        {v.subsection_slug} <span className="text-muted-foreground">#{v.index}</span>
+                                    </span>
+                                    <span
+                                        className={`shrink-0 text-xs ${
+                                            v.approval_status === "approved"
+                                                ? "text-green-700 dark:text-green-400"
+                                                : "text-amber-700 dark:text-amber-400"
+                                        }`}
+                                    >
+                                        {v.approval_status === "approved" ? "goes live" : "needs approval"}
+                                    </span>
+                                </div>
+                                <p className="text-xs text-muted-foreground break-all">
+                                    reuses the video from {v.from_subsection_slug}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={reuseBusy}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault(); // keep the dialog open until the sweep finishes
+                                confirmReuse();
+                            }}
+                            disabled={reuseBusy}
+                        >
+                            {reuseBusy ? "Reusing…" : `Reuse ${reusePlan?.matched}`}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
