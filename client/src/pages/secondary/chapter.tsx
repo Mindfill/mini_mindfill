@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import SecondaryShell, { AccessErrorState, PageSkeleton } from "@/components/secondary/SecondaryShell";
+import SecondaryShell, { AccessErrorState, PageLoader } from "@/components/secondary/SecondaryShell";
 import { ProgressBar } from "@/components/secondary/ProgressBar";
 import CircuitBoard from "@/components/secondary/CircuitBoard";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -79,7 +79,7 @@ function ChapterToc({ chapterId, accessToken }: { chapterId: string; accessToken
     };
 
     if (error && !data) return <AccessErrorState error={error} onRetry={() => refetch()} />;
-    if (!data) return <PageSkeleton />;
+    if (!data) return <PageLoader />;
 
     const { chapter, sections, subject } = data;
 

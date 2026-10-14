@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
-import { ContentSkeleton } from "@/components/skeletons/PageSkeletons";
 import { useActivityHeartbeat } from "@/hooks/use-activity-heartbeat";
 import { SecondaryApiError } from "@/lib/secondaryApi";
 import { useAuth } from "@/hooks/use-auth";
@@ -8,6 +7,7 @@ import { deregisterDevice } from "@/lib/api";
 import DeviceList from "@/components/billing/DeviceList";
 import type { DeviceRow } from "@/lib/device";
 import { Lock, WifiOff, Smartphone } from "lucide-react";
+import TechcessLoader from "@/components/brand/TechcessLoader";
 
 /**
  * The sidebar, gradient, scroll container and auth/profile guards live in
@@ -41,9 +41,9 @@ export default function SecondaryShell({
     return <>{children(ctx)}</>;
 }
 
-/** In-page loading state for chapters, lessons and the rest. */
-export function PageSkeleton() {
-    return <ContentSkeleton />;
+/** In-page loading state: the mascot loader, same as everywhere else. */
+export function PageLoader() {
+    return <TechcessLoader />;
 }
 
 /** Friendly full-page state for the access errors every lesson endpoint can return. */

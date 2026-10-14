@@ -3,7 +3,6 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import TechcessLoader from "@/components/brand/TechcessLoader";
-import { NotesSkeleton } from "@/components/skeletons/PageSkeletons";
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import { GlassButton } from "@/components/ui/glass-button";
 import { supabase } from "@/lib/supabase";
@@ -211,7 +210,7 @@ export default function NotesDashboard() {
                 <AnimatedGradientBg />
                 <AppSidebar userName={userName} activeItem="notes" onSignOut={handleSignOut} />
                 <div className="flex-1 min-w-0 overflow-y-auto relative">
-                    <NotesSkeleton />
+                    <TechcessLoader label="Loading your notes" />
                 </div>
             </div>
         );

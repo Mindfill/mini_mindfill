@@ -6,13 +6,13 @@ import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import WelcomeHeader from "@/components/dashboard/WelcomeHeader";
 import { Users, Flame, Clock, GraduationCap, AlertTriangle, Download, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { DashboardSkeleton } from "@/components/skeletons/PageSkeletons";
 import PageFade from "@/components/ui/page-fade";
 import StudentDetailSheet, { STATUS_LABEL, STATUS_STYLES } from "@/components/dashboard/StudentDetailSheet";
 import UsageAnalyticsPanel from "@/components/dashboard/UsageAnalyticsPanel";
 import HighlyEngagedBadge from "@/components/dashboard/HighlyEngagedBadge";
 import { fetchSchoolMonthlyReport, fetchSchoolStudentDetail } from "@/lib/api";
 import { useSchoolDashboard, useUsageAnalytics } from "@/lib/appQueries";
+import TechcessLoader from "@/components/brand/TechcessLoader";
 
 export default function SchoolDashboard() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
@@ -77,7 +77,7 @@ export default function SchoolDashboard() {
                 <AnimatedGradientBg />
                 <AppSidebar variant="school_admin" userName={userName || "Loading..."} activeItem="home" onSignOut={handleSignOut} />
                 <div className="flex-1 min-w-0 overflow-y-auto relative">
-                    <DashboardSkeleton />
+                    <TechcessLoader label="Loading your dashboard" />
                 </div>
             </div>
         );

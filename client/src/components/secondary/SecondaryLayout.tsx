@@ -6,7 +6,6 @@ import { useUserProfile } from "@/hooks/use-user-profile";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import TechcessLoader from "@/components/brand/TechcessLoader";
-import { ContentSkeleton, DashboardSkeleton, SubjectGridSkeleton } from "@/components/skeletons/PageSkeletons";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ShellContext } from "./SecondaryShell";
 
@@ -89,7 +88,7 @@ export default function SecondaryLayout() {
                 {ready ? (
                     <ShellContext.Provider value={shell}>
                         <ErrorBoundary resetKey={location}>
-                            <Suspense fallback={<PageFallback location={location} />}>
+                            <Suspense fallback={<TechcessLoader />}>
                                 <motion.div
                                     key={location}
                                     initial={{ opacity: 0, y: 8 }}
@@ -126,11 +125,4 @@ export default function SecondaryLayout() {
             </div>
         </div>
     );
-}
-
-/** Each page's own skeleton while its code downloads. */
-function PageFallback({ location }: { location: string }) {
-    if (location === "/secondary/dashboard") return <DashboardSkeleton />;
-    if (location === "/secondary/learn") return <SubjectGridSkeleton />;
-    return <ContentSkeleton />;
 }

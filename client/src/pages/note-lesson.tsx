@@ -7,7 +7,6 @@ import { useCredits } from "@/hooks/use-credits";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useToast } from "@/hooks/use-toast";
 import AppSidebar from "@/components/sidebar/AppSidebar";
-import { ChatSkeleton } from "@/components/skeletons/PageSkeletons";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 import TechcessBot from "@/components/brand/TechcessBot";
 import ChatContent from "@/components/chat/ChatContent";
@@ -22,6 +21,7 @@ import { QueuedNote } from "@/components/chat/PendingMessages";
 import { useSendQueue } from "@/hooks/use-send-queue";
 import { OutOfCreditsError, fetchNoteFigures, type NoteFigure } from "@/lib/api";
 import { extractKeyTerms, type KeyTerm } from "@/lib/keywordHighlight";
+import TechcessLoader from "@/components/brand/TechcessLoader";
 import {
     fetchNoteBoard,
     fetchSectionState,
@@ -289,7 +289,7 @@ export default function NoteLesson() {
     if (authLoading || (loading && !loadError)) {
         return shell(
             <div className="flex-1 min-w-0 flex flex-col relative">
-                <ChatSkeleton label="Loading your lesson" />
+                <TechcessLoader label="Loading your lesson" />
             </div>,
         );
     }

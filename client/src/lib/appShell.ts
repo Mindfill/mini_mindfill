@@ -10,8 +10,8 @@ import type { ComponentType } from "react";
  *
  * 1. `warmAppRoutes()` downloads those chunks in the background once a
  *    signed-in page has mounted, so most tab switches never suspend.
- * 2. While one still does, App's fallback asks `getShellSkeleton()` for the
- *    sidebar + page skeleton frame. That component is loaded by the same warm
+ * 2. While one still does, App's fallback asks `getShellLoader()` for the
+ *    sidebar + mascot loader frame. That component is loaded by the same warm
  *    call (it would bloat the landing-page bundle if App imported it
  *    directly), and until it has loaded the fallback stays the mascot loader.
  *
@@ -20,7 +20,7 @@ import type { ComponentType } from "react";
 
 export type ShellView = "home" | "courses" | "notes" | "profile" | "lesson" | "note-lesson" | "note";
 
-/** Which skeleton a path gets while its chunk downloads, or null for pages
+/** Which page a path is, for the loading frame shown while its chunk downloads, or null for pages
  *  outside the signed-in app (landing, login, onboarding...). */
 export function shellViewFor(path: string): ShellView | null {
     if (path === "/dashboard") return "home";
@@ -33,10 +33,10 @@ export function shellViewFor(path: string): ShellView | null {
     return null;
 }
 
-let ShellSkeleton: ComponentType<{ view: ShellView }> | null = null;
+let ShellLoader: ComponentType<{ view: ShellView }> | null = null;
 
-export function getShellSkeleton() {
-    return ShellSkeleton;
+export function getShellLoader() {
+    return ShellLoader;
 }
 
 let warmed = false;
@@ -54,8 +54,8 @@ export function warmAppRoutes({ universityTabs }: { universityTabs: boolean }) {
         "requestIdleCallback" in window ? (window as any).requestIdleCallback(cb) : setTimeout(cb, 300);
 
     idle(() => {
-        import("@/components/skeletons/AppShellSkeleton").then((m) => {
-            ShellSkeleton = m.default;
+        import("@/components/brand/AppShellLoader").then((m) => {
+            ShellLoader = m.default;
         });
         if (saveData) return;
         import("@/pages/profile");

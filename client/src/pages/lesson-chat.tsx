@@ -7,7 +7,6 @@ import { useCredits } from "@/hooks/use-credits";
 import { useSubscription } from "@/hooks/use-subscription";
 import { supabase } from "@/lib/supabase";
 import AppSidebar from "@/components/sidebar/AppSidebar";
-import { ChatSkeleton } from "@/components/skeletons/PageSkeletons";
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatInput from "@/components/chat/ChatInput";
@@ -18,6 +17,7 @@ import { X } from "lucide-react";
 import QuizSection from "@/components/quiz/QuizSection";
 import mindfillIcon from "@/assets/mindfill.png";
 import TechcessBot from "@/components/brand/TechcessBot";
+import TechcessLoader from "@/components/brand/TechcessLoader";
 
 export default function LessonChat() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
@@ -180,7 +180,7 @@ export default function LessonChat() {
             <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden">
                 <AppSidebar userName={userName} activeItem="courses" onSignOut={handleSignOut} />
                 <div className="flex-1 min-w-0 flex flex-col relative">
-                    <ChatSkeleton />
+                    <TechcessLoader label="Opening your lesson" />
                 </div>
             </div>
         );

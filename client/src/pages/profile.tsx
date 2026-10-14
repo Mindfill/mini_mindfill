@@ -3,7 +3,6 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import AppSidebar, { deriveVariant } from "@/components/sidebar/AppSidebar";
 import TechcessLoader from "@/components/brand/TechcessLoader";
-import { ProfileSkeleton } from "@/components/skeletons/PageSkeletons";
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import {
     fetchProfile,
@@ -293,7 +292,7 @@ export default function Profile() {
                 <AnimatedGradientBg />
                 <AppSidebar userName={userName} activeItem="profile" onSignOut={handleSignOut} variant={sidebarVariant} />
                 <div className="flex-1 min-w-0 overflow-y-auto relative">
-                    <ProfileSkeleton />
+                    <TechcessLoader label="Loading your profile" />
                 </div>
             </div>
         );
