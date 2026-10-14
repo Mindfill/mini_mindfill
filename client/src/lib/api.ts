@@ -1754,6 +1754,48 @@ export function unapproveCurriculumVisual(subsectionId: string, index: number, a
     return postCurriculumVisual("unapprove", "POST", { subsection_id: subsectionId, index }, accessToken, "Couldn't unapprove");
 }
 
+/** One visual that would adopt an already-rendered video from elsewhere. */
+export interface CurriculumVisualReuse {
+    subsection_id: string;
+    subsection_slug: string | null;
+    chapter_title: string | null;
+    index: number | null;
+    from_subsection_slug: string | null;
+    approval_status: string;
+    storage_url: string | null;
+    scene_type: string | null;
+}
+
+export interface CurriculumVisualReuseResult {
+    dry_run: boolean;
+    donor_prompts: number;
+    matched: number;
+    applied: number;
+    visuals: CurriculumVisualReuse[];
+}
+
+/**
+ * POST /admin/curriculum/visuals/reuse — adopt existing videos onto visuals
+ * whose prompt is identical, so a chapter repeated in another class isn't
+ * rendered twice.
+ *
+ * One call sweeps everything that matches; it is not one request per visual.
+ * Defaults to a dry run, which writes nothing and just returns the matches.
+ */
+export function reuseCurriculumVisuals(
+    accessToken: string,
+    options: { dryRun?: boolean; chapterId?: string | null } = {},
+): Promise<CurriculumVisualReuseResult> {
+    const { dryRun = true, chapterId = null } = options;
+    return postCurriculumVisual(
+        "reuse",
+        "POST",
+        { dry_run: dryRun, chapter_id: chapterId },
+        accessToken,
+        "Couldn't reuse visuals",
+    );
+}
+
 export interface AdminSchoolCreateInput {
     school_name: string;
     city?: string;
