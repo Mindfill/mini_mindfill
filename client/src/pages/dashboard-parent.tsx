@@ -5,7 +5,6 @@ import { useUserProfile } from "@/hooks/use-user-profile";
 import AppSidebar from "@/components/sidebar/AppSidebar";
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import WelcomeHeader from "@/components/dashboard/WelcomeHeader";
-import { DashboardSkeleton } from "@/components/skeletons/PageSkeletons";
 import PageFade from "@/components/ui/page-fade";
 import { Flame, TrendingUp, TrendingDown, Users, Sparkles, ArrowUpCircle, ChevronRight } from "lucide-react";
 import StudentDetailSheet from "@/components/dashboard/StudentDetailSheet";
@@ -13,6 +12,7 @@ import UsageAnalyticsPanel from "@/components/dashboard/UsageAnalyticsPanel";
 import { fetchParentStudentDetail, StudentSummary } from "@/lib/api";
 import { useParentDashboard } from "@/lib/appQueries";
 import { formatMinutesChange } from "@/lib/studyTime";
+import TechcessLoader from "@/components/brand/TechcessLoader";
 
 function StudentCard({ student, onOpen }: { student: StudentSummary; onOpen: () => void }) {
     const change = student.study_minutes_change ?? 0;
@@ -149,7 +149,7 @@ export default function ParentDashboard() {
                 <AnimatedGradientBg />
                 <AppSidebar variant="parent" userName={userName || "Loading..."} activeItem="home" onSignOut={handleSignOut} />
                 <div className="flex-1 min-w-0 overflow-y-auto relative">
-                    <DashboardSkeleton />
+                    <TechcessLoader label="Loading your dashboard" />
                 </div>
             </div>
         );

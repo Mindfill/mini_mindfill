@@ -11,7 +11,7 @@ import TechcessBot from "@/components/brand/TechcessBot";
  * It is deliberately polite:
  * - at most one peek per page visit, and never within PEEK_GAP_MS of the last
  *   one anywhere in the app;
- * - only once the page has settled (no skeleton on screen), the tab is
+ * - only once the page has settled (no loader on screen), the tab is
  *   visible, nothing is focused for typing, the student hasn't typed for a
  *   few seconds, and no dialog is open;
  * - never for people who ask their device for reduced motion, since the

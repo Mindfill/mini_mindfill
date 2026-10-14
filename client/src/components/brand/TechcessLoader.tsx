@@ -7,9 +7,8 @@ import TechcessBot from "@/components/brand/TechcessBot";
  * animation library — so it runs before any lazy chunk has loaded and can
  * never throw mid-frame.
  *
- * This is for first loads (opening the app, signing in, opening a lesson).
- * Moving between sidebar tabs uses the page skeletons in
- * components/skeletons instead, so the sidebar never disappears.
+ * It is the one loading state across the app: full screen for first loads,
+ * and in the content area (sidebar kept) for everything inside the app.
  *
  * `delayMs` keeps fast loads from flashing a loader for a few frames: nothing
  * renders until the wait has actually lasted that long.
@@ -37,6 +36,7 @@ export default function TechcessLoader({
         <div
             role="status"
             aria-live="polite"
+            aria-busy="true"
             aria-label={label}
             className={`${fullScreen ? "h-[100dvh] w-full bg-background" : "w-full min-h-[60vh]"} flex items-center justify-center ${className}`}
         >

@@ -4,13 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useSecondaryShell } from "@/components/secondary/SecondaryShell";
-import { DashboardSkeleton } from "@/components/skeletons/PageSkeletons";
 import { secondaryKeys } from "@/lib/secondaryQueries";
 import WelcomeHeader, { greetingMood } from "@/components/dashboard/WelcomeHeader";
 import ContinueLearningCard from "@/components/dashboard/ContinueLearningCard";
 import StreakBadge from "@/components/dashboard/StreakBadge";
 import UsageGraphCard from "@/components/dashboard/UsageGraphCard";
 import { TrendingUp, TrendingDown, AlertTriangle, Sparkles, BookOpen, Play } from "lucide-react";
+import TechcessLoader from "@/components/brand/TechcessLoader";
 import {
     fetchSecondaryDashboard,
     fetchSecondaryUsageGraph,
@@ -66,7 +66,7 @@ export default function SecondaryDashboard() {
         }
     };
 
-    if (isPending && !data) return <DashboardSkeleton />;
+    if (isPending && !data) return <TechcessLoader label="Loading your dashboard" />;
 
     if (isError && !data) {
         return (
@@ -84,7 +84,7 @@ export default function SecondaryDashboard() {
             </div>
         );
     }
-    if (!data) return <DashboardSkeleton />;
+    if (!data) return <TechcessLoader label="Loading your dashboard" />;
 
     const {
         continue_learning, chapter_rings, streak, usage_graph, strengths, weaknesses,

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { secondaryKeys, useSubsection } from "@/lib/secondaryQueries";
-import SecondaryShell, { AccessErrorState, PageSkeleton } from "@/components/secondary/SecondaryShell";
+import SecondaryShell, { AccessErrorState, PageLoader } from "@/components/secondary/SecondaryShell";
 import StaticContent from "@/components/secondary/StaticContent";
 import TutorChat, { type TutorProgress } from "@/components/secondary/TutorChat";
 import MiniQuiz from "@/components/secondary/MiniQuiz";
@@ -72,7 +72,7 @@ function SubsectionView({ subsectionId, accessToken }: { subsectionId: string; a
                 diagnosticFor={subsectionId}
             />
         );
-    if (!data) return <PageSkeleton />;
+    if (!data) return <PageLoader />;
 
     const { subsection, breadcrumb, progress, state } = data;
     const isTutor = TUTOR_TYPES.includes(subsection.subsection_type);

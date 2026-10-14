@@ -7,7 +7,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { useAuth } from "@/hooks/use-auth";
-import { getShellSkeleton, shellViewFor } from "@/lib/appShell";
+import { getShellLoader, shellViewFor } from "@/lib/appShell";
 import { TooltipProvider } from "@/components/ui/tooltip";
 // Home is the landing page every first-time visitor hits, so it's the one
 // route kept in the main bundle — everything else is behind a login/nav
@@ -45,14 +45,14 @@ const SecondaryLayout = lazy(() => import("@/components/secondary/SecondaryLayou
 const PeekingMascot = lazy(() => import("@/components/brand/PeekingMascot"));
 
 /** While a route's chunk downloads: a signed-in user moving around the app
- * keeps the sidebar and sees that page's skeleton; anything else (first load,
- * login, onboarding) gets the mascot. See lib/appShell.ts. */
+ * keeps the sidebar with the mascot loader beside it; anything else (first
+ * load, login, onboarding) gets the full-screen mascot. See lib/appShell.ts. */
 function RouteFallback() {
   const [location] = useLocation();
   const { session } = useAuth();
   const view = shellViewFor(location);
-  const ShellSkeleton = getShellSkeleton();
-  if (session && view && ShellSkeleton) return <ShellSkeleton view={view} />;
+  const ShellLoader = getShellLoader();
+  if (session && view && ShellLoader) return <ShellLoader view={view} />;
   return <TechcessLoader fullScreen />;
 }
 

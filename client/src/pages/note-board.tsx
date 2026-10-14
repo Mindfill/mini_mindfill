@@ -6,7 +6,6 @@ import { useActivityHeartbeat } from "@/hooks/use-activity-heartbeat";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useToast } from "@/hooks/use-toast";
 import AppSidebar from "@/components/sidebar/AppSidebar";
-import { ContentSkeleton } from "@/components/skeletons/PageSkeletons";
 import CircuitBoard from "@/components/secondary/CircuitBoard";
 import { ProgressBar } from "@/components/secondary/ProgressBar";
 import NoteQuizView from "@/components/notes/NoteQuizView";
@@ -14,6 +13,7 @@ import FlashcardsView from "@/components/notes/FlashcardsView";
 import { OutOfCreditsError, generateNoteQuiz, type QuizQuestion } from "@/lib/api";
 import { fetchNoteBoard, type NoteBoard } from "@/lib/noteLessonApi";
 import type { SubsectionType, TocSection } from "@/lib/secondaryApi";
+import TechcessLoader from "@/components/brand/TechcessLoader";
 
 type Tab = "lessons" | "quiz" | "cards";
 
@@ -138,7 +138,7 @@ export default function NoteBoardPage() {
     if (authLoading || !board) {
         return shell(
             <div className="relative h-full">
-                <ContentSkeleton label="Loading your note" />
+                <TechcessLoader label="Loading your note" />
             </div>,
         );
     }

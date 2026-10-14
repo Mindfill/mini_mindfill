@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateSecondaryProgress } from "@/lib/secondaryQueries";
-import SecondaryShell, { PageSkeleton } from "@/components/secondary/SecondaryShell";
+import SecondaryShell, { PageLoader } from "@/components/secondary/SecondaryShell";
 import DiagnosticPreparing from "@/components/secondary/DiagnosticPreparing";
 import MarkdownLatex from "@/components/ui/markdown-latex";
 import OptionChoices from "@/components/quiz/OptionChoices";

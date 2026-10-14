@@ -5,7 +5,6 @@ import { supabase } from "@/lib/supabase";
 import { Note, Course, fetchCourses, deleteCourse, deleteNote } from "@/lib/api";
 import { invalidateNotesCache } from "@/pages/notes";
 import AppSidebar from "@/components/sidebar/AppSidebar";
-import { NotesSkeleton } from "@/components/skeletons/PageSkeletons";
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import NoteUploadModal from "@/components/notes/NoteUploadModal";
 import NoteCard from "@/components/notes/NoteCard";
@@ -15,6 +14,7 @@ import {
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Plus, FileSearch, ArrowLeft, RefreshCw, Trash2 } from "lucide-react";
+import TechcessLoader from "@/components/brand/TechcessLoader";
 
 // Per-course cache (keyed by userId:courseId) so returning to a course reuses
 // the last load instead of re-hitting the DB. Refresh is user-triggered.
@@ -177,7 +177,7 @@ export default function CourseNotes() {
                 <AnimatedGradientBg />
                 <AppSidebar userName={userName || "Loading..."} activeItem="notes" onSignOut={handleSignOut} />
                 <div className="flex-1 min-w-0 overflow-y-auto relative">
-                    <NotesSkeleton />
+                    <TechcessLoader label="Loading this course" />
                 </div>
             </div>
         );

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import SecondaryShell, { AccessErrorState, PageSkeleton } from "@/components/secondary/SecondaryShell";
+import SecondaryShell, { AccessErrorState, PageLoader } from "@/components/secondary/SecondaryShell";
 import { fetchStartHere } from "@/lib/secondaryApi";
 
 /** Lands a student on their next lesson in the free chapter (Ch00). Backs the
@@ -25,5 +25,5 @@ function Redirector({ accessToken }: { accessToken: string }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [accessToken]);
 
-    return error ? <AccessErrorState error={error} onRetry={go} /> : <PageSkeleton />;
+    return error ? <AccessErrorState error={error} onRetry={go} /> : <PageLoader />;
 }

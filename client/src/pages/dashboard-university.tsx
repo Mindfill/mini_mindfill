@@ -9,10 +9,10 @@ import WelcomeHeader, { greetingMood } from "@/components/dashboard/WelcomeHeade
 import ContinueLearningCard from "@/components/dashboard/ContinueLearningCard";
 import StreakBadge from "@/components/dashboard/StreakBadge";
 import UsageGraphCard from "@/components/dashboard/UsageGraphCard";
-import { DashboardSkeleton } from "@/components/skeletons/PageSkeletons";
 import PageFade from "@/components/ui/page-fade";
 import { BookOpen, Clock, Play, FileText } from "lucide-react";
 import { useUniDashboard } from "@/lib/appQueries";
+import TechcessLoader from "@/components/brand/TechcessLoader";
 
 export default function UniversityDashboard() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
@@ -65,7 +65,7 @@ export default function UniversityDashboard() {
                 <AnimatedGradientBg />
                 <AppSidebar userName={userName} activeItem="home" onSignOut={handleSignOut} />
                 <div className="flex-1 min-w-0 overflow-y-auto relative">
-                    <DashboardSkeleton />
+                    <TechcessLoader label="Loading your dashboard" />
                 </div>
             </div>
         );
