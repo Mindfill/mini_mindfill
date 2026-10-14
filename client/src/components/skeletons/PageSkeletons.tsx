@@ -1,12 +1,14 @@
 import type { ReactNode } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import TechcessBot from "@/components/brand/TechcessBot";
 
 /**
  * Loading placeholders shaped like the page that's about to appear. Used for
  * every load inside the app (switching tabs, opening a lesson or a note), where
- * the sidebar stays put and only the content area is waiting. Only opening the
- * app and signing in use the mascot (TechcessLoader).
+ * the sidebar stays put and only the content area is waiting. Each one carries
+ * the thinking mascot in the middle (LoadingBadge), so every load in the app
+ * looks the same; opening the app and signing in use the full TechcessLoader.
  *
  * Each one mirrors its page's outer container (max width + padding) so the
  * content lands where the placeholder was, without a jump.
@@ -19,12 +21,26 @@ function Bone({ className }: { className?: string }) {
     return <Skeleton className={cn("bg-foreground/[0.08] dark:bg-white/[0.15]", className)} />;
 }
 
+/** The mascot + label floated over a skeleton, about a third of the way down
+ *  the screen. It fades in after a beat, so a load that finishes quickly shows
+ *  only the skeleton instead of a robot that blinks in and out. */
+function LoadingBadge({ label }: { label: string }) {
+    return (
+        <div className="pointer-events-none absolute inset-x-0 top-[24vh] z-10 flex justify-center px-4">
+            <div className="loading-badge flex flex-col items-center gap-2 rounded-3xl bg-background/75 px-7 py-5 backdrop-blur-md shadow-[0_12px_32px_-16px_rgb(0_0_0/0.35)] border border-border/60">
+                <TechcessBot mood="thinking" size={56} />
+                <p className="text-sm font-medium text-muted-foreground">{label}…</p>
+            </div>
+        </div>
+    );
+}
+
 function Busy({ label, className, children }: { label: string; className: string; children: ReactNode }) {
     return (
-        <main className={className} role="status" aria-busy="true" aria-label={label}>
+        <main className={cn("relative", className)} role="status" aria-busy="true" aria-label={label}>
             {children}
             {/* Last, so it isn't the first child that space-y-* offsets from. */}
-            <span className="sr-only">{label}…</span>
+            <LoadingBadge label={label} />
         </main>
     );
 }
@@ -78,7 +94,7 @@ export function DashboardSkeleton() {
 /** /courses: header bar, then a stack of course cards. */
 export function CoursesSkeleton() {
     return (
-        <div className="flex-1 flex flex-col" role="status" aria-busy="true" aria-label="Loading courses">
+        <div className="relative flex-1 flex flex-col" role="status" aria-busy="true" aria-label="Loading courses">
             <div className="glass-chip border-b border-border/50 px-8 py-6 flex items-center gap-3">
                 <Bone className="w-16 h-16 rounded-2xl" />
                 <div className="space-y-2">
@@ -99,7 +115,7 @@ export function CoursesSkeleton() {
                     </div>
                 ))}
             </div>
-            <span className="sr-only">Loading courses…</span>
+            <LoadingBadge label="Loading courses" />
         </div>
     );
 }
@@ -207,7 +223,7 @@ export function SubjectGridSkeleton() {
  *  bottom where the real one will appear. */
 export function ChatSkeleton({ label = "Opening your lesson" }: { label?: string }) {
     return (
-        <div className="flex-1 min-h-0 h-full flex flex-col" role="status" aria-busy="true" aria-label={label}>
+        <div className="relative flex-1 min-h-0 h-full flex flex-col" role="status" aria-busy="true" aria-label={label}>
             <div className="flex items-center gap-3 px-4 md:px-6 py-4 border-b border-border/50">
                 <Bone className="h-4 w-14" />
                 <Bone className="h-5 w-48 max-w-[50vw]" />
@@ -234,7 +250,7 @@ export function ChatSkeleton({ label = "Opening your lesson" }: { label?: string
             <div className="px-4 md:px-6 pb-5 pt-2">
                 <Bone className="max-w-3xl mx-auto h-12 rounded-2xl" />
             </div>
-            <span className="sr-only">{label}…</span>
+            <LoadingBadge label={label} />
         </div>
     );
 }
