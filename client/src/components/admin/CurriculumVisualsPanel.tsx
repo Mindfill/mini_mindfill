@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { VizVideo } from "@/components/chat/ChatContent";
 import {
-    Loader2, Play, RefreshCw, CheckCircle2, EyeOff, Save, AlertTriangle, Film, Clapperboard, Copy,
+    Loader2, Play, RefreshCw, CheckCircle2, EyeOff, Save, AlertTriangle, Film, Clapperboard, Copy, Code2,
 } from "lucide-react";
 import {
     AlertDialog,
@@ -23,6 +23,7 @@ import {
     fetchCurriculumVisualStatus,
     renderCurriculumVisual,
     editCurriculumVisualPrompt,
+    saveCurriculumVisualCode,
     approveCurriculumVisual,
     unapproveCurriculumVisual,
     reuseCurriculumVisuals,
@@ -99,8 +100,9 @@ function VisualCard({
     const { toast } = useToast();
     const { ref, near } = useNearViewport<HTMLDivElement>();
     const [draft, setDraft] = useState(visual.prompt);
+    const [codeDraft, setCodeDraft] = useState(visual.manim_code ?? "");
     const [sceneType, setSceneType] = useState<SceneType | "">(visual.scene_type ?? "");
-    const [busy, setBusy] = useState<"save" | "render" | "approve" | null>(null);
+    const [busy, setBusy] = useState<"save" | "code" | "render" | "approve" | null>(null);
 
     // Keep the draft in sync when the server copy changes underneath us
     // (e.g. a reload), but never clobber unsaved typing.
@@ -112,8 +114,20 @@ function VisualCard({
         }
     }, [visual.prompt]);
 
+    const serverCode = visual.manim_code ?? "";
+    const lastServerCode = useRef(serverCode);
+    useEffect(() => {
+        if (serverCode !== lastServerCode.current) {
+            setCodeDraft((c) => (c === lastServerCode.current ? serverCode : c));
+            lastServerCode.current = serverCode;
+        }
+    }, [serverCode]);
+
     const rendering = visual.render_status === "rendering";
     const promptDirty = draft.trim() !== visual.prompt.trim();
+    const codeDirty = codeDraft.trim() !== serverCode.trim();
+    // What the next Render will actually send to the renderer.
+    const usesOwnCode = serverCode.trim().length > 0;
 
     // Poll while this visual renders; stop on success/failure or unmount.
     const onChangeRef = useRef(onChange);
@@ -141,7 +155,7 @@ function VisualCard({
         };
     }, [rendering, visual.subsection_id, visual.index, accessToken]);
 
-    const run = async (kind: "save" | "render" | "approve", action: () => Promise<unknown>, success?: { title: string; description?: string }) => {
+    const run = async (kind: "save" | "code" | "render" | "approve", action: () => Promise<unknown>, success?: { title: string; description?: string }) => {
         setBusy(kind);
         try {
             await action();
@@ -160,6 +174,14 @@ function VisualCard({
         run("save", () => editCurriculumVisualPrompt(visual.subsection_id, visual.index, draft.trim(), accessToken), {
             title: "Prompt saved",
             description: "Copy the new text into the workbook too, or the next import restores the old prompt.",
+        });
+
+    const saveCode = () =>
+        run("code", () => saveCurriculumVisualCode(visual.subsection_id, visual.index, codeDraft.trim(), accessToken), {
+            title: codeDraft.trim() ? "Code saved" : "Code cleared",
+            description: codeDraft.trim()
+                ? "Render now sends this code straight to the renderer."
+                : "Render generates code from the prompt again.",
         });
 
     const startRender = () => {
@@ -236,6 +258,52 @@ function VisualCard({
                     </div>
 
                     <div className="space-y-1.5">
+                        <Label htmlFor={`code-${keyOf(visual)}`} className="flex items-center gap-1.5">
+                            <Code2 className="w-3.5 h-3.5" /> Manim code <span className="text-muted-foreground font-normal">(optional)</span>
+                        </Label>
+                        <Textarea
+                            id={`code-${keyOf(visual)}`}
+                            value={codeDraft}
+                            onChange={(e) => setCodeDraft(e.target.value)}
+                            rows={codeDraft ? 12 : 4}
+                            maxLength={20000}
+                            spellCheck={false}
+                            placeholder={"Leave empty to generate the code from the prompt.\n\nPaste a scene whose class is TechcessScene to render it as-is."}
+                            className="text-xs leading-snug resize-y font-mono"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            {usesOwnCode
+                                ? "Render sends this code straight to the renderer — nothing is generated."
+                                : "Empty: Render generates the code from the prompt."}
+                        </p>
+                        {codeDirty && (
+                            <div className="flex flex-wrap items-center gap-3">
+                                <GlassButton
+                                    size="sm"
+                                    onClick={saveCode}
+                                    disabled={busy !== null}
+                                    contentClassName="flex items-center gap-1.5"
+                                >
+                                    {busy === "code" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                                    {codeDraft.trim() ? "Save code" : "Clear code"}
+                                </GlassButton>
+                                <button
+                                    type="button"
+                                    onClick={() => setCodeDraft(serverCode)}
+                                    className="text-xs text-muted-foreground hover:text-foreground min-h-[44px] px-2"
+                                >
+                                    Discard
+                                </button>
+                                <p className="text-xs text-muted-foreground w-full">
+                                    {visual.approval_status === "approved"
+                                        ? "Saving takes this visual away from students until you render and approve it again."
+                                        : "Saving discards the current render."}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="space-y-1.5">
                         <Label htmlFor={`scene-${keyOf(visual)}`}>Scene type</Label>
                         <select
                             id={`scene-${keyOf(visual)}`}
@@ -255,7 +323,7 @@ function VisualCard({
                         <GlassButton
                             size="sm"
                             onClick={startRender}
-                            disabled={!sceneType || rendering || promptDirty || busy !== null}
+                            disabled={!sceneType || rendering || promptDirty || codeDirty || busy !== null}
                             contentClassName="flex items-center gap-1.5"
                         >
                             {busy === "render" || rendering ? (
@@ -287,12 +355,17 @@ function VisualCard({
                         )}
                     </div>
 
-                    {promptDirty && !rendering && (
-                        <p className="text-xs text-muted-foreground">Save or discard your prompt edit before rendering.</p>
+                    {(promptDirty || codeDirty) && !rendering && (
+                        <p className="text-xs text-muted-foreground">
+                            Save or discard your {promptDirty && codeDirty ? "edits" : promptDirty ? "prompt edit" : "code edit"} before rendering.
+                        </p>
                     )}
                     {rendering && (
                         <p className="text-xs text-muted-foreground">
-                            Rendering usually takes 1–2 minutes. Failed renders retry automatically.
+                            Rendering usually takes 1–2 minutes.{" "}
+                            {usesOwnCode
+                                ? "Your own code is never rewritten, so a failure comes back with its error for you to fix."
+                                : "Failed renders retry automatically."}
                             {visual.approval_status === "approved" && " Students keep the current video until you approve the new one."}
                         </p>
                     )}
@@ -465,7 +538,8 @@ export default function CurriculumVisualsPanel({ accessToken }: { accessToken: s
                     <p className="text-sm text-muted-foreground mt-1">
                         Every visual authored in the imported workbook, in lesson order. Pick a scene type and render;
                         edit the prompt and render again until it's right, then approve. Only approved visuals appear
-                        in lessons, at the position set in the workbook.
+                        in lessons, at the position set in the workbook. To render a scene you wrote yourself, paste it
+                        into a visual's Manim code box — that code is rendered as-is and nothing is generated.
                     </p>
                 </div>
 

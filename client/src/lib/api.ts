@@ -1685,6 +1685,9 @@ export interface CurriculumVisual {
     display_order: number | null;
     index: number;
     prompt: string;
+    /** Hand-written Manim code. When set, Render sends this straight to the
+     * renderer and no code is generated from the prompt. */
+    manim_code: string | null;
     position: string | null;
     approval_status: VisualApprovalStatus;
     storage_url: string | null;
@@ -1744,6 +1747,12 @@ export function renderCurriculumVisual(subsectionId: string, index: number, scen
 /** Saves an edited prompt. Discards the current render and resets approval. */
 export function editCurriculumVisualPrompt(subsectionId: string, index: number, prompt: string, accessToken: string) {
     return postCurriculumVisual("prompt", "PUT", { subsection_id: subsectionId, index, prompt }, accessToken, "Couldn't save prompt");
+}
+
+/** Saves hand-written Manim code (or clears it with ""). Discards the current
+ * render and resets approval, exactly like a prompt edit. */
+export function saveCurriculumVisualCode(subsectionId: string, index: number, manimCode: string, accessToken: string) {
+    return postCurriculumVisual("code", "PUT", { subsection_id: subsectionId, index, manim_code: manimCode }, accessToken, "Couldn't save code");
 }
 
 export function approveCurriculumVisual(subsectionId: string, index: number, accessToken: string) {
