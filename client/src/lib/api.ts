@@ -1763,6 +1763,60 @@ export function unapproveCurriculumVisual(subsectionId: string, index: number, a
     return postCurriculumVisual("unapprove", "POST", { subsection_id: subsectionId, index }, accessToken, "Couldn't unapprove");
 }
 
+/** One visual in an ingest plan. */
+export interface IngestPlanVisual {
+    index: number;
+    line: number;
+    scene_type: SceneType;
+    position: string | null;
+    has_code: boolean;
+    action: "create" | "update";
+    /** This update throws away a render that already exists. */
+    discards_render: boolean;
+    /** This update pulls a visual students can currently see. */
+    unpublishes: boolean;
+    placement: "marker" | "position" | "bare_marker" | "end";
+    warning: string | null;
+}
+
+export interface IngestPlanSubsection {
+    subsection_id: string;
+    subsection_slug: string;
+    subsection_title: string | null;
+    chapter_title: string | null;
+    chapter_number: number | null;
+    creates: number;
+    updates: number;
+    visuals: IngestPlanVisual[];
+    /** The whole `manim_prompts` cell to paste back into the workbook. */
+    workbook_cell: string;
+}
+
+export interface IngestRejection {
+    line: number;
+    subsection_id?: string;
+    index?: number;
+    error: string;
+}
+
+export interface IngestResult {
+    dry_run: boolean;
+    parsed: number;
+    applied: number;
+    subsections: IngestPlanSubsection[];
+    rejections: IngestRejection[];
+}
+
+/** POST /admin/curriculum/visuals/ingest — parse a pasted batch of visuals.
+ * dryRun writes nothing and returns the plan. */
+export async function ingestCurriculumVisuals(
+    text: string,
+    accessToken: string,
+    { dryRun }: { dryRun: boolean },
+): Promise<IngestResult> {
+    return postCurriculumVisual("ingest", "POST", { text, dry_run: dryRun }, accessToken, "Couldn't read the paste");
+}
+
 /** One visual that would adopt an already-rendered video from elsewhere. */
 export interface CurriculumVisualReuse {
     subsection_id: string;

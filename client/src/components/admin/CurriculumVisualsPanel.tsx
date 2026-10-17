@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { VizVideo } from "@/components/chat/ChatContent";
 import {
     Loader2, Play, RefreshCw, CheckCircle2, EyeOff, Save, AlertTriangle, Film, Clapperboard, Copy, Code2,
+    ClipboardPaste,
 } from "lucide-react";
 import {
     AlertDialog,
@@ -27,7 +28,10 @@ import {
     approveCurriculumVisual,
     unapproveCurriculumVisual,
     reuseCurriculumVisuals,
+    ingestCurriculumVisuals,
     type CurriculumVisual,
+    type IngestResult,
+    type IngestPlanVisual,
     type CurriculumVisualReuseResult,
     type SceneType,
     type VisualApprovalStatus,
@@ -401,6 +405,254 @@ function VisualCard({
     );
 }
 
+const PLACEMENT_NOTE: Record<IngestPlanVisual["placement"], string> = {
+    marker: "placed by a [VISUAL] marker",
+    position: "placed by its position",
+    bare_marker: "may be picked up by a bare [VISUAL] marker",
+    end: "at the end of the lesson",
+};
+
+/** Paste a batch of authored visuals (prompt + scene type + Manim code).
+ * Always checks first: an ingest can discard renders and unpublish live
+ * visuals, so nothing is written until the plan has been read. */
+function IngestDialog({
+    accessToken,
+    open,
+    onOpenChange,
+    onApplied,
+}: {
+    accessToken: string;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onApplied: () => void;
+}) {
+    const { toast } = useToast();
+    const [text, setText] = useState("");
+    const [plan, setPlan] = useState<IngestResult | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [busy, setBusy] = useState<"check" | "apply" | null>(null);
+
+    const reset = () => {
+        setText("");
+        setPlan(null);
+        setError(null);
+    };
+
+    const check = async () => {
+        setBusy("check");
+        setError(null);
+        try {
+            setPlan(await ingestCurriculumVisuals(text, accessToken, { dryRun: true }));
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Couldn't read the paste");
+        } finally {
+            setBusy(null);
+        }
+    };
+
+    const apply = async () => {
+        setBusy("apply");
+        try {
+            const result = await ingestCurriculumVisuals(text, accessToken, { dryRun: false });
+            toast({
+                title: `Ingested ${result.applied} visual${result.applied === 1 ? "" : "s"}`,
+                description: "Paste each workbook cell back into the workbook, or the next import reverts these.",
+            });
+            reset();
+            onOpenChange(false);
+            onApplied();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Couldn't apply the paste");
+        } finally {
+            setBusy(null);
+        }
+    };
+
+    const totals = plan
+        ? {
+              creates: plan.subsections.reduce((n, s) => n + s.creates, 0),
+              updates: plan.subsections.reduce((n, s) => n + s.updates, 0),
+              discards: plan.subsections.reduce((n, s) => n + s.visuals.filter((v) => v.discards_render).length, 0),
+              unpublishes: plan.subsections.reduce((n, s) => n + s.visuals.filter((v) => v.unpublishes).length, 0),
+              warnings: plan.subsections.reduce((n, s) => n + s.visuals.filter((v) => v.warning).length, 0),
+          }
+        : null;
+
+    return (
+        <AlertDialog
+            open={open}
+            onOpenChange={(next) => {
+                if (!next) reset();
+                onOpenChange(next);
+            }}
+        >
+            <AlertDialogContent className="max-w-3xl">
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{plan ? "Check before applying" : "Paste authored visuals"}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {plan
+                            ? "Nothing has been written yet. Entries you didn't paste are never touched."
+                            : "One ===VISUAL=== block per visual, each keyed by its subsection slug and index. Code is optional — leave it out to generate from the prompt."}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+
+                {error && (
+                    <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-3">
+                        <p className="text-xs text-red-700 dark:text-red-400 whitespace-pre-wrap break-words">{error}</p>
+                    </div>
+                )}
+
+                {!plan ? (
+                    <Textarea
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        rows={16}
+                        spellCheck={false}
+                        placeholder={"===BATCH: 2===\n\n===VISUAL===\nsubsection_id: ss1-math-ch01-s6-02\nindex: 1\nscene_type: GRAPH_PLOT\nposition: after_intuition\n---PROMPT---\nWhat the figure shows.\n---CODE---\nfrom manim import *\n\nclass TechcessScene(Scene):\n    def construct(self):\n        ...\n===END VISUAL==="}
+                        className="text-xs leading-snug font-mono resize-y"
+                    />
+                ) : (
+                    <div className="space-y-3">
+                        <div className="flex flex-wrap gap-2 text-xs">
+                            <span className="px-2.5 py-1 rounded-full glass-chip">{plan.parsed} parsed</span>
+                            <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                                {totals!.creates} new
+                            </span>
+                            <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400">
+                                {totals!.updates} updated
+                            </span>
+                            {plan.rejections.length > 0 && (
+                                <span className="px-2.5 py-1 rounded-full bg-red-500/10 text-red-700 dark:text-red-400">
+                                    {plan.rejections.length} rejected
+                                </span>
+                            )}
+                        </div>
+
+                        {totals!.unpublishes > 0 && (
+                            <p className="text-xs text-red-700 dark:text-red-400 flex items-start gap-1.5">
+                                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                                {totals!.unpublishes} visual{totals!.unpublishes === 1 ? " is" : "s are"} live for students
+                                right now — applying this pulls {totals!.unpublishes === 1 ? "it" : "them"} until re-rendered
+                                and approved.
+                            </p>
+                        )}
+                        {totals!.discards > totals!.unpublishes && (
+                            <p className="text-xs text-amber-700 dark:text-amber-400">
+                                {totals!.discards} existing render{totals!.discards === 1 ? "" : "s"} will be discarded.
+                            </p>
+                        )}
+                        {totals!.warnings > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                                {totals!.warnings} visual{totals!.warnings === 1 ? "" : "s"} have no [VISUAL] marker or no
+                                usable position — see the notes below.
+                            </p>
+                        )}
+
+                        {plan.rejections.length > 0 && (
+                            <div className="rounded-xl border border-red-500/30 bg-red-500/5 divide-y divide-red-500/20 max-h-40 overflow-y-auto">
+                                {plan.rejections.map((r, i) => (
+                                    <p key={i} className="p-2.5 text-xs text-red-700 dark:text-red-400 break-words">
+                                        <span className="font-mono">line {r.line}</span>
+                                        {r.subsection_id && <span className="font-mono"> · {r.subsection_id}{r.index ? ` #${r.index}` : ""}</span>}
+                                        {" — "}
+                                        {r.error}
+                                    </p>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="max-h-72 overflow-y-auto rounded-xl border border-border divide-y divide-border">
+                            {plan.subsections.map((s) => (
+                                <div key={s.subsection_slug} className="p-3 space-y-2">
+                                    <div className="flex items-baseline justify-between gap-3">
+                                        <span className="text-sm font-medium break-all">
+                                            {s.subsection_title ?? s.subsection_slug}
+                                            <span className="text-muted-foreground font-normal"> · {s.subsection_slug}</span>
+                                        </span>
+                                        <span className="shrink-0 text-xs text-muted-foreground">
+                                            {s.creates} new · {s.updates} updated
+                                        </span>
+                                    </div>
+                                    {s.visuals.map((v) => (
+                                        <div key={v.index} className="text-xs text-muted-foreground flex flex-wrap items-baseline gap-x-2">
+                                            <span className="font-mono text-foreground">#{v.index}</span>
+                                            <span>{v.action === "create" ? "new" : "updated"}</span>
+                                            <span>· {v.scene_type}</span>
+                                            <span>· {v.has_code ? "own code" : "from prompt"}</span>
+                                            <span>· {PLACEMENT_NOTE[v.placement]}</span>
+                                            {v.unpublishes && (
+                                                <span className="text-red-700 dark:text-red-400">· unpublishes a live visual</span>
+                                            )}
+                                            {!v.unpublishes && v.discards_render && (
+                                                <span className="text-amber-700 dark:text-amber-400">· discards its render</span>
+                                            )}
+                                            {v.warning && <span className="w-full text-muted-foreground/80">{v.warning}</span>}
+                                        </div>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            navigator.clipboard?.writeText(s.workbook_cell);
+                                            toast({ title: "Workbook cell copied", description: `Paste it into manim_prompts for ${s.subsection_slug}.` });
+                                        }}
+                                        className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 min-h-[36px]"
+                                    >
+                                        <Copy className="w-3.5 h-3.5" /> Copy workbook cell
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+
+                        <p className="text-xs text-muted-foreground">
+                            The workbook stays the source of truth: copy each cell into its subsection's
+                            <span className="font-mono"> manim_prompts</span> column, or the next import reverts these
+                            prompts and drops the code with them.
+                        </p>
+                    </div>
+                )}
+
+                <AlertDialogFooter>
+                    {plan ? (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => setPlan(null)}
+                                disabled={busy !== null}
+                                className="text-sm text-muted-foreground hover:text-foreground min-h-[44px] px-3 mr-auto"
+                            >
+                                Back to the paste
+                            </button>
+                            <AlertDialogCancel disabled={busy !== null}>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    apply();
+                                }}
+                                disabled={busy !== null || plan.subsections.length === 0}
+                            >
+                                {busy === "apply" ? "Applying…" : `Apply ${totals!.creates + totals!.updates}`}
+                            </AlertDialogAction>
+                        </>
+                    ) : (
+                        <>
+                            <AlertDialogCancel disabled={busy !== null}>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    check();
+                                }}
+                                disabled={busy !== null || !text.trim()}
+                            >
+                                {busy === "check" ? "Checking…" : "Check paste"}
+                            </AlertDialogAction>
+                        </>
+                    )}
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
+}
+
 export default function CurriculumVisualsPanel({ accessToken }: { accessToken: string }) {
     const { toast } = useToast();
     const [visuals, setVisuals] = useState<CurriculumVisual[]>([]);
@@ -425,6 +677,7 @@ export default function CurriculumVisualsPanel({ accessToken }: { accessToken: s
     // does every match, so this is a single click however many there are.
     const [reuseBusy, setReuseBusy] = useState(false);
     const [reusePlan, setReusePlan] = useState<CurriculumVisualReuseResult | null>(null);
+    const [ingestOpen, setIngestOpen] = useState(false);
 
     const previewReuse = async () => {
         setReuseBusy(true);
@@ -561,6 +814,14 @@ export default function CurriculumVisualsPanel({ accessToken }: { accessToken: s
                     <div className="flex items-center gap-4 md:ml-auto">
                         <button
                             type="button"
+                            onClick={() => setIngestOpen(true)}
+                            title="Paste a batch of authored visuals — prompt, scene type and optional Manim code — instead of typing them in one by one"
+                            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 min-h-[44px]"
+                        >
+                            <ClipboardPaste className="w-4 h-4" /> Paste visuals
+                        </button>
+                        <button
+                            type="button"
                             onClick={previewReuse}
                             disabled={loading || reuseBusy}
                             title="Adopt an already-rendered video onto any visual whose prompt is identical, instead of rendering it again"
@@ -625,6 +886,13 @@ export default function CurriculumVisualsPanel({ accessToken }: { accessToken: s
                     ))}
                 </div>
             )}
+
+            <IngestDialog
+                accessToken={accessToken}
+                open={ingestOpen}
+                onOpenChange={setIngestOpen}
+                onApplied={load}
+            />
 
             <AlertDialog open={reusePlan !== null} onOpenChange={(open) => !open && setReusePlan(null)}>
                 <AlertDialogContent className="max-w-2xl">
