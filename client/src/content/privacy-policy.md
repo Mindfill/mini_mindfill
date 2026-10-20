@@ -2,11 +2,11 @@
 
 **Effective Date:** July 29, 2026
 
-**Last Updated:** September 19, 2026
+**Last Updated:** October 20, 2026
 
 ## 1. Introduction
 
-Techcess ("Techcess," "we," "our," or "us") is committed to protecting your personal information. This Privacy Policy explains, in plain language, what personal data we collect, why we collect it, the legal basis we rely on, who we share it with, how long we keep it, and the rights you have. It covers our website, web application, and related services (collectively, the "Platform").
+Techcess Innovations Ltd, a company incorporated in the Federal Republic of Nigeria ("Techcess," "we," "our," or "us"), operates the Techcess learning platform and is committed to protecting your personal information. This Privacy Policy explains, in plain language, what personal data we collect, why we collect it, the legal basis we rely on, who we share it with, how long we keep it, and the rights you have. It covers our website, web application, and related services (collectively, the "Platform").
 
 This Policy is written to meet the requirements of the **Nigeria Data Protection Act 2023 ("NDPA")** and the **NDPA General Application and Implementation Directive 2025 ("GAID")** issued by the Nigeria Data Protection Commission ("NDPC"). The Nigeria Data Protection Regulation 2019 (NDPR) no longer applies and has been replaced by these instruments. Where you live in the European Economic Area, the United Kingdom, or California, the additional rights described in Section 10 also apply.
 
@@ -16,15 +16,17 @@ This Policy applies to all users of the Platform — university students, second
 
 ## 2. Who We Are and How to Contact Us
 
-**Data controller:** Techcess
+**Data controller:** Techcess Innovations Ltd
 
-**Registered country:** Federal Republic of Nigeria
+**Country of incorporation:** Federal Republic of Nigeria
+
+**Place of business:** Narayi High Cost, Kaduna, Kaduna State, Nigeria
 
 **Contact email:** support@techcess.org
 
 **Data Protection Officer:** To be designated. Until a Data Protection Officer is formally appointed, all privacy enquiries and requests should be sent to the contact email above with the subject line "Data Protection."
 
-For users in the EEA or United Kingdom, Techcess acts as a data controller for personal data collected through the Platform.
+For users in the EEA or United Kingdom, Techcess Innovations Ltd acts as a data controller for personal data collected through the Platform.
 
 ## 3. Information We Collect
 
@@ -280,12 +282,12 @@ For any questions, concerns or requests about this Policy or your data:
 
 **Email:** support@techcess.org
 
-**Organisation:** Techcess
+**Organisation:** Techcess Innovations Ltd
 
-**Country:** Nigeria
+**Address:** Narayi High Cost, Kaduna, Kaduna State, Nigeria
 
 If you are not satisfied with our response, you may complain to the Nigeria Data Protection Commission (ndpc.gov.ng) or your local supervisory authority.
 
-Document version: 2.0  |  Effective: July 29, 2026  |  Last Updated: September 19, 2026
+Document version: 2.1  |  Effective: July 29, 2026  |  Last Updated: October 20, 2026
 
-© 2026 Techcess. All rights reserved.
+© 2026 Techcess Innovations Ltd. All rights reserved.

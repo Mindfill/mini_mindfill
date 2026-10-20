@@ -2,13 +2,13 @@
 
 **Effective Date:** July 29, 2026
 
-**Last Updated:** September 19, 2026
+**Last Updated:** October 20, 2026
 
 **PLEASE READ THESE TERMS CAREFULLY BEFORE USING THE PLATFORM. BY CREATING AN ACCOUNT OR USING ANY PART OF THE TECHCESS PLATFORM, YOU AGREE TO BE BOUND BY THESE TERMS. IF YOU DO NOT AGREE, DO NOT USE THE PLATFORM.**
 
 ## 1. Acceptance of Terms
 
-These Terms of Service ("Terms") constitute a legally binding agreement between you ("User," "you," or "your") and Techcess ("Techcess," "we," "our," or "us"), governing your access to and use of the Techcess learning platform, including our website, web application, AI tutoring features, and all related services (collectively, the "Platform").
+These Terms of Service ("Terms") constitute a legally binding agreement between you ("User," "you," or "your") and Techcess Innovations Ltd, a company incorporated in the Federal Republic of Nigeria ("Techcess," "we," "our," or "us"), governing your access to and use of the Techcess learning platform, including our website, web application, AI tutoring features, and all related services (collectively, the "Platform").
 
 By registering for an account, accessing the Platform, or using any of its features, you confirm that:
 
@@ -221,7 +221,7 @@ These Terms are governed by and construed in accordance with the laws of the Fed
 
 ### 13.2 Dispute Resolution
 
-In the event of any dispute arising from or related to these Terms or the Platform, the parties agree to first attempt resolution through good-faith negotiation. If unresolved within 30 days, disputes shall be submitted to the exclusive jurisdiction of the courts located in Abuja, Federal Capital Territory, Nigeria.
+In the event of any dispute arising from or related to these Terms or the Platform, the parties agree to first attempt resolution through good-faith negotiation. If unresolved within 30 days, disputes shall be submitted to the exclusive jurisdiction of the courts located in Kaduna, Kaduna State, Nigeria.
 
 ### 13.3 Users in Other Jurisdictions
 
@@ -267,12 +267,12 @@ For questions, concerns, or notices regarding these Terms:
 
 **Email:** support@techcess.org
 
-**Organisation:** Techcess
+**Organisation:** Techcess Innovations Ltd
 
 **Country:** Nigeria
 
 For privacy-related requests, please refer to our Privacy Policy or email support@techcess.org.
 
-Document version: 1.2  |  Effective: July 29, 2026  |  Last Updated: September 19, 2026
+Document version: 1.3  |  Effective: July 29, 2026  |  Last Updated: October 20, 2026
 
-© 2026 Techcess. All rights reserved.
+© 2026 Techcess Innovations Ltd. All rights reserved.
