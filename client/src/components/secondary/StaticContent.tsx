@@ -131,7 +131,7 @@ function KeyDefinitions({ definitions }: { definitions: SubsectionContent["key_d
                                     i === active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
                                 }`}
                             >
-                                {d.term}
+                                <MarkdownLatex inline content={d.term} />
                             </button>
                         ))}
                     </div>
@@ -139,7 +139,9 @@ function KeyDefinitions({ definitions }: { definitions: SubsectionContent["key_d
 
                 {current && (
                     <div role="tabpanel" className="mt-6 rounded-2xl glass-panel p-5 space-y-2">
-                        <p className="text-lg font-semibold text-primary">{current.term}</p>
+                        <p className="text-lg font-semibold text-primary">
+                            <MarkdownLatex inline content={current.term} />
+                        </p>
                         {current.definition ? (
                             <MarkdownLatex content={current.definition} className="prose-base text-foreground/90 [&_p]:leading-relaxed" />
                         ) : (
