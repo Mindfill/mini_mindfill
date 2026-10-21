@@ -37,7 +37,7 @@ export default function SecondaryDashboard() {
 
     // Cached: returning Home shows the last dashboard instantly and refreshes
     // it behind the scenes instead of blanking to a loading state every visit.
-    const { data, isPending, isError, refetch } = useQuery<SecondaryDashboardResponse>({
+    const { data, isPending, isError, isFetching, refetch } = useQuery<SecondaryDashboardResponse>({
         queryKey: secondaryKeys.dashboard(),
         queryFn: () => fetchSecondaryDashboard(accessToken),
         enabled: onboardingCompleted,
@@ -66,7 +66,9 @@ export default function SecondaryDashboard() {
         }
     };
 
-    if (isPending && !data) return <TechcessLoader label="Loading your dashboard" />;
+    // A failed query stays in "error" while it refetches, so isPending alone
+    // would leave the error panel up during a Retry and the button looks dead.
+    if ((isPending || isFetching) && !data) return <TechcessLoader label="Loading your dashboard" />;
 
     if (isError && !data) {
         return (
