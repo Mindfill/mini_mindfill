@@ -12,7 +12,7 @@ import HighlyEngagedBadge from "@/components/dashboard/HighlyEngagedBadge";
 import { useUsageAnalytics } from "@/lib/appQueries";
 import {
     Loader2, School, Ticket, UserPlus, Power, Upload, FileSpreadsheet,
-    CheckCircle2, AlertTriangle, XCircle, GraduationCap, LogOut,
+    CheckCircle2, AlertTriangle, XCircle, GraduationCap, LogOut, Link2, Copy,
 } from "lucide-react";
 import {
     fetchAdminSchools,
@@ -31,6 +31,11 @@ import {
     fetchAdminPromoCodes,
     createAdminPromoCode,
     toggleAdminPromoCode,
+    fetchAdminDemoLinks,
+    createAdminDemoLink,
+    revokeAdminDemoLink,
+    rotateAdminDemoLink,
+    type AdminDemoLink,
     importCurriculumContent,
     type AdminSchool,
     type AdminSchoolAdmin,
@@ -649,6 +654,229 @@ function PromoCodesPanel({ accessToken }: { accessToken: string }) {
     );
 }
 
+const DEMO_STATE_STYLE: Record<AdminDemoLink["state"], string> = {
+    active: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+    expired: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+    revoked: "bg-muted text-muted-foreground",
+};
+
+function formatOpened(link: AdminDemoLink): string {
+    if (!link.last_opened_at) return "Never";
+    const when = new Date(link.last_opened_at).toLocaleString(undefined, {
+        day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+    });
+    return `${when} · ${link.open_count}×`;
+}
+
+/**
+ * Investor demo links — each one signs its holder straight into their own
+ * ready-made secondary student account (app/routers/admin_demo.py). The
+ * server stores only a hash, so a link's URL is shown once, right after it
+ * is created or re-issued.
+ */
+function InvestorLinksPanel({ accessToken }: { accessToken: string }) {
+    const { toast } = useToast();
+    const [links, setLinks] = useState<AdminDemoLink[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [creating, setCreating] = useState(false);
+    const [label, setLabel] = useState("");
+    const [displayName, setDisplayName] = useState("");
+    const [days, setDays] = useState("14");
+    // The one moment a URL exists in the UI: { label, url }.
+    const [fresh, setFresh] = useState<{ label: string; url: string } | null>(null);
+    // "<action>:<id>" awaiting its second click.
+    const [confirming, setConfirming] = useState<string | null>(null);
+
+    const loadLinks = async () => {
+        setLoading(true);
+        try {
+            setLinks(await fetchAdminDemoLinks(accessToken));
+        } catch (err) {
+            console.error(err);
+            toast({ variant: "destructive", title: "Couldn't load investor links" });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadLinks();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
+        if (!confirming) return;
+        const t = setTimeout(() => setConfirming(null), 4000);
+        return () => clearTimeout(t);
+    }, [confirming]);
+
+    const copy = async (url: string) => {
+        try {
+            await navigator.clipboard.writeText(url);
+            toast({ title: "Link copied" });
+        } catch {
+            toast({ variant: "destructive", title: "Couldn't copy — select the link and copy it by hand" });
+        }
+    };
+
+    const handleCreate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!label.trim() || creating) return;
+        setCreating(true);
+        try {
+            const created = await createAdminDemoLink(
+                {
+                    label: label.trim(),
+                    display_name: displayName.trim() || undefined,
+                    days: parseInt(days, 10) || 14,
+                },
+                accessToken
+            );
+            if (created.url) setFresh({ label: created.label, url: created.url });
+            setLabel("");
+            setDisplayName("");
+            loadLinks();
+        } catch (err) {
+            console.error(err);
+            toast({ variant: "destructive", title: "Couldn't create link" });
+        } finally {
+            setCreating(false);
+        }
+    };
+
+    const handleAction = async (action: "revoke" | "rotate", link: AdminDemoLink) => {
+        const key = `${action}:${link.id}`;
+        if (confirming !== key) {
+            setConfirming(key);
+            return;
+        }
+        setConfirming(null);
+        try {
+            if (action === "revoke") {
+                await revokeAdminDemoLink(link.id, accessToken);
+                toast({ title: "Link revoked" });
+                if (fresh?.label === link.label) setFresh(null);
+            } else {
+                const rotated = await rotateAdminDemoLink(link.id, accessToken);
+                if (rotated.url) setFresh({ label: link.label, url: rotated.url });
+            }
+            loadLinks();
+        } catch (err) {
+            console.error(err);
+            toast({ variant: "destructive", title: action === "revoke" ? "Couldn't revoke link" : "Couldn't issue a new link" });
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            <form onSubmit={handleCreate} className="glass-panel rounded-2xl p-6 space-y-4">
+                <h3 className="font-semibold flex items-center gap-2"><Link2 className="w-4 h-4" /> New Investor Link</h3>
+                <p className="text-sm text-muted-foreground">
+                    Opens straight into a fresh SS1 student account with full access — no sign-up,
+                    onboarding or paywall. Each link gets its own account; opening it again returns
+                    to the same one.
+                </p>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                        <Label>Who it's for</Label>
+                        <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Tunde – Ventures Platform" />
+                        <p className="text-[11px] text-muted-foreground leading-snug">Only you see this.</p>
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label>Name in the app (optional)</Label>
+                        <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Guest" />
+                        <p className="text-[11px] text-muted-foreground leading-snug">What the dashboard greets them as.</p>
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label>Valid for (days)</Label>
+                        <Input type="number" min={1} max={90} value={days} onChange={(e) => setDays(e.target.value)} />
+                        <p className="text-[11px] text-muted-foreground leading-snug">The link and the account's access both end then.</p>
+                    </div>
+                </div>
+                <GlassButton type="submit" disabled={creating || !label.trim()} contentClassName="flex items-center gap-2">
+                    {creating && <Loader2 className="w-4 h-4 animate-spin" />} Create Link
+                </GlassButton>
+            </form>
+
+            {fresh && (
+                <div className="glass-panel rounded-2xl p-6 space-y-3 border border-primary/40">
+                    <p className="text-sm font-medium">Link for {fresh.label}</p>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        <Input readOnly value={fresh.url} onFocus={(e) => e.target.select()} className="font-mono text-xs" />
+                        <GlassButton type="button" onClick={() => copy(fresh.url)} contentClassName="flex items-center gap-2">
+                            <Copy className="w-4 h-4" /> Copy
+                        </GlassButton>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-snug">
+                        Copy it now — it won't be shown again. Lost it? Use “New link” below; the account stays the same.
+                        Anyone with the link can get in, so send it only to the investor.
+                    </p>
+                </div>
+            )}
+
+            <div className="glass-panel rounded-2xl overflow-hidden">
+                <h3 className="font-semibold p-6 pb-4">Investor Links</h3>
+                {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground ml-6 mb-6" />
+                ) : links.length === 0 ? (
+                    <p className="text-muted-foreground text-sm px-6 pb-6">No investor links yet.</p>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="text-left text-muted-foreground text-xs uppercase tracking-wider border-b border-border/50">
+                                    <th className="px-6 py-2 font-medium">For</th>
+                                    <th className="px-6 py-2 font-medium">Last opened</th>
+                                    <th className="px-6 py-2 font-medium">Expires</th>
+                                    <th className="px-6 py-2 font-medium">Status</th>
+                                    <th className="px-6 py-2 font-medium"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {links.map((l) => (
+                                    <tr key={l.id} className="border-b border-border/30 last:border-0">
+                                        <td className="px-6 py-3">
+                                            <div className="font-medium">{l.label}</div>
+                                            <div className="text-xs text-muted-foreground">as “{l.display_name}”</div>
+                                        </td>
+                                        <td className="px-6 py-3 text-muted-foreground whitespace-nowrap">{formatOpened(l)}</td>
+                                        <td className="px-6 py-3 text-muted-foreground whitespace-nowrap">{formatExpiry(l.expires_at)}</td>
+                                        <td className="px-6 py-3">
+                                            <span className={`text-xs font-medium px-2.5 py-1 rounded-full capitalize ${DEMO_STATE_STYLE[l.state]}`}>
+                                                {l.state}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-3">
+                                            {l.state !== "revoked" && (
+                                                <div className="flex items-center gap-3 justify-end whitespace-nowrap">
+                                                    <button
+                                                        onClick={() => handleAction("rotate", l)}
+                                                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                                        title="New URL for the same account — the old URL stops working"
+                                                    >
+                                                        {confirming === `rotate:${l.id}` ? "Confirm new link" : "New link"}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleAction("revoke", l)}
+                                                        className="text-xs text-red-700 dark:text-red-400 hover:underline"
+                                                        title="Switch off for good — the link stops working and access ends now"
+                                                    >
+                                                        {confirming === `revoke:${l.id}` ? "Confirm revoke" : "Revoke"}
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
 const ENTITY_LABEL: Record<string, string> = {
     chapters: "Chapters",
     sections: "Sections",
@@ -902,7 +1130,7 @@ export default function Admin() {
     const { session, isLoading: authLoading, signOut } = useAuth();
     const { role, loading: profileLoading } = useUserProfile();
     const [, navigate] = useLocation();
-    const [tab, setTab] = useState<"schools" | "promo" | "content" | "visuals" | "usage">("schools");
+    const [tab, setTab] = useState<"schools" | "promo" | "investors" | "content" | "visuals" | "usage">("schools");
 
     useEffect(() => {
         if (!authLoading && !session) navigate("/login");
@@ -963,6 +1191,12 @@ export default function Admin() {
                         Promo Codes
                     </button>
                     <button
+                        onClick={() => setTab("investors")}
+                        className={`px-5 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${tab === "investors" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                        Investor Links
+                    </button>
+                    <button
                         onClick={() => setTab("content")}
                         className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${tab === "content" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                     >
@@ -984,6 +1218,7 @@ export default function Admin() {
 
                 {tab === "schools" && <SchoolsPanel accessToken={session.access_token} />}
                 {tab === "promo" && <PromoCodesPanel accessToken={session.access_token} />}
+                {tab === "investors" && <InvestorLinksPanel accessToken={session.access_token} />}
                 {tab === "content" && <ContentPanel accessToken={session.access_token} />}
                 {tab === "visuals" && <CurriculumVisualsPanel accessToken={session.access_token} />}
                 {tab === "usage" && <AdminUsagePanel accessToken={session.access_token} />}

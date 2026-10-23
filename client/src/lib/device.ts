@@ -26,6 +26,17 @@ export function setDeviceToken(token: string): void {
     setCookie(TOKEN_KEY, token, TOKEN_COOKIE_MAX_AGE_DAYS);
 }
 
+/** Forget this browser's token, so the next registration's token is the one
+ * a caller can wait for (see pages/demo.tsx). */
+export function clearDeviceToken(): void {
+    try {
+        localStorage.removeItem(TOKEN_KEY);
+    } catch {
+        // ignore — the cookie is cleared below either way
+    }
+    setCookie(TOKEN_KEY, "", 0);
+}
+
 function getCookie(name: string): string | null {
     const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
     return match ? decodeURIComponent(match[1]) : null;

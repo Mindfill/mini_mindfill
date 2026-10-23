@@ -38,6 +38,7 @@ const Terms = lazy(() => import("@/pages/terms"));
 const ResetPassword = lazy(() => import("@/pages/reset-password"));
 const Onboarding = lazy(() => import("@/pages/onboarding"));
 const InviteAccept = lazy(() => import("@/pages/invite-accept"));
+const DemoEntry = lazy(() => import("@/pages/demo"));
 // Every /secondary/* page renders inside one persistent layout (sidebar,
 // background, guards), which owns its own nested routes.
 const SecondaryLayout = lazy(() => import("@/components/secondary/SecondaryLayout"));
@@ -85,6 +86,7 @@ function Router() {
         <Route path="/reset-password" component={ResetPassword} />
         <Route path="/onboarding" component={Onboarding} />
         <Route path="/invite/accept" component={InviteAccept} />
+        <Route path="/demo/:token" component={DemoEntry} />
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/secondary/*" component={SecondaryLayout} />
         <Route path="/parent/dashboard" component={ParentDashboard} />
