@@ -2138,3 +2138,82 @@ export async function toggleAdminPromoCode(promoId: string, accessToken: string)
     }
     return res.json();
 }
+
+// ── Investor demo links ─────────────────────────────────────────────────────
+
+export interface AdminDemoLink {
+    id: string;
+    label: string;
+    display_name: string;
+    user_id: string | null;
+    expires_at: string;
+    revoked_at: string | null;
+    created_at: string;
+    last_opened_at: string | null;
+    open_count: number;
+    state: "active" | "expired" | "revoked";
+    /** Only on the create / rotate response — the server keeps a hash. */
+    url?: string;
+}
+
+export async function fetchAdminDemoLinks(accessToken: string): Promise<AdminDemoLink[]> {
+    const res = await fetch(`${BACKEND_URL}/admin/demo-links`, {
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to fetch demo links: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+export async function createAdminDemoLink(
+    input: { label: string; display_name?: string; days: number },
+    accessToken: string
+): Promise<AdminDemoLink> {
+    const res = await fetch(`${BACKEND_URL}/admin/demo-links`, {
+        method: "POST",
+        headers: authHeaders(accessToken, true),
+        body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to create demo link: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+export async function revokeAdminDemoLink(linkId: string, accessToken: string): Promise<AdminDemoLink> {
+    const res = await fetch(`${BACKEND_URL}/admin/demo-links/${linkId}/revoke`, {
+        method: "POST",
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to revoke demo link: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+export async function rotateAdminDemoLink(linkId: string, accessToken: string): Promise<AdminDemoLink> {
+    const res = await fetch(`${BACKEND_URL}/admin/demo-links/${linkId}/rotate`, {
+        method: "POST",
+        headers: authHeaders(accessToken),
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to issue a new demo link: ${res.status} — ${await parseErrorDetail(res)}`);
+    }
+    return res.json();
+}
+
+/** Public — the link token is the credential. Resolves to a one-time Supabase
+ * magic-link token hash for supabase.auth.verifyOtp. Errors carry the
+ * backend's code (demo_link_invalid / _expired / _revoked) as their message. */
+export async function redeemDemoLink(token: string): Promise<{ token_hash: string }> {
+    const res = await fetch(`${BACKEND_URL}/demo/redeem`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+    });
+    if (!res.ok) {
+        throw new Error(await parseErrorDetail(res));
+    }
+    return res.json();
+}
