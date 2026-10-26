@@ -21,8 +21,14 @@ import { buildHighlightMatcher, rehypeHighlightKeyTerms, type KeyTerm } from "@/
  * "$125.", "$25, which". Real math keeps its dollars: "$2x$", "$25$",
  * "$2 + 3$" and "$5\,\text{kg}$" don't match. Code spans and fences are left
  * alone, since a `\$` there would show literally.
+ *
+ * A number list is maths too (2026-10-26): "$18, 13, 8, 3$", "$1, -2, 3$" and
+ * "$2, b, 18$" used to match as "$18," + space and lose their opening dollar,
+ * which broke nearly every sequence question. So after the punctuation, a
+ * digit, sign, backslash or lone variable letter means maths; a word means
+ * money ("$25, which").
  */
-const CURRENCY_RE = /(^|[^\\$\w])\$(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)(?=[.,;:!?)]*(?:\s+[A-Za-z]|\s*$)|[.,;:!?)]+\s)/gm;
+const CURRENCY_RE = /(^|[^\\$\w])\$(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)(?=[.,;:!?)]*(?:\s+[A-Za-z](?![,$])|\s*$)|[.,;:!?)]+\s+(?![\d\\(+\-−])(?![A-Za-z](?![A-Za-z])))/gm;
 const CODE_RE = /(```[\s\S]*?```|`[^`\n]*`)/;
 
 function escapeCurrency(text: string): string {

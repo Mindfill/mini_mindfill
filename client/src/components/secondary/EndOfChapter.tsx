@@ -34,6 +34,8 @@ function ProblemTutorSheet({
     onOpenChange: (open: boolean) => void;
 }) {
     const [messages, setMessages] = useState<SecondaryMessage[] | null>(null);
+    // The chat's id in the visuals pipeline — lets [VIZ:N] tokens find their videos.
+    const [vizSessionId, setVizSessionId] = useState<string | undefined>(undefined);
     const [sending, setSending] = useState(false);
     const [streaming, setStreaming] = useState<string | null>(null);
     // Retry lives on the queued message now, so this only carries the reason.
@@ -46,7 +48,10 @@ function ProblemTutorSheet({
     useEffect(() => {
         if (!open || messages !== null) return;
         startProblemChat(problem.problem_id, accessToken)
-            .then((res) => setMessages(res.messages))
+            .then((res) => {
+                setVizSessionId(res.viz_session_id);
+                setMessages(res.messages);
+            })
             .catch((err) => {
                 setMessages([]);
                 setError(err instanceof Error ? err.message : "Couldn't start the tutor");
@@ -94,8 +99,18 @@ function ProblemTutorSheet({
                     {messages === null ? (
                         <Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" />
                     ) : (
-                        messages.map((m, i) => <ChatBubble key={i} role={m.role} content={m.content} />)
+                        messages.map((m, i) => (
+                            <ChatBubble
+                                key={i}
+                                role={m.role}
+                                content={m.content}
+                                sessionId={m.role === "assistant" ? vizSessionId : undefined}
+                                isHistory
+                            />
+                        ))
                     )}
+                    {/* No sessionId while streaming: these are the model's own
+                        [VIZ:N] numbers, not yet the server's. */}
                     {streaming ? <ChatBubble role="assistant" content={streaming} /> : sending && <TypingIndicator />}
                     <PendingMessages pending={queue.pending} onRetry={queue.retry} onDismiss={queue.dismiss} />
                     {error && (

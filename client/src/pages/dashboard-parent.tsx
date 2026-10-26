@@ -109,6 +109,17 @@ function StudentCard({ student, onOpen }: { student: StudentSummary; onOpen: () 
                 </div>
             )}
 
+            {/* Practice quizzes — only shown once there's a score to show. */}
+            {student.practice_accuracy_percent != null && (
+                <p className="text-sm text-muted-foreground">
+                    Practice quizzes:{" "}
+                    <span className="font-semibold text-foreground">{student.practice_accuracy_percent}% right</span>
+                    {student.practice_quizzes_this_week
+                        ? ` · ${student.practice_quizzes_this_week} this week`
+                        : ""}
+                </p>
+            )}
+
             <p className="flex items-center gap-1 text-xs font-medium text-primary pt-1">
                 See full progress <ChevronRight className="w-3.5 h-3.5" />
             </p>

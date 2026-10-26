@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import TechcessLoader from "@/components/brand/TechcessLoader";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import type { SchoolStudentDetail, StudentRow } from "@/lib/api";
+import PracticeSummaryCard from "./PracticeSummaryCard";
 
 export const STATUS_STYLES: Record<StudentRow["status"], string> = {
     active: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
@@ -115,6 +116,14 @@ export default function StudentDetailSheet({
                             <ChipList title="Strong at" items={data.strengths} tone="text-emerald-700 dark:text-emerald-400" />
                             <ChipList title="Needs work" items={data.weaknesses} tone="text-amber-700 dark:text-amber-400" />
                             <ChipList title="Improved over time" items={data.resolved_weaknesses} tone="text-primary" />
+
+                            {/* Absent for university students — no practice quizzes. */}
+                            {data.practice && (
+                                <PracticeSummaryCard
+                                    summary={data.practice}
+                                    subject={data.student_name.split(" ")[0] || "This student"}
+                                />
+                            )}
 
                             {/* Empty for university students — no curriculum chapters. */}
                             {data.chapter_rings.length > 0 && (

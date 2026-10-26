@@ -9,6 +9,7 @@ import WelcomeHeader, { greetingMood } from "@/components/dashboard/WelcomeHeade
 import ContinueLearningCard from "@/components/dashboard/ContinueLearningCard";
 import StreakBadge from "@/components/dashboard/StreakBadge";
 import UsageGraphCard from "@/components/dashboard/UsageGraphCard";
+import PracticeSummaryCard from "@/components/dashboard/PracticeSummaryCard";
 import { TrendingUp, TrendingDown, AlertTriangle, Sparkles, BookOpen, Play } from "lucide-react";
 import TechcessLoader from "@/components/brand/TechcessLoader";
 import {
@@ -93,6 +94,18 @@ export default function SecondaryDashboard() {
         most_pressing, days_since_last_session, recently_completed_chapters, next_chapter_preview,
     } = data;
 
+    // The five chapters the student was in most recently, not a scrolling
+    // list of everything. Untouched chapters fill any gap in curriculum order.
+    const recentRings = chapter_rings
+        .map((ring, order) => ({ ring, order }))
+        .sort((a, b) => {
+            const at = a.ring.last_activity_at ?? "";
+            const bt = b.ring.last_activity_at ?? "";
+            return at === bt ? a.order - b.order : at < bt ? 1 : -1;
+        })
+        .slice(0, 5)
+        .map(({ ring }) => ring);
+
     return (
         <>
             <div>
@@ -145,9 +158,9 @@ export default function SecondaryDashboard() {
                         />
                         <div className="glass-panel rounded-2xl p-6">
                             <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Chapter Progress</h3>
-                            {chapter_rings.length > 0 ? (
-                                <div className="space-y-3 max-h-40 overflow-y-auto pr-1">
-                                    {chapter_rings.map((ring) => (
+                            {recentRings.length > 0 ? (
+                                <div className="space-y-3">
+                                    {recentRings.map((ring) => (
                                         <div key={ring.chapter_id}>
                                             <div className="flex justify-between text-sm mb-1">
                                                 <span className={ring.is_complete ? "text-foreground" : "text-muted-foreground"}>
@@ -201,6 +214,8 @@ export default function SecondaryDashboard() {
                             )}
                         </div>
                     </section>
+
+                    <PracticeSummaryCard summary={data.practice} onPractice={() => navigate("/secondary/practice")} />
 
                     {most_pressing && (
                         <section className="rounded-2xl p-5 glass-panel border border-amber-500/30 flex items-center gap-3">

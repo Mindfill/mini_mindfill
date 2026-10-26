@@ -15,6 +15,8 @@ const loadChapter = () => import("@/pages/secondary/chapter");
 const loadSubsection = () => import("@/pages/secondary/subsection");
 const loadStart = () => import("@/pages/secondary/start");
 const loadDiagnostic = () => import("@/pages/secondary/diagnostic");
+const loadPractice = () => import("@/pages/secondary/practice");
+const loadPracticeQuiz = () => import("@/pages/secondary/practice-quiz");
 
 const SecondaryDashboard = lazy(loadDashboard);
 const Learn = lazy(loadLearn);
@@ -22,6 +24,8 @@ const Chapter = lazy(loadChapter);
 const Subsection = lazy(loadSubsection);
 const Start = lazy(loadStart);
 const Diagnostic = lazy(loadDiagnostic);
+const Practice = lazy(loadPractice);
+const PracticeQuiz = lazy(loadPracticeQuiz);
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 /**
@@ -58,6 +62,7 @@ export default function SecondaryLayout() {
             loadLearn();
             loadChapter();
             loadSubsection();
+            loadPractice();
         });
     }, [userType]);
 
@@ -81,7 +86,13 @@ export default function SecondaryLayout() {
             <AppSidebar
                 variant="secondary"
                 userName={userName}
-                activeItem={location.startsWith("/secondary/dashboard") ? "home" : "learn"}
+                activeItem={
+                    location.startsWith("/secondary/dashboard")
+                        ? "home"
+                        : location.startsWith("/secondary/practice")
+                            ? "practice"
+                            : "learn"
+                }
                 onSignOut={handleSignOut}
             />
             <div ref={scrollRef} className="flex-1 min-w-0 overflow-y-auto relative">
@@ -103,6 +114,8 @@ export default function SecondaryLayout() {
                                         <Route path="/secondary/chapters/:chapterId" component={Chapter} />
                                         <Route path="/secondary/subsections/:subsectionId" component={Subsection} />
                                         <Route path="/secondary/diagnostic/:subsectionId" component={Diagnostic} />
+                                        <Route path="/secondary/practice" component={Practice} />
+                                        <Route path="/secondary/practice/:quizId" component={PracticeQuiz} />
                                         <Route component={NotFound} />
                                     </Switch>
                                 </motion.div>

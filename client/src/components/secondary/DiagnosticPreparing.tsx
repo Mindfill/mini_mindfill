@@ -23,15 +23,27 @@ const PHRASES = [
     "Nearly there. This only happens once…",
 ];
 
+/** For the practice quiz, whose first quiz on a section writes the questions. */
+export const PRACTICE_PHRASES = [
+    "Reading the lessons you picked…",
+    "Writing the questions…",
+    "Building the wrong answers — the tempting ones…",
+    "Checking there's exactly one right answer…",
+    "Mixing easy with hard…",
+    "Shuffling things around…",
+    "Nearly there. New sections take a moment the first time…",
+];
+
 const ROTATE_MS = 2200;
 
-export default function DiagnosticPreparing() {
+/** `phrases` swaps the lines for another slow write (the practice quiz). */
+export default function DiagnosticPreparing({ phrases = PHRASES }: { phrases?: string[] }) {
     const [i, setI] = useState(0);
 
     useEffect(() => {
-        const t = setInterval(() => setI((n) => (n + 1) % PHRASES.length), ROTATE_MS);
+        const t = setInterval(() => setI((n) => (n + 1) % phrases.length), ROTATE_MS);
         return () => clearInterval(t);
-    }, []);
+    }, [phrases.length]);
 
     return (
         <div className="glass-panel rounded-2xl p-6 md:p-8" aria-live="polite" aria-busy="true">
@@ -47,7 +59,7 @@ export default function DiagnosticPreparing() {
                     key={i}
                     className="text-sm text-muted-foreground animate-in fade-in slide-in-from-bottom-1 duration-500"
                 >
-                    {PHRASES[i]}
+                    {phrases[i % phrases.length]}
                 </p>
             </div>
         </div>
