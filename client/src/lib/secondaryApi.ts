@@ -243,7 +243,12 @@ export const fetchChapters = (subjectId: string, t: string) =>
     );
 
 export const fetchChapterToc = (chapterId: string, t: string) =>
-    getJson<{ subject: { subject_id: string; title: string }; chapter: ChapterSummary; sections: TocSection[] }>(
+    getJson<{
+        /** class_level: older backends omit it. */
+        subject: { subject_id: string; title: string; class_level?: string | null };
+        chapter: ChapterSummary;
+        sections: TocSection[];
+    }>(
         `/secondary/sections/${encodeURIComponent(chapterId)}`, t, "Couldn't load chapter",
     );
 
@@ -521,8 +526,30 @@ export const submitProblemWorking = (problemId: string, working: string, t: stri
 export const markProblemUnderstood = (problemId: string, t: string) =>
     postJson<{ understood: boolean }>("/secondary/problems/understood", { problem_id: problemId }, t, "Couldn't save that");
 
+/** Mini-tutor chats ("Ask tutor" on a chapter problem or a practice question).
+ *  `viz_session_id` is the conversation's id in the visuals pipeline — pass it
+ *  to ChatBubble so [VIZ:N] tokens poll for their videos. Older backends omit it. */
+export interface MiniTutorChat {
+    messages: SecondaryMessage[];
+    viz_session_id?: string;
+}
+
+/** The reply as saved: the server rewrites [VIZ:N] tokens after streaming,
+ *  so the `final` event — not the streamed text — is what gets kept. */
+function finalReply(text: string, events: Record<string, string>): string {
+    if (events.final) {
+        try {
+            const f = JSON.parse(events.final);
+            if (typeof f.content === "string") return f.content;
+        } catch {
+            // fall back to the streamed text
+        }
+    }
+    return extractStreamingContent(text) ?? "";
+}
+
 export const startProblemChat = (problemId: string, t: string) =>
-    postJson<{ messages: SecondaryMessage[] }>("/secondary/problems/chat/start", { problem_id: problemId }, t, "Couldn't start the tutor");
+    postJson<MiniTutorChat>("/secondary/problems/chat/start", { problem_id: problemId }, t, "Couldn't start the tutor");
 
 export async function sendProblemTutorMessage(
     problemId: string,
@@ -540,5 +567,188 @@ export async function sendProblemTutorMessage(
     if (!("done" in events)) {
         throw new SecondaryApiError(200, "The connection dropped before your tutor finished. Please try again.", "stream_incomplete");
     }
-    return extractStreamingContent(text) ?? "";
+    return finalReply(text, events);
+}
+
+// ── Practice quiz ──────────────────────────────────────────────────────────
+
+export type PracticeDifficulty = "foundational" | "standard" | "extended";
+export type PracticeDifficultyChoice = PracticeDifficulty | "mixed";
+export type PracticeLength = 10 | 20 | 30;
+
+export const PRACTICE_DIFFICULTY_LABEL: Record<PracticeDifficultyChoice, string> = {
+    mixed: "Mixed",
+    foundational: "Foundational",
+    standard: "Standard",
+    extended: "Extended",
+};
+
+/** What the student may see about a question right now. Untimed quizzes
+ *  reveal the key as soon as it's answered; timed ones only once finished. */
+export interface PracticeAnswerState {
+    given: string | null;
+    correct?: boolean;
+    answer?: string;
+    explanation?: string;
+}
+
+export interface PracticeQuestion {
+    id: string;
+    question_text: string;
+    options: DiagnosticOption[];
+    difficulty: PracticeDifficulty;
+    chapter_id: string;
+    chapter_title: string;
+    section_label: string;
+    answer_state: PracticeAnswerState | null;
+}
+
+export interface PracticeChapterScore {
+    chapter_id: string;
+    chapter_title: string;
+    correct: number;
+    total: number;
+}
+
+export interface PracticeResult {
+    correct_count: number;
+    question_count: number;
+    answered_count: number;
+    accuracy_percent: number;
+    by_chapter: PracticeChapterScore[];
+    finished_late: boolean;
+    finished_at: string | null;
+}
+
+export interface PracticeQuiz {
+    id: string;
+    subject_id: string;
+    chapter_ids: string[];
+    section_ids: string[];
+    chapter_titles: string[];
+    difficulty: PracticeDifficultyChoice;
+    question_count: number;
+    timed: boolean;
+    time_limit_seconds: number | null;
+    started_at: string;
+    /** Server clock at response time — the countdown is measured against this. */
+    server_now: string;
+    status: "in_progress" | "finished";
+    /** Questions the pool couldn't supply this time (0 almost always). */
+    short_by: number;
+    questions: PracticeQuestion[];
+    result: PracticeResult | null;
+    /** Client-only: Date.now() when this payload arrived (see stampReceived). */
+    received_at?: number;
+}
+
+export interface CreatePracticeInput {
+    subject_id: string;
+    chapter_ids: string[];
+    section_ids: string[];
+    question_count: PracticeLength;
+    difficulty: PracticeDifficultyChoice;
+    timed: boolean;
+    /** Timed only: the student's own time for the whole set (server default: a minute a question). */
+    time_limit_minutes?: number;
+}
+
+export interface PracticeAnswerResponse {
+    question_id: string;
+    recorded: boolean;
+    given?: string;
+    correct?: boolean;
+    answer?: string;
+    explanation?: string;
+}
+
+export interface PracticeHistoryItem {
+    id: string;
+    subject_id: string;
+    chapter_ids: string[];
+    section_ids: string[];
+    chapter_titles: string[];
+    difficulty: PracticeDifficultyChoice;
+    question_count: number;
+    timed: boolean;
+    status: "in_progress" | "finished";
+    correct_count: number;
+    answered_count: number;
+    started_at: string;
+    finished_at: string | null;
+}
+
+export interface PracticeChapterAccuracy {
+    chapter_id: string;
+    chapter_title: string;
+    answered: number;
+    correct: number;
+    accuracy_percent: number;
+    last_practiced: string | null;
+}
+
+export interface PracticeSummary {
+    window_days: number;
+    quizzes_this_week: number;
+    answered: number;
+    correct: number;
+    accuracy_percent: number | null;
+    weakest_chapter: PracticeChapterAccuracy | null;
+    by_chapter: PracticeChapterAccuracy[];
+}
+
+/** Slow the first time anyone practices a section (questions are written
+ *  then), instant afterwards. */
+export const createPracticeQuiz = (input: CreatePracticeInput, t: string) =>
+    postJson<PracticeQuiz>("/secondary/practice/quizzes", input, t, "Couldn't prepare your quiz");
+
+export const fetchPracticeQuiz = (quizId: string, t: string) =>
+    getJson<PracticeQuiz>(`/secondary/practice/quizzes/${encodeURIComponent(quizId)}`, t, "Couldn't load your quiz");
+
+export const answerPracticeQuestion = (quizId: string, questionId: string, letter: string, t: string) =>
+    postJson<PracticeAnswerResponse>(
+        `/secondary/practice/quizzes/${encodeURIComponent(quizId)}/answer`,
+        { question_id: questionId, letter },
+        t,
+        "Couldn't save your answer",
+    );
+
+export const finishPracticeQuiz = (quizId: string, t: string) =>
+    postJson<PracticeQuiz>(`/secondary/practice/quizzes/${encodeURIComponent(quizId)}/finish`, null, t, "Couldn't mark your quiz");
+
+export const fetchPracticeHistory = (t: string) =>
+    getJson<{ quizzes: PracticeHistoryItem[]; summary: PracticeSummary }>(
+        "/secondary/practice/history", t, "Couldn't load your practice history",
+    );
+
+/** The saved "Ask tutor" conversation about one question (per student per
+ *  question — it carries over between quizzes). Empty = ask for the opening. */
+export const fetchPracticeChat = (quizId: string, questionId: string, t: string) =>
+    getJson<MiniTutorChat>(
+        `/secondary/practice/chat?quiz_id=${encodeURIComponent(quizId)}&question_id=${encodeURIComponent(questionId)}`,
+        t,
+        "Couldn't load your conversation",
+    );
+
+/** One "Ask tutor" turn; the server saves both sides. Omit `message` for the
+ *  tutor's opening (only on an empty conversation). Resolves to the reply as
+ *  saved, with server-numbered [VIZ:N] tokens. */
+export async function streamPracticeExplain(
+    quizId: string,
+    questionId: string,
+    message: string | null,
+    accessToken: string,
+    handlers: NamedStreamHandlers = {},
+): Promise<string> {
+    const res = await fetch(`${BACKEND_URL}/secondary/practice/explain`, {
+        method: "POST",
+        headers: authHeaders(accessToken, true),
+        body: JSON.stringify({ quiz_id: quizId, question_id: questionId, message }),
+    });
+    if (!res.ok) throw await toError(res, "Your tutor couldn't respond just now");
+    const { text, events } = await readNamedSSE(res, handlers);
+    if (!("done" in events)) {
+        throw new SecondaryApiError(200, "The connection dropped before your tutor finished. Please try again.", "stream_incomplete");
+    }
+    return finalReply(text, events);
 }

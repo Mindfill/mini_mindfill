@@ -4,6 +4,8 @@
  */
 
 import { getDeviceToken } from "./device";
+// Type-only, so the secondaryApi → api runtime import stays one-way.
+import type { PracticeSummary } from "./secondaryApi";
 
 export const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "https://mindfill-api.onrender.com").trim().replace(/[`'"]/g, "");
 
@@ -315,6 +317,8 @@ export interface ChapterRing {
     chapter_title: string;
     percent_complete: number;
     is_complete: boolean;
+    /** Last time the student touched a lesson in it; null if never. */
+    last_activity_at?: string | null;
 }
 
 export interface StrengthWeakness {
@@ -337,6 +341,8 @@ export interface SecondaryDashboardResponse {
     days_since_last_session: number | null;
     recently_completed_chapters: string[];
     next_chapter_preview: string | null;
+    /** Practice-quiz scores. Optional: older backends omit it. */
+    practice?: PracticeSummary | null;
 }
 
 export async function fetchSecondaryDashboard(accessToken: string): Promise<SecondaryDashboardResponse> {
@@ -393,6 +399,9 @@ export interface StudentSummary {
     resolved_weaknesses: string[];
     last_active_date: string | null;
     sessions_this_week: number;
+    /** Practice quizzes (secondary only; older backends omit these). */
+    practice_quizzes_this_week?: number;
+    practice_accuracy_percent?: number | null;
 }
 
 export interface ParentDashboardResponse {
@@ -1981,6 +1990,8 @@ export interface SchoolStudentDetail {
     weaknesses: string[];
     resolved_weaknesses: string[];
     recent_struggles: SchoolStudentStruggle[];
+    /** Practice-quiz scores — secondary students only. */
+    practice?: PracticeSummary | null;
     generated_at: string;
 }
 

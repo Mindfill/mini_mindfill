@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { Home, BookOpen, LogOut, Menu, X, FileText, GraduationCap } from "lucide-react";
+import { Home, BookOpen, LogOut, Menu, X, FileText, GraduationCap, ListChecks } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ export type Variant = "university" | "secondary" | "parent" | "school_admin";
 
 interface AppSidebarProps {
     userName: string;
-    activeItem: "home" | "courses" | "notes" | "learn" | "profile";
+    activeItem: "home" | "courses" | "notes" | "learn" | "practice" | "profile";
     onSignOut: () => void;
     /** Which nav items to show — the uni-specific ones (Courses/Notes) must
      * never appear for secondary/parent/school_admin accounts. Optional: when
@@ -30,7 +30,7 @@ interface AppSidebarProps {
 type SidebarNavItem = {
     icon: React.ReactNode;
     label: string;
-    key: "home" | "courses" | "notes" | "learn";
+    key: "home" | "courses" | "notes" | "learn" | "practice";
     path: string;
 };
 
@@ -50,6 +50,7 @@ const NAV_ITEMS_BY_VARIANT: Record<Variant, SidebarNavItem[]> = {
     secondary: [
         { icon: <Home className="w-5 h-5" />, label: "Home", key: "home", path: "/secondary/dashboard" },
         { icon: <GraduationCap className="w-5 h-5" />, label: "Learn", key: "learn", path: "/secondary/learn" },
+        { icon: <ListChecks className="w-5 h-5" />, label: "Practice", key: "practice", path: "/secondary/practice" },
     ],
     parent: [
         { icon: <Home className="w-5 h-5" />, label: "Home", key: "home", path: "/parent/dashboard" },

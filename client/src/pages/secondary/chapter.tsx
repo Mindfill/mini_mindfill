@@ -8,7 +8,7 @@ import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CheckCircle2, Circle, Lock, PlayCircle, ChevronLeft, CircuitBoard as BoardIcon, List } from "lucide-react";
+import { CheckCircle2, Circle, Lock, PlayCircle, ChevronLeft, CircuitBoard as BoardIcon, List, ListChecks } from "lucide-react";
 import { SUBSECTION_TYPE_LABEL, type TocSubsection } from "@/lib/secondaryApi";
 import { useChapterToc } from "@/lib/secondaryQueries";
 
@@ -113,15 +113,23 @@ function ChapterToc({ chapterId, accessToken }: { chapterId: string; accessToken
                     complete={chapter.is_complete}
                     label={`${chapter.completed_subsections} of ${chapter.total_subsections} lessons complete`}
                 />
-                {resume && (
+                <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
+                    {resume && (
+                        <button
+                            onClick={() => navigate(`/secondary/subsections/${resume.subsection_id}`)}
+                            className="w-full sm:w-auto min-h-[48px] px-6 rounded-full bg-primary text-primary-foreground font-medium flex items-center justify-center gap-2"
+                        >
+                            <PlayCircle className="w-5 h-5" />
+                            {chapter.completed_subsections > 0 ? "Continue" : "Start"}: {resume.subsection_title}
+                        </button>
+                    )}
                     <button
-                        onClick={() => navigate(`/secondary/subsections/${resume.subsection_id}`)}
-                        className="w-full sm:w-auto min-h-[48px] px-6 rounded-full bg-primary text-primary-foreground font-medium flex items-center justify-center gap-2"
+                        onClick={() => navigate(`/secondary/practice?chapter=${chapter.chapter_id}`)}
+                        className="w-full sm:w-auto min-h-[48px] px-6 rounded-full glass-chip font-medium flex items-center justify-center gap-2"
                     >
-                        <PlayCircle className="w-5 h-5" />
-                        {chapter.completed_subsections > 0 ? "Continue" : "Start"}: {resume.subsection_title}
+                        <ListChecks className="w-5 h-5" /> Practice this chapter
                     </button>
-                )}
+                </div>
             </header>
 
             <div className="flex items-center justify-end">

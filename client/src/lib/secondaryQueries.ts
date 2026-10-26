@@ -13,9 +13,12 @@ import { useQuery, type QueryClient } from "@tanstack/react-query";
 import {
     fetchChapters,
     fetchChapterToc,
+    fetchPracticeHistory,
+    fetchPracticeQuiz,
     fetchSubjects,
     fetchSubsection,
     type ClassLevel,
+    type PracticeQuiz,
 } from "./secondaryApi";
 
 export const secondaryKeys = {
@@ -26,6 +29,8 @@ export const secondaryKeys = {
     toc: (chapterId: string) => ["secondary", "toc", chapterId] as const,
     subsection: (subsectionId: string) => ["secondary", "subsection", subsectionId] as const,
     dashboard: () => ["secondary", "dashboard"] as const,
+    practiceHistory: () => ["secondary", "practice", "history"] as const,
+    practiceQuiz: (quizId: string) => ["secondary", "practice", "quiz", quizId] as const,
 };
 
 // Navigation data shows cached immediately and refreshes behind the scenes.
@@ -51,7 +56,13 @@ export const useChapters = (subjectId: string, token: string) =>
     useQuery({ queryKey: secondaryKeys.chapters(subjectId), queryFn: () => fetchChapters(subjectId, token), ...NAV_OPTIONS });
 
 export const useChapterToc = (chapterId: string, token: string) =>
-    useQuery({ queryKey: secondaryKeys.toc(chapterId), queryFn: () => fetchChapterToc(chapterId, token), ...NAV_OPTIONS });
+    useQuery({
+        queryKey: secondaryKeys.toc(chapterId),
+        queryFn: () => fetchChapterToc(chapterId, token),
+        ...NAV_OPTIONS,
+        // The practice page asks optionally (only with ?chapter=).
+        enabled: !!chapterId,
+    });
 
 export const useSubsection = (subsectionId: string, token: string) =>
     useQuery({
@@ -60,6 +71,25 @@ export const useSubsection = (subsectionId: string, token: string) =>
         ...NAV_OPTIONS,
         // 402/403/404 are answers, not blips — retrying just delays the message.
         retry: (count: number, err: unknown) => count < 1 && !(err instanceof Error && "status" in err && [402, 403, 404].includes((err as { status: number }).status)),
+    });
+
+export const usePracticeHistory = (token: string) =>
+    useQuery({ queryKey: secondaryKeys.practiceHistory(), queryFn: () => fetchPracticeHistory(token), ...NAV_OPTIONS });
+
+/** Marks when a quiz payload arrived. The timed countdown needs it to line
+ *  the server's clock up with this device's. */
+export const stampReceived = (quiz: PracticeQuiz): PracticeQuiz => ({ ...quiz, received_at: Date.now() });
+
+/** The quiz page owns the state once it opens (and writes it back into this
+ *  cache), so this never refetches behind the student's back mid-quiz. */
+export const usePracticeQuiz = (quizId: string, token: string) =>
+    useQuery({
+        queryKey: secondaryKeys.practiceQuiz(quizId),
+        queryFn: () => fetchPracticeQuiz(quizId, token).then(stampReceived),
+        staleTime: 30_000,
+        gcTime: 10 * 60_000,
+        refetchOnWindowFocus: false,
+        retry: (count: number, err: unknown) => count < 1 && !(err instanceof Error && "status" in err && [403, 404].includes((err as { status: number }).status)),
     });
 
 /** After progress changes, every listing that shows progress is out of date. */

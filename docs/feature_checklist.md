@@ -493,6 +493,30 @@
 
 ---
 
+## Practice Quiz (secondary) — added 2026-10-26
+
+Students pick chapters (optionally sections) in one subject and quiz themselves.
+Plan: `C:\Users\HP USER\.claude\plans\hallo-i-want-to-zany-church.md`.
+Migration: `docs/migrations/2026-10-26_practice_quiz.sql` (enum lines first, on their own).
+
+**Backend:**
+- [x] Migration run (2 enum values, 4 tables, RLS on)
+- [x] `app/core/practice.py` — per-section shared pools, Luna-written, bank questions as seeds, top-up when a student runs out of unseen questions
+- [x] `app/routers/secondary_practice.py` — create / resume / answer / finish / history / explain (SSE)
+- [x] Streak counts `practice_answered` + `practice_tutor_exchange`
+- [x] `practice` summary on secondary dashboard, parent card, parent/school student drill-down
+
+**Frontend:**
+- [x] Sidebar "Practice" entry, `/secondary/practice` setup + history page
+- [x] `/secondary/practice/:quizId` — untimed (instant feedback) and timed (exam-style) modes
+- [x] "Ask tutor" bottom sheet on answered questions — conversation saved per student per question
+- [x] Visuals ([VIZ:N]) in the practice tutor AND the end-of-chapter problem tutor, via the shared cache (migration `2026-10-26_practice_conversations.sql`)
+- [x] "Practice this chapter" on the chapter page
+- [x] Practice card on student dashboard + drill-down sheet; one-liner on parent card
+- [ ] Tested at 360px
+
+---
+
 ## GLOBAL — Applies to Every Feature
 
 - [ ] bleach sanitize_input() utility function applied to all text inputs
