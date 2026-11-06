@@ -1,6 +1,11 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import type { SchoolDashboardResponse, StudentRow } from "@/lib/api";
+import type { SchoolMonthlyReportResponse, StudentRow } from "@/lib/api";
+
+// The report is the previous calendar month's activity (report.month) on top
+// of the live roster: status, streaks, chapters and strengths are as of today,
+// because they describe where a student is now, not what they did.
+type SchoolDashboardResponse = SchoolMonthlyReportResponse;
 
 /**
  * The school admin's monthly report as a designed, printable A4 PDF.
@@ -65,6 +70,40 @@ function formatDate(iso: string | null): string {
     return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
+/** "October 2026" for the report month; falls back to the download month
+ *  only against a backend too old to send one. */
+function reportMonthLabel(report: SchoolDashboardResponse): string {
+    if (!report.month) return formatMonth(report.generated_at);
+    return report.month.partial ? `${report.month.label} · so far` : report.month.label;
+}
+
+/** "1–25 November 2026 (month so far)" or "October 2026". Day numbers are
+ *  read straight off the YYYY-MM-DD strings — parsing them as Dates would
+ *  shift a day in any timezone west of UTC. */
+function coveredPeriod(month: NonNullable<SchoolDashboardResponse["month"]>): string {
+    if (!month.partial) return month.label;
+    const first = Number(month.start.slice(8, 10));
+    const last = Number(month.end.slice(8, 10));
+    const days = first === last ? `${first}` : `${first}–${last}`;
+    return `${days} ${month.label} (month so far)`;
+}
+
+/** Sessions in the report month — the same figure the monthly email counts. */
+function monthSessions(report: SchoolDashboardResponse, s: StudentRow): number {
+    if (!report.month) return s.sessions_this_week;
+    return report.month.sessions_by_student[s.student_id] ?? 0;
+}
+
+/** 340 -> "5h 40m". A month of study doesn't read well in bare minutes. */
+function formatStudyMinutes(min: number | null): string {
+    if (min === null) return "—";
+    const rounded = Math.round(min);
+    if (rounded < 60) return `${rounded}m`;
+    const h = Math.floor(rounded / 60);
+    const m = rounded % 60;
+    return m ? `${h}h ${m}m` : `${h}h`;
+}
+
 /** Trims to fit a column so long chapter titles don't wrap the table open. */
 function truncate(value: string, max: number): string {
     if (value.length <= max) return value;
@@ -97,15 +136,20 @@ function drawHeader(doc: jsPDF, report: SchoolDashboardResponse) {
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    doc.text(formatMonth(report.generated_at), PAGE_W - MARGIN, 26, { align: "right" });
+    doc.text(reportMonthLabel(report), PAGE_W - MARGIN, 26, { align: "right" });
 }
 
 function drawOverview(doc: jsPDF, report: SchoolDashboardResponse, top: number): number {
-    const { overview } = report;
+    const { overview, month } = report;
+    const monthName = month ? month.label.split(" ")[0] : "";
     const tiles: { value: string; label: string }[] = [
         { value: String(overview.total_students), label: "Students" },
-        { value: String(overview.active_this_week), label: "Active this week" },
-        { value: `${overview.avg_study_minutes_this_week}m`, label: "Avg study time" },
+        month
+            ? { value: String(month.active_students), label: `Active in ${monthName}` }
+            : { value: String(overview.active_this_week), label: "Active this week" },
+        month
+            ? { value: formatStudyMinutes(month.avg_study_minutes), label: "Avg study / student" }
+            : { value: `${overview.avg_study_minutes_this_week}m`, label: "Avg study time" },
         { value: `${overview.avg_streak}d`, label: "Avg streak" },
         { value: `${overview.chapters_completed_percent}%`, label: "Completed a chapter" },
     ];
@@ -136,7 +180,44 @@ function drawOverview(doc: jsPDF, report: SchoolDashboardResponse, top: number):
         doc.text(tile.label.toUpperCase(), centre, top + 16.5, { align: "center" });
     });
 
-    return top + height;
+    if (!month) return top + height;
+
+    // Says which numbers cover the month and which are a snapshot of today —
+    // otherwise "Avg streak" next to "Active in October" reads as October's.
+    const generated = new Date(report.generated_at);
+    const asOf = Number.isNaN(generated.getTime())
+        ? "today"
+        : generated.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+    doc.setTextColor(...MUTED);
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(7.6);
+    doc.text(
+        `Activity and sessions cover ${coveredPeriod(month)}. Streaks, chapters and status are as of ${asOf}.`,
+        MARGIN,
+        top + height + 5,
+    );
+    return top + height + 5;
+}
+
+// Above the footer rule (drawn at PAGE_H - 13).
+const CONTENT_BOTTOM = PAGE_H - 18;
+
+/** The slim band that marks pages 2+. Keyed to the document's page, not a
+ *  table's own page count — a table that starts on page 2 is on its own
+ *  "page 1" and would otherwise skip the band. */
+function drawContinuationBand(doc: jsPDF) {
+    if (doc.getCurrentPageInfo().pageNumber === 1) return;
+    doc.setFillColor(...BRAND);
+    doc.rect(0, 0, PAGE_W, 3, "F");
+}
+
+/** Hand-drawn sections don't break across pages on their own. If `needed`
+ *  mm won't fit below `y`, start a new page and return the new top. */
+function ensureSpace(doc: jsPDF, y: number, needed: number): number {
+    if (y + needed <= CONTENT_BOTTOM) return y;
+    doc.addPage();
+    drawContinuationBand(doc);
+    return MARGIN + 6;
 }
 
 function drawSectionTitle(doc: jsPDF, title: string, top: number): number {
@@ -160,7 +241,8 @@ function drawWeakTopics(doc: jsPDF, report: SchoolDashboardResponse, top: number
         doc.setTextColor(...MUTED);
         doc.setFont("helvetica", "italic");
         doc.setFontSize(9);
-        doc.text("No struggle data recorded this month.", MARGIN, y + 2);
+        // The weak-topic window is the last 90 days (school.py), not the month.
+        doc.text("No struggle data recorded in the last 90 days.", MARGIN, y + 2);
         return y + 8;
     }
 
@@ -196,13 +278,20 @@ function drawWeakTopics(doc: jsPDF, report: SchoolDashboardResponse, top: number
 }
 
 function drawNeedsAttention(doc: jsPDF, report: SchoolDashboardResponse, top: number): number {
+    // Everyone flagged — this used to stop at 8 and say nothing about the
+    // rest, so in a big school the students most in need of a call home could
+    // be silently left off the one section a head teacher actually reads.
     const flagged = report.students
         .filter((s) => s.status !== "active")
         // At Risk before Inactive: the ones to call home about come first.
-        .sort((a, b) => (a.status === "at_risk" ? -1 : 1) - (b.status === "at_risk" ? -1 : 1))
-        .slice(0, 8);
+        // (Array.sort is stable, so roster order holds within each group.)
+        .sort((a, b) => (a.status === "at_risk" ? 0 : 1) - (b.status === "at_risk" ? 0 : 1));
 
-    const y = drawSectionTitle(doc, "Students needing attention", top);
+    const y = drawSectionTitle(
+        doc,
+        flagged.length ? `Students needing attention (${flagged.length})` : "Students needing attention",
+        top,
+    );
 
     if (!flagged.length) {
         doc.setFillColor(...STATUS_FILL.active);
@@ -210,18 +299,22 @@ function drawNeedsAttention(doc: jsPDF, report: SchoolDashboardResponse, top: nu
         doc.setTextColor(...STATUS_TEXT.active);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(9.5);
-        doc.text("Every student was active this month.", MARGIN + 4, y + 5);
+        // Status is today's (7/14-day rule), so don't claim it about the month.
+        doc.text("No students are currently inactive or at risk.", MARGIN + 4, y + 5);
         return y + 13;
     }
 
     autoTable(doc, {
         startY: y - 2,
-        margin: { left: MARGIN, right: MARGIN },
+        // Uncapped, so it can run onto page 2: same top margin and slim band
+        // as the roster table, and the header row repeats (autoTable default).
+        margin: { left: MARGIN, right: MARGIN, top: MARGIN },
+        didDrawPage: () => drawContinuationBand(doc),
         head: [["Student", "Class", "Sessions", "Last active", "Status"]],
         body: flagged.map((s) => [
             truncate(s.student_name || "—", 30),
             s.class_level || "—",
-            String(s.sessions_this_week),
+            String(monthSessions(report, s)),
             formatDate(s.last_active_date),
             STATUS_LABEL[s.status],
         ]),
@@ -260,7 +353,7 @@ function drawRoster(doc: jsPDF, report: SchoolDashboardResponse, top: number) {
         body: report.students.map((s) => [
             truncate(s.student_name || "—", 26),
             s.class_level || "—",
-            String(s.sessions_this_week),
+            String(monthSessions(report, s)),
             truncate(s.current_chapter || "—", 28),
             truncate(s.top_strengths.join(", ") || "—", 30),
             formatDate(s.last_active_date),
@@ -290,12 +383,8 @@ function drawRoster(doc: jsPDF, report: SchoolDashboardResponse, top: number) {
             data.cell.styles.fontStyle = "bold";
             data.cell.styles.fontSize = 7.4;
         },
-        // Page 2 onward carries a slim title instead of the full blue band.
-        didDrawPage: (data) => {
-            if (data.pageNumber === 1) return;
-            doc.setFillColor(...BRAND);
-            doc.rect(0, 0, PAGE_W, 3, "F");
-        },
+        // Page 2 onward carries a slim band instead of the full blue header.
+        didDrawPage: () => drawContinuationBand(doc),
     });
 }
 
@@ -327,15 +416,20 @@ function drawFooters(doc: jsPDF, report: SchoolDashboardResponse) {
 export function buildSchoolReportPdf(report: SchoolDashboardResponse): jsPDF {
     const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
     doc.setProperties({
-        title: `${report.school_name || "School"} — Techcess monthly report`,
+        title: `${report.school_name || "School"} — Techcess monthly report, ${reportMonthLabel(report)}`,
         creator: "Techcess",
     });
 
     drawHeader(doc, report);
     let y = drawOverview(doc, report, 44);
-    y = drawNeedsAttention(doc, report, y + 12);
-    y = drawWeakTopics(doc, report, y + 6);
-    drawRoster(doc, report, y + 6);
+    // Title + header row + first rows, so a heading is never stranded alone
+    // at the foot of a page.
+    y = drawNeedsAttention(doc, report, ensureSpace(doc, y + 12, 30));
+    // Weak topics are drawn by hand: the whole block must fit (title + up to
+    // 6 bars), since it can't split across pages.
+    const topicRows = Math.max(Math.min(report.weak_topics.length, 6), 1);
+    y = drawWeakTopics(doc, report, ensureSpace(doc, y + 6, 12 + topicRows * 7.4));
+    drawRoster(doc, report, ensureSpace(doc, y + 6, 30));
     drawFooters(doc, report);
 
     return doc;
@@ -343,5 +437,14 @@ export function buildSchoolReportPdf(report: SchoolDashboardResponse): jsPDF {
 
 export function schoolReportFilename(report: SchoolDashboardResponse): string {
     const slug = (report.school_name || "school").replace(/[^\w-]+/g, "-").replace(/^-+|-+$/g, "");
-    return `${slug || "school"}-report-${report.generated_at.slice(0, 10)}.pdf`;
+    // Named for the period it reports on: "…-report-2026-10.pdf" for a full
+    // month, "…-report-2026-11-01-to-2026-11-25.pdf" for a month so far (so
+    // two downloads a week apart don't overwrite each other).
+    const { month } = report;
+    const stamp = !month
+        ? report.generated_at.slice(0, 10)
+        : month.partial
+          ? `${month.start}-to-${month.end}`
+          : month.start.slice(0, 7);
+    return `${slug || "school"}-report-${stamp}.pdf`;
 }

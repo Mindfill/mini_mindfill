@@ -464,8 +464,38 @@ export async function fetchSchoolDashboard(accessToken: string): Promise<SchoolD
     return res.json();
 }
 
-export async function fetchSchoolMonthlyReport(accessToken: string): Promise<SchoolDashboardResponse> {
-    const res = await fetch(`${BACKEND_URL}/school/report/monthly`, {
+/** "current" = the month so far; "previous" = the last full month, exactly
+ *  what the monthly email sent on the 1st. */
+export type SchoolReportPeriod = "current" | "previous";
+
+/** The month a report covers. Same "active" rule and counting as the
+ *  monthly email either way. */
+export interface SchoolReportMonth {
+    start: string;
+    /** Last day covered — today, when `partial`. */
+    end: string;
+    /** "October 2026" */
+    label: string;
+    /** The month is still in progress; every activity figure is "so far". */
+    partial: boolean;
+    /** Students with at least one lesson session in the month. */
+    active_students: number;
+    /** null when the study-time read failed — print a dash, not 0. */
+    avg_study_minutes: number | null;
+    /** Sessions in the month by student id; a missing id means 0. */
+    sessions_by_student: Record<string, number>;
+}
+
+export interface SchoolMonthlyReportResponse extends SchoolDashboardResponse {
+    /** Optional only so a PDF built against an older backend still renders. */
+    month?: SchoolReportMonth;
+}
+
+export async function fetchSchoolMonthlyReport(
+    accessToken: string,
+    period: SchoolReportPeriod = "current",
+): Promise<SchoolMonthlyReportResponse> {
+    const res = await fetch(`${BACKEND_URL}/school/report/monthly?period=${period}`, {
         headers: authHeaders(accessToken),
     });
     if (!res.ok) {

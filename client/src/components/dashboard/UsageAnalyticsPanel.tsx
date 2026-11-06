@@ -3,6 +3,7 @@ import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis } from "rechar
 import { ChevronLeft, ChevronRight, Loader2, Moon, Repeat, Users } from "lucide-react";
 import { useUsageAnalytics } from "@/lib/appQueries";
 import type { UsageAnalytics, UsageScope } from "@/lib/usageAnalytics";
+import StudentWeekTable from "./StudentWeekTable";
 
 /**
  * Usage analytics, identical on the admin, school and parent dashboards.
@@ -39,10 +40,13 @@ export default function UsageAnalyticsPanel({
     scope,
     accessToken,
     enabled = true,
+    onOpenStudent,
 }: {
     scope: UsageScope;
     accessToken: string;
     enabled?: boolean;
+    /** Makes rows in the per-student table open that dashboard's student sheet. */
+    onOpenStudent?: (studentId: string) => void;
 }) {
     // 0 = the week in progress; each step back adds one.
     const [weekOffset, setWeekOffset] = useState(0);
@@ -95,6 +99,7 @@ export default function UsageAnalyticsPanel({
                 <>
                     <HourChart data={data} busy={isFetching} />
                     <Metrics data={data} />
+                    <StudentWeekTable data={data} scope={scope} onOpenStudent={onOpenStudent} />
                     <Revisits data={data} />
                 </>
             )}

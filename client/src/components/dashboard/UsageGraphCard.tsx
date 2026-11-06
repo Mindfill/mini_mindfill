@@ -31,7 +31,9 @@ export default function UsageGraphCard({
     }));
 
     const isUp = usage.change_direction === "up";
-    const comparisonLabel = isWeekly ? "vs previous 4 weeks" : "vs last week";
+    // The backend compares like for like — last week only up to the same
+    // weekday — so say so; "vs last week" on a Monday read as a collapse.
+    const comparisonLabel = isWeekly ? "vs previous 4 weeks" : "vs this time last week";
 
     return (
         <div className="glass-panel rounded-2xl p-6">

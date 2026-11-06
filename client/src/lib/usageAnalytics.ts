@@ -28,12 +28,33 @@ export interface UsageRevisit {
     students: number;
 }
 
+/** One student's figures for the week the payload describes (not always
+ *  "this week" — it follows week_offset like everything else). */
+export interface UsageStudentWeek {
+    sessions: number;
+    /** First attempts that reached completion. Finished reviews are revisits. */
+    lessons_completed: number;
+    revisit_sessions: number;
+    outside_hours_sessions: number;
+    /** Messages exchanged with the tutor across the week's sessions. */
+    tutor_exchanges: number;
+    /** Distinct days (Africa/Lagos) with at least one session. */
+    days_active: number;
+    /** null when that read failed server-side — show a dash, not a 0. */
+    study_minutes: number | null;
+    practice_quizzes: number | null;
+    /** Latest session start in the week, ISO; null if they didn't study. */
+    last_session_at: string | null;
+}
+
 export interface UsageStudent {
     student_id: string;
     student_name: string;
     class_level: string;
-    /** Has logged at least one session outside school hours this week. */
+    /** Has logged at least one session outside school hours in this week. */
     highly_engaged: boolean;
+    /** Absent only from a backend that predates the per-student breakdown. */
+    week?: UsageStudentWeek | null;
 }
 
 export interface UsageAnalytics {
