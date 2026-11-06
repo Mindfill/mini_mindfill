@@ -220,6 +220,7 @@ export default function ParentDashboard() {
                                     scope="parent"
                                     accessToken={session?.access_token ?? ""}
                                     enabled={!!session}
+                                    onOpenStudent={setOpenStudentId}
                                 />
                             </section>
                         </>

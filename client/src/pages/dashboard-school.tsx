@@ -10,14 +10,15 @@ import PageFade from "@/components/ui/page-fade";
 import StudentDetailSheet, { STATUS_LABEL, STATUS_STYLES } from "@/components/dashboard/StudentDetailSheet";
 import UsageAnalyticsPanel from "@/components/dashboard/UsageAnalyticsPanel";
 import HighlyEngagedBadge from "@/components/dashboard/HighlyEngagedBadge";
-import { fetchSchoolMonthlyReport, fetchSchoolStudentDetail } from "@/lib/api";
+import { fetchSchoolMonthlyReport, fetchSchoolStudentDetail, type SchoolReportPeriod } from "@/lib/api";
 import { useSchoolDashboard, useUsageAnalytics } from "@/lib/appQueries";
 import TechcessLoader from "@/components/brand/TechcessLoader";
 
 export default function SchoolDashboard() {
     const { session, user, isLoading: authLoading, signOut: supabaseSignOut } = useAuth();
     const [, navigate] = useLocation();
-    const [downloadingReport, setDownloadingReport] = useState(false);
+    // Which report is being built, so only that button spins.
+    const [downloadingReport, setDownloadingReport] = useState<SchoolReportPeriod | null>(null);
     const [openStudentId, setOpenStudentId] = useState<string | null>(null);
     const { toast } = useToast();
 
@@ -50,12 +51,16 @@ export default function SchoolDashboard() {
     // designed A4 PDF, so a school can circulate or print it. jsPDF is pulled
     // in on click rather than imported at the top — it's a large dependency
     // and no other page needs it, so it stays out of the initial bundle.
-    const handleDownloadReport = async () => {
-        if (!session) return;
-        setDownloadingReport(true);
+    //
+    // "current" is the month so far; "previous" is last month in full — the
+    // same figures the email sent on the 1st, and the one a school wants in
+    // the first days of a month, when "so far" is only a day or two.
+    const handleDownloadReport = async (period: SchoolReportPeriod) => {
+        if (!session || downloadingReport) return;
+        setDownloadingReport(period);
         try {
             const [report, { buildSchoolReportPdf, schoolReportFilename }] = await Promise.all([
-                fetchSchoolMonthlyReport(session.access_token),
+                fetchSchoolMonthlyReport(session.access_token, period),
                 import("@/lib/schoolReportPdf"),
             ]);
             buildSchoolReportPdf(report).save(schoolReportFilename(report));
@@ -67,7 +72,7 @@ export default function SchoolDashboard() {
                 variant: "destructive",
             });
         } finally {
-            setDownloadingReport(false);
+            setDownloadingReport(null);
         }
     };
 
@@ -116,19 +121,28 @@ export default function SchoolDashboard() {
                 <main className="max-w-6xl mx-auto p-6 md:p-10 space-y-8">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                         <WelcomeHeader name={firstName} subtitle={school_name || "No school linked to this account yet."} />
-                        <button
-                            onClick={handleDownloadReport}
-                            disabled={downloadingReport}
-                            className="glass-chip flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-foreground hover:brightness-110 transition disabled:opacity-60"
-                            data-testid="button-monthly-report"
-                        >
-                            {downloadingReport ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <Download className="w-4 h-4" />
-                            )}
-                            Monthly report
-                        </button>
+                        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Download monthly report">
+                            {([
+                                { period: "current", label: "Report: this month so far", title: "Activity from the 1st up to today", testId: "button-monthly-report" },
+                                { period: "previous", label: "Last month", title: "Last month in full — the same figures as the email sent on the 1st", testId: "button-monthly-report-previous" },
+                            ] as const).map((b) => (
+                                <button
+                                    key={b.period}
+                                    onClick={() => handleDownloadReport(b.period)}
+                                    disabled={downloadingReport !== null}
+                                    title={b.title}
+                                    className="glass-chip flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-foreground hover:brightness-110 transition disabled:opacity-60"
+                                    data-testid={b.testId}
+                                >
+                                    {downloadingReport === b.period ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <Download className="w-4 h-4" />
+                                    )}
+                                    {b.label}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
                     {/* Overview stats */}
@@ -161,7 +175,12 @@ export default function SchoolDashboard() {
                     </section>
 
                     {/* Usage analytics — read-only, its own week navigation */}
-                    <UsageAnalyticsPanel scope="school" accessToken={session?.access_token ?? ""} enabled={!!session} />
+                    <UsageAnalyticsPanel
+                        scope="school"
+                        accessToken={session?.access_token ?? ""}
+                        enabled={!!session}
+                        onOpenStudent={setOpenStudentId}
+                    />
 
                     {/* Weak topics */}
                     {weak_topics.length > 0 && (
