@@ -27,7 +27,7 @@ interface TheoryExplainModalProps {
 /**
  * On-demand, stateless explanation chat for a wrong theory-quiz answer.
  * Mirrors QuizSection.tsx's explanation modal pattern, backed by
- * POST /notes/{note_id}/quiz/explain (gpt-5.6-luna) instead of /quiz/explain.
+ * POST /notes/{note_id}/quiz/explain (gpt-6-luna) instead of /quiz/explain.
  * No history is persisted server-side — this component owns it entirely.
  */
 export default function TheoryExplainModal({ noteId, accessToken, context, onClose }: TheoryExplainModalProps) {
