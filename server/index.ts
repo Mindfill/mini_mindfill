@@ -74,7 +74,9 @@ app.use((req, res, next) => {
   server.listen({
     port,
     host: "0.0.0.0",
-    reusePort: true,
+    // SO_REUSEPORT doesn't exist on Windows; recent Node throws ENOTSUP for it
+    // there instead of ignoring it. Kept everywhere else (Render is Linux).
+    reusePort: process.platform !== "win32",
   }, () => {
     log(`serving on port ${port}`);
   });

@@ -3,7 +3,8 @@ import { useLocation } from "wouter";
 import SecondaryShell, { AccessErrorState, PageLoader } from "@/components/secondary/SecondaryShell";
 import { fetchStartHere } from "@/lib/secondaryApi";
 
-/** Lands a student on their next lesson in the free chapter (Ch00). Backs the
+/** Lands a student on their next lesson in the first free chapter (SS1 Number
+ * Bases since 2026-11-20; Mental Models before that). Backs the
  * onboarding paywall's "start the free chapter" path. */
 export default function SecondaryStart() {
     return <SecondaryShell>{({ accessToken }) => <Redirector accessToken={accessToken} />}</SecondaryShell>;

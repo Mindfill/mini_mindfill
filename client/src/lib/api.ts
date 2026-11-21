@@ -1223,10 +1223,18 @@ export interface OnboardingStatus {
  * Fetch the current user's onboarding progress. Also triggers the backend's
  * post-signup hook (resolving any pending parent-link / subscription invite)
  * the first time it's called for a user.
+ *
+ * `resume` marks the app's first load for this user — the only call that can
+ * mean "came back to an unfinished onboarding". The backend logs
+ * onboarding_dropped on that alone; logging it on every call counted each
+ * screen save (which refreshes this) as a drop, ~10 per student who finished.
  * GET /onboarding/status
  */
-export async function fetchOnboardingStatus(accessToken: string): Promise<OnboardingStatus> {
-    const res = await fetch(`${BACKEND_URL}/onboarding/status`, {
+export async function fetchOnboardingStatus(
+    accessToken: string,
+    opts: { resume?: boolean } = {},
+): Promise<OnboardingStatus> {
+    const res = await fetch(`${BACKEND_URL}/onboarding/status${opts.resume ? "?resume=true" : ""}`, {
         headers: authHeaders(accessToken),
     });
 
@@ -1584,7 +1592,9 @@ export async function fetchPaywallStatus(accessToken: string): Promise<PaywallSt
 const PROMO_CODE_MESSAGES = {
     promo_code_invalid: "That code isn't valid.",
     promo_code_expired: "This code has expired or reached its limit.",
-    promo_code_already_redeemed: "You've already used this code.",
+    // Only reached once that use has run out — a retry while it still gives
+    // access now succeeds instead.
+    promo_code_already_redeemed: "You've already used this code and its access has ended. Ask your school for a new one.",
 } as const;
 
 export class PromoCodeError extends Error {

@@ -48,6 +48,7 @@ export default function TutorChat({
     hasActiveSession,
     hasPreviousSessions,
     onProgress,
+    readyAction,
 }: {
     subsectionId: string;
     accessToken: string;
@@ -57,6 +58,11 @@ export default function TutorChat({
     hasActiveSession: boolean;
     hasPreviousSessions: boolean;
     onProgress: (p: TutorProgress) => void;
+    /** Pinned above the composer while the chat is open. The page's own Next
+     * button sits below the whole conversation and the composer, which on a
+     * phone is somewhere the student never scrolls to — the pilot's strongest
+     * student was told he could move on and then couldn't find how. */
+    readyAction?: React.ReactNode;
 }) {
     const [messages, setMessages] = useState<SecondaryMessage[]>([]);
     const [session, setSession] = useState<LiveSession | null>(null);
@@ -254,6 +260,7 @@ export default function TutorChat({
 
             {started && session?.status === "active" && (
                 <div className="sticky bottom-0 z-10">
+                    {readyAction}
                     {/* Never disabled while a reply streams — the message is
                         queued and sent as soon as this exchange completes. */}
                     <ChatInput onSend={queue.enqueue} variant="floating" placeholder="Reply to your tutor…" />

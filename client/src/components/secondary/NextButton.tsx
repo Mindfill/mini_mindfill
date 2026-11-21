@@ -65,6 +65,7 @@ export default function NextButton({
 
     if (!visible) return null;
 
+    const lockedHint = hint ?? "Keep chatting with your tutor to unlock the next lesson";
     const context = next
         ? next.is_new_chapter
             ? `Chapter complete — next: ${next.chapter_title}`
@@ -100,11 +101,12 @@ export default function NextButton({
                         <TooltipTrigger asChild>
                             <span tabIndex={0} className="w-full sm:w-auto rounded-full">{button}</span>
                         </TooltipTrigger>
-                        <TooltipContent>{hint ?? "Keep chatting with your tutor to unlock the next lesson"}</TooltipContent>
+                        <TooltipContent>{lockedHint}</TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
             )}
-            {!unlocked && hint && <p className="text-xs text-muted-foreground text-center sm:hidden">{hint}</p>}
+            {/* Phones have no hover, so the tooltip never shows there. */}
+            {!unlocked && <p className="text-xs text-muted-foreground text-center sm:hidden">{lockedHint}</p>}
         </div>
     );
 }

@@ -123,7 +123,7 @@ export default function Paywall({ accessToken, collected }: ScreenProps) {
         try {
             await completeOnboarding(accessToken);
             await refreshProfile();
-            // Straight into the next lesson of the free chapter (Ch00).
+            // Straight into the next lesson of the first free chapter (Number Bases).
             navigate("/secondary/start");
         } catch (err) {
             console.error("Failed to complete onboarding:", err);
