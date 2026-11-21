@@ -9,7 +9,7 @@ import MiniQuiz from "@/components/secondary/MiniQuiz";
 import EndOfChapter from "@/components/secondary/EndOfChapter";
 import NextButton from "@/components/secondary/NextButton";
 import ChapterCelebration from "@/components/secondary/ChapterCelebration";
-import { ChevronRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight, ChevronRight, CheckCircle2, Loader2 } from "lucide-react";
 import {
     completeSession,
     SecondaryApiError,
@@ -126,7 +126,13 @@ function SubsectionView({ subsectionId, accessToken }: { subsectionId: string; a
     };
 
     const unlocked = isTutor ? tutor.unlocked : nonTutorDone !== null;
-    const buttonVisible = isTutor ? pastStatic || isCompleted : true;
+    // While the chat is open its composer is pinned to the bottom of the
+    // screen, so the Next control rides on top of it instead of waiting below
+    // the whole conversation. The bottom button returns once the chat closes.
+    const pinnedReady = isTutor && unlocked && tutor.session?.status === "active";
+    const buttonVisible = !pinnedReady && (isTutor ? pastStatic || isCompleted : true);
+    const upNext = (nonTutorDone?.progression?.next ?? nonTutorDone?.next ?? data.next) || null;
+    const advanceBusy = advancing || (isTutor && tutor.busy);
 
     return (
         <main className="max-w-3xl mx-auto px-4 py-6 md:px-10 md:py-10 space-y-8">
@@ -181,6 +187,11 @@ function SubsectionView({ subsectionId, accessToken }: { subsectionId: string; a
                             hasActiveSession={!!data.active_session}
                             hasPreviousSessions={data.has_previous_sessions}
                             onProgress={onTutorProgress}
+                            readyAction={
+                                pinnedReady ? (
+                                    <PinnedReady next={upNext} busy={advanceBusy} error={advanceError} onClick={handleNext} />
+                                ) : undefined
+                            }
                         />
                     ) : (
                         <div className="h-24 rounded-2xl bg-muted/30 animate-pulse" aria-hidden />
@@ -204,8 +215,8 @@ function SubsectionView({ subsectionId, accessToken }: { subsectionId: string; a
             <NextButton
                 visible={buttonVisible}
                 unlocked={unlocked}
-                busy={advancing || (isTutor && tutor.busy)}
-                next={(nonTutorDone?.progression?.next ?? nonTutorDone?.next ?? data.next) || null}
+                busy={advanceBusy}
+                next={upNext}
                 hint={
                     isTutor
                         ? undefined
@@ -215,7 +226,7 @@ function SubsectionView({ subsectionId, accessToken }: { subsectionId: string; a
                 }
                 onClick={handleNext}
             />
-            {advanceError && (
+            {advanceError && !pinnedReady && (
                 <p role="alert" className="text-sm text-center text-amber-700 dark:text-amber-400 -mt-4 pb-6">{advanceError}</p>
             )}
 
@@ -230,5 +241,45 @@ function SubsectionView({ subsectionId, accessToken }: { subsectionId: string; a
                 />
             )}
         </main>
+    );
+}
+
+/** The Next control, pinned on top of the open chat's composer once the
+ * lesson is unlocked — always on screen, wherever the student has scrolled. */
+function PinnedReady({
+    next,
+    busy,
+    error,
+    onClick,
+}: {
+    next: NextDestination | null;
+    busy: boolean;
+    error: string | null;
+    onClick: () => void;
+}) {
+    const context = next
+        ? next.is_new_chapter
+            ? `Chapter done · next: ${next.chapter_title}`
+            : `Next up: ${next.subsection_title}`
+        : "Last lesson in this subject";
+
+    return (
+        <div className="pt-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-card/85 backdrop-blur-xl px-3 py-2 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.45)]">
+                <p className="flex-1 min-w-0 text-sm text-muted-foreground truncate">{context}</p>
+                <button
+                    onClick={onClick}
+                    disabled={busy}
+                    className="shrink-0 min-h-[44px] px-5 rounded-full bg-primary text-primary-foreground font-semibold text-sm inline-flex items-center gap-1.5 hover:bg-primary/90 disabled:opacity-70"
+                >
+                    {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    {next ? "I'm ready" : "Finish"}
+                    {!busy && <ArrowRight className="w-4 h-4" />}
+                </button>
+            </div>
+            {error && (
+                <p role="alert" className="text-xs text-center text-amber-700 dark:text-amber-400 mt-1.5">{error}</p>
+            )}
+        </div>
     );
 }

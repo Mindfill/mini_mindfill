@@ -2,7 +2,7 @@
 
 **Effective Date:** July 29, 2026
 
-**Last Updated:** October 20, 2026
+**Last Updated:** November 20, 2026
 
 ## 1. Introduction
 
@@ -62,7 +62,7 @@ Your uploaded files and the text extracted from them are **never used to train A
 
 - Pages visited, features used, and events such as lesson and quiz completion.
 - Device type, browser, operating system, and approximate location (country or city level) derived from your IP address.
-- **Device identification:** plans are limited to two devices. To enforce this we store a device token in your browser and create a one-way code (a "fingerprint") from technical characteristics of your browser, such as its type, screen size, time zone and language. The fingerprint is used only to recognise a device you have used before, so that signing in again does not use up a device slot. It is not used for advertising or to track you on other websites.
+- **Device identification:** there is no limit on how many devices you can use. We keep a list of the devices you have signed in on, which you can see and manage on your Profile page. To do this we store a device token in your browser and create a one-way code (a "fingerprint") from technical characteristics of your browser, such as its type, screen size, time zone and language. The fingerprint is used only to recognise a device you have used before, so that signing in again does not add it to your list a second time. It is not used for advertising or to track you on other websites.
 - Error logs and diagnostic data.
 - AI usage records (for example, the number of tokens used), kept to monitor cost and quality.
 
@@ -84,7 +84,7 @@ Under the NDPA, we must have a lawful basis for each use of your data. Each purp
   - creating and running your account, and authenticating you;
   - delivering the tutor, lessons, notes, quizzes, flashcards and visualisations you ask for;
   - tracking your progress and personalising lessons;
-  - managing your plan, credits, billing and the two-device limit.
+  - managing your plan, credits, billing and the list of devices you have signed in on.
 - **Consent** (or, for users under 18, the consent of a parent or guardian):
   - showing a student's progress to a linked parent or guardian, or to their school (Section 6.2);
   - sending weekly or monthly progress reports to linked parents and schools.
@@ -222,7 +222,7 @@ If you believe we have not handled your data in line with this Policy or the law
 We use only what is strictly necessary for the Platform to work:
 
 - **Authentication:** your Supabase sign-in session is stored in your browser's local storage so you stay signed in between visits.
-- **Device token:** a random token stored in local storage and in a first-party cookie (valid for up to one year) that identifies this browser for the two-device limit.
+- **Device token:** a random token stored in local storage and in a first-party cookie (valid for up to one year) that identifies this browser in the list of devices you have signed in on.
 - **Preferences:** small settings, such as your chosen theme or view, stored in your browser.
 
 We do not use advertising trackers or third-party analytics cookies. Because these items are strictly necessary, they cannot be switched off while you use the Platform. If this changes, we will update this Section and ask for your consent where the law requires.
@@ -288,6 +288,6 @@ For any questions, concerns or requests about this Policy or your data:
 
 If you are not satisfied with our response, you may complain to the Nigeria Data Protection Commission (ndpc.gov.ng) or your local supervisory authority.
 
-Document version: 2.1  |  Effective: July 29, 2026  |  Last Updated: October 20, 2026
+Document version: 2.2  |  Effective: July 29, 2026  |  Last Updated: November 20, 2026
 
 © 2026 Techcess Innovations Ltd. All rights reserved.

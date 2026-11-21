@@ -81,12 +81,12 @@ function SubjectList({ accessToken }: { accessToken: string }) {
             {subjects.length === 0 ? (
                 <div className={`glass-panel rounded-2xl p-8 text-center space-y-4 ${isPlaceholderData ? "opacity-60" : ""}`}>
                     <p className="text-muted-foreground">{activeClass ?? "These"} lessons are on the way — check back soon.</p>
-                    {/* Mental Models is free for every class — never leave someone with nothing to do. */}
+                    {/* SS1 Number Bases is free for every class — never leave someone with nothing to do. */}
                     <button
                         onClick={() => navigate("/secondary/start")}
                         className="min-h-[44px] px-5 rounded-full bg-primary text-primary-foreground text-sm font-medium"
                     >
-                        Start with Mental Models (free) →
+                        Start with Number Bases (free) →
                     </button>
                 </div>
             ) : (
@@ -126,6 +126,10 @@ function ChapterGrid({ subjectId, accessToken }: { subjectId: string; accessToke
     if (error && !data) return <AccessErrorState error={error} onRetry={() => refetch()} />;
     if (!data) return <PageLoader />;
 
+    // Only the FIRST free chapter is the intro. SS1 has two free chapters
+    // (Number Bases, then Mental Models), and both used to get the badge.
+    const introId = data.chapters.find((c) => c.is_free && !c.coming_soon)?.chapter_id;
+
     return (
         <main className="max-w-5xl mx-auto px-4 py-8 md:p-10 space-y-8">
             <header>
@@ -142,6 +146,7 @@ function ChapterGrid({ subjectId, accessToken }: { subjectId: string; accessToke
                             key={c.chapter_id}
                             chapter={c}
                             index={i}
+                            isIntro={c.chapter_id === introId}
                             onOpen={() => {
                                 if (c.requires_subscription) navigate("/upgrade");
                                 else navigate(`/secondary/chapters/${c.chapter_id}`);
@@ -154,8 +159,8 @@ function ChapterGrid({ subjectId, accessToken }: { subjectId: string; accessToke
     );
 }
 
-function ChapterCard({ chapter: c, index, onOpen }: { chapter: ChapterSummary; index: number; onOpen: () => void }) {
-    const startHere = c.is_free && !c.is_complete && c.completed_subsections === 0;
+function ChapterCard({ chapter: c, index, isIntro, onOpen }: { chapter: ChapterSummary; index: number; isIntro: boolean; onOpen: () => void }) {
+    const startHere = isIntro && !c.is_complete && c.completed_subsections === 0;
     const disabled = c.coming_soon || (c.locked && !c.requires_subscription);
 
     let stateLabel: React.ReactNode;

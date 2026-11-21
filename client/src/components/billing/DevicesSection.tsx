@@ -80,7 +80,7 @@ export default function DevicesSection({ accessToken }: { accessToken: string })
                 <div>
                     <h2 className="text-lg font-semibold tracking-tight">Your devices</h2>
                     <p className="text-muted-foreground text-sm">
-                        You can use Techcess on 2 devices. Remove one to swap it for another.
+                        Where you're signed in. Remove any you no longer use.
                     </p>
                 </div>
             </div>

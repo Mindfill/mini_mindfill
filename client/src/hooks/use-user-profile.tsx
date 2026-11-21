@@ -81,11 +81,14 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
         // backend's clock catches up with Supabase's. Without it userType
         // stays null for the whole session (secondary pages hang on their
         // skeleton and the device never registers).
-        fetchOnboardingStatus(accessToken)
+        // Only the first load can be a return to unfinished onboarding — token
+        // rotations and refresh() after each screen save must not count as drops.
+        const opts = { resume: firstLoadForUser };
+        fetchOnboardingStatus(accessToken, opts)
             .catch(async () => {
                 await new Promise((resolve) => setTimeout(resolve, 1500));
                 if (cancelled) throw new Error("cancelled");
-                return fetchOnboardingStatus(accessToken);
+                return fetchOnboardingStatus(accessToken, opts);
             })
             .then((res) => {
                 if (cancelled) return;

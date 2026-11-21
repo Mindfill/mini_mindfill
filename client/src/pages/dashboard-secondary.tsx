@@ -140,8 +140,8 @@ export default function SecondaryDashboard() {
                         <ContinueLearningCard
                             icon={<Play className="w-6 h-6" />}
                             eyebrow="Get started"
-                            title="Start with Chapter 0"
-                            meta="Mental Models is free and always unlocked — a great place to begin."
+                            title="Start with Number Bases"
+                            meta="Your first chapter is free and always unlocked — a great place to begin."
                             ctaLabel="Start learning"
                             onClick={() => navigate("/secondary/start")}
                             testId="button-start-learning"
